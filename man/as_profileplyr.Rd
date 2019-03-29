@@ -2,7 +2,7 @@
 % Please edit documentation in R/allMethods.R
 \name{as_profileplyr}
 \alias{as_profileplyr}
-\title{Import ChIPprofile object to profileplyr Import}
+\title{Import ChIPprofile object to profileplyr}
 \usage{
 as_profileplyr(chipProfile, names = NULL)
 }
@@ -15,7 +15,7 @@ as_profileplyr(chipProfile, names = NULL)
 A profileplyr object
 }
 \description{
-Working with soGGi ChIPprofile objects in profileplyr.
+Function to convert soGGi ChIPprofile objects to  profileplyr object .
 }
 \examples{
 
