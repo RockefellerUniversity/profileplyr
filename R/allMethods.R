@@ -158,7 +158,7 @@ import_deepToolsMat <- function(deeptools_matrix){
   
   if(sum(is.na(myTempM)) > 0) {
     myTempM[is.na(myTempM)] <- 0
-    print("Matrix contained 'NA' values, these will be replaced with zeros")
+    message("Matrix contained 'NA' values, these will be replaced with zeros")
   }
   
   myTempGR <- GRanges(myTemp[,1],IRanges(myTemp[,2],myTemp[,3]),
@@ -269,6 +269,9 @@ clusterRanges.profileplyr <- function(object, fun = rowMeans, scaleRows = TRUE, 
   #range_summ <- summarize(object, fun, output = "matrix") %>%
   #                                       as.data.frame()
   
+  if (length(assays(object)) < 2){
+    stop("The profileplyr object must have at least two samples (length(assays(object)) > 1) for clustering")
+  }
   # summarize adds the group name to the rownames, which I don't want to do as it messes up the separation required later on to build GRanges, but summarize is only a couple lines of code, so just include releveant ones here
   range_summ <- lapply(assays(object), fun)
   range_summ <- as.matrix(do.call(cbind,range_summ))
@@ -285,13 +288,13 @@ clusterRanges.profileplyr <- function(object, fun = rowMeans, scaleRows = TRUE, 
   
   if (is.null(kmeans_k) & is.null(cutree_rows)){
     res = pheatmap(range_summ, scale = scale, clustering_distance_rows = clustering_distance_rows, cluster_method = cluster_method, show_rownames = show_rownames, silent = FALSE, clustering_callback = clustering_callback)
-    print("No 'kmeans_k' or 'cutree_rows' arguments specified. profileplyr object will be returned new column with hierarchical order from hclust")
+    message("No 'kmeans_k' or 'cutree_rows' arguments specified. profileplyr object will be returned new column with hierarchical order from hclust")
     rowRanges(object)$hierarchical_order <- order(res$tree_row$order)
     return(object)
     }
   
   if (!(is.null(kmeans_k)) & !(is.null(cutree_rows))){
-    print("Values for both 'kmeans_k' or 'cutree_rows' arguments were specified, kmeans will be used. To choose one method, change the value of the method not being used to NULL")
+    message("Values for both 'kmeans_k' or 'cutree_rows' arguments were specified, kmeans will be used. To choose one method, change the value of the method not being used to NULL")
   }
   
   if (scaleRows == TRUE) {
@@ -299,17 +302,17 @@ clusterRanges.profileplyr <- function(object, fun = rowMeans, scaleRows = TRUE, 
   }
   
   if (!(is.null(kmeans_k))) {
-    print("K means clustering used.")
+    message("K means clustering used.")
     res <- pheatmap(range_summ, scale = scale, kmeans_k = kmeans_k, silent = silent)
     cluster <- res$kmeans$cluster %>%
       data.frame(row.names = names(.), kmeans_cluster = .)
     rowRanges(object)$cluster <- cluster[,1]
   }else if (!(is.null(cutree_rows))) {
     if(identical(clustering_callback,(function(x, ...){return(x)}))){
-      print("Hierarchical clustering used. It is advised to avoid this option with large matrices as the clustering can take a long time. Kmeans is more suitable for large matrices.")
+      message("Hierarchical clustering used. It is advised to avoid this option with large matrices as the clustering can take a long time. Kmeans is more suitable for large matrices.")
     }
     if(!(identical(clustering_callback,(function(x, ...){return(x)})))){
-      print("Hierarchical clustering performed using clustering method input in the 'callback_clustering' argument.  It is advised to avoid this option with large matrices as the clustering can take a long time. Kmeans is more suitable for large matrices.")
+      message("Hierarchical clustering performed using clustering method input in the 'callback_clustering' argument.  It is advised to avoid this option with large matrices as the clustering can take a long time. Kmeans is more suitable for large matrices.")
     }
     res <- pheatmap(range_summ, scale = scale, clustering_distance_rows = clustering_distance_rows, cluster_method = cluster_method, silent = silent, cutree_rows = cutree_rows, show_rownames = show_rownames, clustering_callback = clustering_callback)
     cluster <- cutree(res$tree_row, k = cutree_rows) %>%
@@ -319,7 +322,7 @@ clusterRanges.profileplyr <- function(object, fun = rowMeans, scaleRows = TRUE, 
   }
   
   metadata(object)$rowGroupsInUse <- "cluster"  # set the group to be filtered by as the overlap column, this will be used by export function to make the groups and also wil lbe labels for heatmap
-  print("A column has been added to the range metadata with the column name 'cluster', and the 'rowGroupsInUse' has been set to this column.")         
+  message("A column has been added to the range metadata with the column name 'cluster', and the 'rowGroupsInUse' has been set to this column.")         
   
   rowRanges(object)$cluster <- ordered(rowRanges(object)$cluster, 
                                                  levels = rowRanges(object)$cluster[!duplicated(rowRanges(object)$cluster)])
@@ -497,7 +500,7 @@ annotateRanges.profileplyr <- function(object, annotation_subset = NULL, TxDb, t
       rowRanges(object)$annotate_group <- paste(rowRanges(object)$annotation_short, group_label_order, sep = "_")
     }
     metadata(object)$rowGroupsInUse <- "annotate_group"
-    print("A column has been added to the range metadata with the column name 'annotate_group' that combines the inherited groups with the annotations determined here. The 'rowGroupsInUse' has been set to this column.")      
+    message("A column has been added to the range metadata with the column name 'annotate_group' that combines the inherited groups with the annotations determined here. The 'rowGroupsInUse' has been set to this column.")      
   }
   
   colnames(mcols(object)) <- make.unique(colnames(mcols(object)))
@@ -537,7 +540,7 @@ subsetbyRangeOverlap <- function(object, group, GRanges_names = NULL, include_no
   if(!(is.null(names(region_list_GRanges)))){
     GRanges_names <- names(region_list_GRanges)
   }else if(is.null(names(region_list_GRanges)) & is.null(GRanges_names)){
-    print("The argument 'GRanges_names' was not set so the GRanges will be given generic names. To name GRanges, set them using the 'GRanges_names' argument")
+    message("The argument 'GRanges_names' was not set so the GRanges will be given generic names. To name GRanges, set them using the 'GRanges_names' argument")
     GRanges_names <- vector()
     for(i in seq_along(region_list_GRanges)) {
       temp <- paste0("RegionSet_", i)
@@ -700,12 +703,12 @@ subsetbyRangeOverlap <- function(object, group, GRanges_names = NULL, include_no
   
   if(inherit_groups == TRUE){
     metadata(object)$rowGroupsInUse <- "group_and_GRoverlap"
-    print("A column has been added to the range metadata with the column name 'group_and_GRoverlap' that combines the inherited groups with the GRanges each range overlaps with. The 'rowGroupsInUse' has been set to this column.")      
+    message("A column has been added to the range metadata with the column name 'group_and_GRoverlap' that combines the inherited groups with the GRanges each range overlaps with. The 'rowGroupsInUse' has been set to this column.")      
   }
   
   if(inherit_groups == FALSE){
     metadata(object)$rowGroupsInUse <- "GRoverlap_names"
-    print("A column has been added to the range metadata with the column name 'GRoverlap_names' that specifies the GRanges each range overlaps with, but the inherited groups are not included. The 'rowGroupsInUse' has been set to this column.")      
+    message("A column has been added to the range metadata with the column name 'GRoverlap_names' that specifies the GRanges each range overlaps with, but the inherited groups are not included. The 'rowGroupsInUse' has been set to this column.")      
   }
   
   ### MOVED THIS TO GENERATEENRICHEDHEATMAP FUNCTION
@@ -742,7 +745,7 @@ subsetbyRangeOverlap <- function(object, group, GRanges_names = NULL, include_no
 subsetbyGeneListOverlap <- function(object, group, include_nonoverlapping = FALSE, separateDuplicated = TRUE, inherit_groups = FALSE) {
   
   if(is.null(names(group))){
-    print("Input gene lists do not have names, they will be given generic names. To name gene list, set them before using this function with names(gene list) function")
+    message("Input gene lists do not have names, they will be given generic names. To name gene list, set them before using this function with names(gene list) function")
     gene_list_names <- vector()
     for(i in seq_along(group)) {
       temp <- paste0("GeneSet_", i)
@@ -928,12 +931,12 @@ subsetbyGeneListOverlap <- function(object, group, include_nonoverlapping = FALS
   
   if(inherit_groups == TRUE){
   metadata(object)$rowGroupsInUse <- "group_and_GLoverlap"
-  print("A column has been added to the range metadata with the column name 'group_and_GLoverlap' that combines the inherited groups with the GRanges each range overlaps with. The 'rowGroupsInUse' has been set to this column.")      
+  message("A column has been added to the range metadata with the column name 'group_and_GLoverlap' that combines the inherited groups with the GRanges each range overlaps with. The 'rowGroupsInUse' has been set to this column.")      
   }
   
   if(inherit_groups == FALSE){
     metadata(object)$rowGroupsInUse <- "GLoverlap_names"
-    print("A column has been added to the range metadata with the column name 'GLoverlap_names' that specifies the GRanges each range overlaps with, but the inherited groups are not included. The 'rowGroupsInUse' has been set to this column.")      
+    message("A column has been added to the range metadata with the column name 'GLoverlap_names' that specifies the GRanges each range overlaps with, but the inherited groups are not included. The 'rowGroupsInUse' has been set to this column.")      
   }
   ### MOVED THIS TO GENERATEENRICHEDHEATMAP FUNCTION
   #this will sort the ranges by signal and group so when we output to EnrichedHeatmap it will look nice on the heatmap
@@ -1029,7 +1032,7 @@ summarize.profileplyr <- function(object, fun, output, keep_all_mcols = FALSE){
     objectToReturn@params$perSampleDPParams <- info[lengths(info) == length(sample_labels)] %>%
       names %>% make.names
     
-    print("objectToReturn")
+    message("objectToReturn")
     return(objectToReturn)
   }
 }
@@ -1321,7 +1324,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
   
   group_boundaries <- c(which(!duplicated(rowData(object)[metadata(object)$rowGroupsInUse]))-1,length(object))
   
-  # divide the maritcies into separate matrciies for each group
+  # divide the maritcies into separate matrcies for each group
   group_sub <- vector(mode = "list", length = length(group_boundaries)-1)
   for(i in seq_along(group_boundaries[-(length(group_boundaries))])){
     if(i==1){
@@ -1331,21 +1334,31 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     }
   }
   
-  # get the max col mean accounting for groups
+  # get the max and min col mean accounting for groups
   col_means <- vector(mode = "list", length = length(group_sub))
   for (i in seq_along(group_sub)){
     col_means[[i]] <- colMeans(group_sub[[i]])
   }
   col_means_unlist <- unlist(col_means)
+  
   col_means_max <- max(col_means_unlist)
   # get the value for which this would be 90% to giv esome room in the figure
   max_for_figure = col_means_max/0.9
+  
+  col_means_min <- min(col_means_unlist)
+  min_for_figure <- col_means_min/0.9
+  
+  if (min_for_figure < 0){
+    min_for_figure <- col_means_min/0.9
+  }else {
+    min_for_figure <- 0
+  }
   
   yaxis_side <- vector(length = length(enrichMAT))
   yaxis <- vector(length = length(enrichMAT))
   if(!is.null(ylim)){
     if(ylim == "common_max"){
-      ylim <- c(0, max_for_figure)
+      ylim <- c(min_for_figure, max_for_figure)
     }
     for (i in seq_along(enrichMAT)){
       if(i == 1){
@@ -1809,7 +1822,7 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, testRanges_names =
     if(!(is.null(names(testRanges_GR)))){
       group_labels <- names(testRanges_GR)
     }else if(is.null(names(testRanges_GR)) & is.null(testRanges_names)){
-      print("The argument 'testRanges_names' was not set so the GRanges will be given generic names. To name GRanges, set them using the 'testRanges_names' argument")
+      message("The argument 'testRanges_names' was not set so the GRanges will be given generic names. To name GRanges, set them using the 'testRanges_names' argument")
       group_labels <- vector()
       for(i in seq_along(testRanges_GR)) {
         temp <- paste0("RegionSet_", i)

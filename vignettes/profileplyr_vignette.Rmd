@@ -1,7 +1,7 @@
 
 ---
 title: "Visualization and annotation of read signal over genomic ranges with profileplyr"
-author: "Tom Carroll and Doug Barrows"
+author: "Doug Barrows and Tom Carroll"
 date: "`r format(Sys.Date(), '%m/%d/%Y')`"
 abstract: >
   Quick and straighforward visualizion of read signal over genomic intervals is key for generating hypotheses from sequencing data sets (e.g. ChIP-seq, ATAC-seq, bisulfite/methyl-seq). Many tools both inside and outside of R and Bioconductor are available to explore these types of data, and they typically start with a bigWig or BAM file and end with some representation of the signal (e.g. heatmap). profileplyr leverages many Bioconductor tools to allow for both flexibility and additional functionality in workflows that end with visualization of the read signal. Signal over select genomic intervals can be quantified with Biocondictor packages in R (e.g. [soGGi](https://bioconductor.org/packages/release/bioc/html/soGGi.html), [EnrichedHeatmap](http://bioconductor.org/packages/release/bioc/html/EnrichedHeatmap.html), [genomation](https://bioconductor.org/packages/release/bioc/html/genomation.html) or via the command line (e.g. [deepTools](https://deeptools.readthedocs.io/en/develop/index.html), [ngs.plot](https://github.com/shenlab-sinai/ngsplot)). profileplyr takes the signal quantification over ranges coming from either soGGi or deepTools, as well as the metadata associated with the ranges and the input bigWig or BAM files and stores this information in a RangedSummarizedExperiment object. profileplyr then uses this object to summarize and plot the signal within these ranges, and also to group and subset these ranges based on clustering, overlap with GRanges objects, overlap with gene lists, and genomic annotations. After manipulation with established Bioconductor tools, the profileplyr object can then be either directly visualized as a customized heatmap in R using EnrichedHeatmap or exported in a format that can be visualized with deepTools. While many users prefer to use deepTools certain steps of sequencing analysis (the handling of BAM files and utilizing computeMatrix/plotHeatmap), by staying outside of R one cannot take advantage of the many Bioconductor packages used to analyze genomic range data. The profileplyr object serves as an intermediate that can be easily manipulated and annotated using Bioconductor tools, and the integration of this object with deepTools, soGGi, and EnrichedHeatmap functions enhances the user's ability to visualize genomic signal. 
@@ -306,16 +306,15 @@ Importantly, this also changes the names of the matricies stored in the assays()
 
 Code involving profileplyr objects can be made clearer using the pipe operator from the magrittr package. This is aided by the fact that the profileplyr object is both the output and input of most functions within the package. This is demonstrated in the [Quick Start](#quickStartpipe) section, as well as some of the more complex visualizations [later in this vignette](#laterPipe). The user can go all the way from importing a deepTools matrix or soGGi object, through annotation and grouping, and ending with export to either the generateEnrichedHeatmap() (shown below) or export_deepToolsMat() function
 
-# Export/Conversion of profileplyr object for visualization
+# Export/Conversion of profileplyr object for heatmap visualization of ranges
 
 The profileplyr object allows for the flexibility to be exported to various types of visualization, both inside and outside of R. This flexibility coupled with the annotation and subsetting functions described later in this vignette provide great potential for quickly navigating through data sets. There are two main ways to visualize this data once the data is stored in a profileplyr object, first as a heatmap of signal over the individual bins within these genomic ranges (e.g. deepTools and EnrichedHeatmap), and second as summarized signal (e.g. mean of the entire range) in [ggplot](https://cran.r-project.org/web/packages/ggplot2/index.html) or clustered heatmaps (e.g. [pheatmap](https://cran.r-project.org/web/packages/pheatmap/index.html)). 
 
 For heatmap visualization of the signal over the genomic intervals this object can be converted to:
 
 1) [A matrix that can be used as an input for the 'plotHeatmap' function of deepTools](#export_deepToolsMat) 
-2) [A list of matrices that can be used in the EnrichedHeatmap() function within R](#convertToEnrichedHeatmapMat)
-3) [A heatmap containing all range grouping and annotation information (using a modified implementation of the EnrichedHeatmap constructor)](#generateEnrichedHeatmap)
-
+2) [A heatmap containing all range grouping and annotation information (using a modified implementation of the EnrichedHeatmap constructor)](#generateEnrichedHeatmap)
+3) [A list of matrices that can be used in the EnrichedHeatmap() function within R](#convertToEnrichedHeatmapMat)
 
 <a name="export_deepToolsMat"/>
 
@@ -332,11 +331,24 @@ export_deepToolsMat(proplyrObject, "test_output")
 unlink("test_output.gz")
 ```
 
+
+<a name="generateEnrichedHeatmap"/>
+
+## Directly generate a customized EnrichedHeatmap with annotated ranges
+
+To generate a heatmap within R directly from the profileplyr object, the  generateEnrichedHeatmap() function should be used. This function takes a profileplyr object and produces a heatmap using the EnrichedHeatmap package. It allows for easy export from the profileplyr object and simple inclusion of the metadata as heatmap annotations. So far the profileplyr object used in this vignette is relatively basic (no groups or additional metadata), but this function generates a multipanel heatmap with a variety of arguments that have been tailored to visualizing the profileplyr object. As we explore more functionality within profileplyr, some of these features will be demonstrated. 
+
+By default, if the ranges are divided into multiple groups (e.g. multiple BED files were input) the heatmap will automatically be divided and annotated to reflect these groups. Here we have no groups so we can set the 'include_group_annotation' argument to be FALSE. If this were set to TRUE, then colored annotation bars would exist to the left of the heatmaps. The maximum value for the y-axis in the line plots at the top of each heatmap are also automatically set based on the highest mean range signal from all of the samples. This can be set manually with the 'ylim' argument, or if ylim = NULL, the maximum will be inferred (i.e. be different) for each individual heatmap. 
+
+```{r, fig3, fig.height = 6, fig.width = 4}
+generateEnrichedHeatmap(proplyrObject, include_group_annotation = FALSE)
+```
+
 <a name="convertToEnrichedHeatmapMat"/>
 
 ## Convert to an EnrichedHeatmap matrix
 
-To generate a heatmap within R using the EnrichedHeatmap package, a special type of matrix of the 'normalizedMatrix' class must be used. The convertToEnrichedHeatmapMat() function takes a profileplyr object as the only required input, and then converts the matrices contained within the assays slot of the profileplyr object to a list of 'normalizedMatrix' class objects that can be used in the EnrichedHeatmap() function. See the [EnrichedHeatmap](http://www.bioconductor.org/packages/devel/bioc/vignettes/EnrichedHeatmap/inst/doc/EnrichedHeatmap.html#toc_10) vignette for detailed examples for how heatmaps can be concatenated together to visualize all of the data in one figure. Importantly, the metadata stored in the rowRanges slot of the profileplyr object can also be utilized to annotate these heatmaps. NOTE: While this function provides the most flexibility for the user to build a custom set of heatmaps, a more useful function for quick visualization of data stored in a profileplyr object is the generateEnrichedHeatmap() function, which builds these heatmaps with one command using the profileplyr object (see the following section).
+profileplyr also facilitates direct use of the EnrichedHeatmap() function within the EnrichedHeatmap package, allowing the user further flexibility in the heatmaps that can be generated from a profileplyr object.EnrichedHeatmap uses a special type of matrix of the 'normalizedMatrix' class to generate heatmaps. The convertToEnrichedHeatmapMat() function within profileplyr takes a profileplyr object as the only required input, and then converts the matrices contained within the assays slot to a list of 'normalizedMatrix' class objects that can be used in the EnrichedHeatmap() function. See the [EnrichedHeatmap](http://www.bioconductor.org/packages/devel/bioc/vignettes/EnrichedHeatmap/inst/doc/EnrichedHeatmap.html#toc_10) vignette for detailed examples for how heatmaps can be concatenated together to visualize all of the data in one figure. Importantly, the metadata stored in the rowRanges slot of the profileplyr object can also be utilized to annotate these heatmaps. NOTE: While this function provides the most flexibility for the user to build a custom set of heatmaps, a more useful function for quick visualization of data stored in a profileplyr object is the generateEnrichedHeatmap() function, which builds these heatmaps with one command using the profileplyr object (see the previous section).
 
 ```{r, fig2, fig.height=8, fig.width=4, results='hide', fig.keep='none'}
 library(EnrichedHeatmap)
@@ -356,25 +368,13 @@ EnrichedHeatmap(EH_mat[[1]],
 # heatmap not included
 ```
 
-<a name="generateEnrichedHeatmap"/>
 
-## Directly generate a customized EnrichedHeatmap with annotated ranges
-
-profileplyr also contains the generateEnrichedHeatmap() function, which takes a profileplyr object and produces an EnrichedHeatmap that can be easily modified to incorporate metadata from the object. So far the profileplyr object used in this vignette is relatively basic (no groups or additional metadata), but this function generates a multipanel heatmap with a variety of arguments that have been tailored to visualizing the profileplyr object. As we explore more functionality within profileplyr, some of these features will be demonstrated. 
-
-By default, if the ranges are divided into multiple groups (e.g. multiple BED files were input) the heatmap will automatically be divided and annotated to reflect these groups. Here we have no groups so we can set the 'include_group_annotation' argument to be FALSE. If this were set to TRUE, then colored annotation bars would exist to the left of the heatmaps. The maximum value for the y-axis in the line plots at the top of each heatmap are also automatically set based on the highest mean range signal from all of the samples. This can be set manually with the 'ylim' argument, or if ylim = NULL, the maximum will be inferred (i.e. be different) for each individual heatmap. 
-
-```{r, fig3, fig.height = 6, fig.width = 4}
-generateEnrichedHeatmap(proplyrObject, include_group_annotation = FALSE)
-```
-
-
-## Summarizing signal for ggplot or heatmap visualization
+# Summarize signal for ggplot or heatmap visualization
 
 Oftentimes it will be important to use some kind of summary statistic for the entire range when trying to understand and visualize differences between samples. This is often going to be done using the summarize() function. The summarize function requires the name of a profileplyr object, the function used to summarize the ranges (e.g. rowMeans or rowMax), and the type of output. Here the basic options will be demonstrated with the example data which contains no groups, however, note how it is used [later](#ggplotGroups) in the vignette or in the [quick start](#quickStartggplot) when additional grouping options are discussed and summarizing the data in this way becomes especially useful. 
 
 
-### Matrix output with the summarize() function
+## Matrix output for heatmaps  
 
 If the 'output' argument is set to 'matrix', then only a matrix will be returned with a single column for each sample containing the bins summarized as indicated with the 'fun' argument. The row names of this matrix is a unique identifier for each range containing the chromosome, start, end, and group. 
 
@@ -394,7 +394,7 @@ pheatmap(object_sumMat,
          show_rownames = FALSE)
 ```
 
-### Long output for ggplot with the summarize() function
+## Long output for ggplot 
 
 If the 'output' argument is set to 'long', then the output will be a long data frame that can be used for plotting with ggplot. The grouping column of the range metadata as specified by 'metadata(proplyrObject)$rowGroupsInUse' will automatically be included in the data frame. If the other range metadata columns should be included in the data frame, then the 'keep_all_mcols' argument should be set to TRUE. Additionally, columns specifying the range, as well as the sample and the summarized signal that correspond to that range are included by default.
 
@@ -414,7 +414,7 @@ ggplot(proplyrObject_long, aes(x = Sample, y = log(Signal))) +
 
 ```
 
-### profileplyr object output with the summarize() function
+## profileplyr object output with summarized matrix
 
 Lastly, if the 'output' argument is set to 'object', then a profileplyr object containing the summarized matrix will be returned. This will allow for further grouping or manipulation of the summarized ranges with other profileplyr functions, as opposed to using the binned ranges that are often used in the examples below. 
 
@@ -818,12 +818,13 @@ import_deepToolsMat(example) %>%
                                                     "white"),
                                                   c("#e7e1ef", 
                                                     "#c994c7", 
-                                                    "#dd1c77")
-                                                  ))
+                                                    "#dd1c77")))
 
 ```
  
+# Acknowledgements
 
+Thank you to Ji-Dung Luo and Elitsa Stoyanova for their feedback, and David Allis for his support. 
 
 # Session info
 
