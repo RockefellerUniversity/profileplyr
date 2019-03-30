@@ -48,7 +48,6 @@ artifacts:
 environment:
     global:
       WARNINGS_ARE_ERRORS: true
-      _R_CHECK_FORCE_SUGGESTS_: false
       R_COMPILE_AND_INSTALL_PACKAGES: always
       R_ARCH: x64
       USE_RTOOLS: true
