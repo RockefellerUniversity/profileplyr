@@ -15,6 +15,12 @@ cache:
 
 # Adapt as necessary starting from here
 
+environment:
+  global:
+   WARNINGS_ARE_ERRORS: 0
+   USE_RTOOLS: true
+   R_VERSION: devel
+   
 build_script:
   # The following configuration will use the development version of Bioconductor.  This
   # is because under the hood, r-appveyor relies on r-travis, and r-travis sets an
