@@ -1,0 +1,8 @@
+language: r
+os:
+  - linux
+  - osx
+warnings_are_errors: false
+sudo: false
+cache: packages
+r: bioc-devel
