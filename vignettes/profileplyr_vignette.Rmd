@@ -46,11 +46,11 @@ path_to_matrix <- system.file("extdata", "example_deepTools_MAT", package = "pro
 
 Here we demonstrate a basic workflow starting from either a matrix output of the 'computeMatrix' function of deepTools or a soGGi ChIPprofile object, and ending with a heatmap or a boxplot to visualize the quantified signal across samples. Later in this document we will go deeper into the profileplyr object used here and the functions that can be used on this object. 
 
-In the code below, a deepTools 'computeMatrix' output is imported as a profileplyr object. The following actions are then performed on this object: 1) subset to include only the hindbrain and liver samples, 2) annotate with genes using [GREAT](https://bioconductor.org/packages/release/bioc/html/rGREAT.html), 3) group by range overlap with these gene annotations based on expression in hindbrain or liver, and 4) output as a deepTools matrix:
+In the code below, a deepTools 'computeMatrix' output is imported as a profileplyr object. The following actions are then performed on this object: 1) subset to include only the hindbrain and liver samples, 2) annotate with genes using [ChIPseeker](https://www.bioconductor.org/packages/release/bioc/html/ChIPseeker.html), 3) group by range overlap with these gene annotations based on expression in hindbrain or liver, and 4) output as a deepTools matrix:
 ```{r, results='hide', fig.keep="none"}
 proplyrObject <- import_deepToolsMat(path_to_matrix)
 proplyrObject <- proplyrObject[, , c(1:2)]
-proplyrObject <- annotateRanges_great(proplyrObject, species = "mm10") 
+proplyrObject <- annotateRanges(proplyrObject, TxDb = "mm10") 
 proplyrObject <- groupBy(proplyrObject, group = gene_list_dataframe)
 export_deepToolsMat(proplyrObject, con = "./deepTools_export")
 ```
@@ -60,7 +60,7 @@ The pipe function (%>%) from the magrittr package can also be used to simplify t
 ```{r, results='hide', fig.keep="none"}
 import_deepToolsMat(path_to_matrix) %>%
   .[ , , c(1:2)] %>%
-  annotateRanges_great(species = "mm10") %>%
+  annotateRanges(TxDb = "mm10")  %>%
   groupBy(group = gene_list_dataframe) %>% 
 export_deepToolsMat(con = "./deepTools_export")
 ```
@@ -103,7 +103,7 @@ BamBigwig_to_chipProfile(signalFiles,
                          format = "bigwig") %>%
   as_profileplyr() %>%
   .[, , c(1:2)] %>%
-  annotateRanges_great(species = "mm10") %>% 
+  annotateRanges(TxDb = "mm10") %>% 
   groupBy(group = gene_list_dataframe) %>% 
   generateEnrichedHeatmap(extra_annotation_columns = "hindbrain_liv_stat",
                           sample_names = c("Hindbrain",
@@ -118,7 +118,7 @@ Further, the signal in the ranges can be summarized with the mean (or any other 
 ```{r, results='hide', fig.keep='last'}
 import_deepToolsMat(path_to_matrix) %>%
   .[, , c(1,2)] %>%
-  annotateRanges_great(species = "mm10") %>% 
+  annotateRanges(TxDb = "mm10")  %>% 
   groupBy(group = gene_list_dataframe) %>% 
   summarize(fun = rowMeans, 
             output = "long", 
@@ -355,17 +355,7 @@ library(EnrichedHeatmap)
 EH_mat <- convertToEnrichedHeatmapMat(proplyrObject)
 EH_mat[[1]]
 
-EnrichedHeatmap(EH_mat[[1]], 
-                name = names(EH_mat[1]), 
-                column_title = names(EH_mat[1])) +
-  EnrichedHeatmap(EH_mat[[2]], 
-                  name = names(EH_mat[2]), 
-                  column_title = names(EH_mat[2])) +
-    EnrichedHeatmap(EH_mat[[3]], 
-                  name = names(EH_mat[3]), 
-                  column_title = names(EH_mat[3]))
-
-# heatmap not included
+# the matricies of this list can be inputs for EnrichedHeatmap()
 ```
 
 
