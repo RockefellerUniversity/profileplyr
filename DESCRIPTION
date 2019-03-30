@@ -5,7 +5,7 @@ Version: 0.99.2
 Date: 2018-12-02
 Author: Tom Carroll and Doug Barrows
 Maintainer: Tom Carroll <tc.infomatics@gmail.com>, Doug Barrows <doug.barrows@gmail.com>
-Description:Quick and straighforward visualizion of read signal over genomic intervals is key for generating
+Description:Quick and straighforward visualization of read signal over genomic intervals is key for generating
   hypotheses from sequencing data sets (e.g. ChIP-seq, ATAC-seq, bisulfite/methyl-seq). Many tools both inside
   and outside of R and Bioconductor are available to explore these types of data, and they typically start
   with a bigWig or BAM file and end with some representation of the signal (e.g. heatmap). profileplyr leverages
