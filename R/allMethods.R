@@ -1070,11 +1070,7 @@ setMethod("summarize", signature(object="profileplyr"), summarize.profileplyr)
 #' 
 #' # group by gene list or list of data frames with genes as rownames
 #' 
-#' gene_list_hindVliver_df <- system.file("extdata", 
-#'                                        "gene_list_hindbrain_liv_df.RData", 
-#'                                         package = "profileplyr") 
-#'
-#' gene_list_dataframe <- readRDS(gene_list_hindVliver_df) 
+#' data("gene_list_dataframe")
 #' 
 #' library(magrittr)
 #' library(rtracklayer)
