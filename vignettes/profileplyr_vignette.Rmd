@@ -46,7 +46,7 @@ path_to_matrix <- system.file("extdata", "example_deepTools_MAT", package = "pro
 
 Here we demonstrate a basic workflow starting from either a matrix output of the 'computeMatrix' function of deepTools or a soGGi ChIPprofile object, and ending with a heatmap or a boxplot to visualize the quantified signal across samples. Later in this document we will go deeper into the profileplyr object used here and the functions that can be used on this object. 
 
-In the code below, a deepTools 'computeMatrix' output is imported as a profileplyr object. The following actions are then performed on this object: 1) subset to include only the hindbrain and liver samples, 2) annotate with genes using [ChIPseeker](https://www.bioconductor.org/packages/release/bioc/html/ChIPseeker.html), 3) group by range overlap with these gene annotations based on expression in hindbrain or liver, and 4) output as a deepTools matrix:
+In the code below, a deepTools 'computeMatrix' output is imported as a profileplyr object. This matrix is the result of quantification of ATAC-seq signal over highly variable peaks across various tissues. The following actions are then performed on this object: 1) subset to include only the hindbrain and liver samples, 2) annotate with genes using [ChIPseeker](https://www.bioconductor.org/packages/release/bioc/html/ChIPseeker.html), 3) group by range overlap with these gene annotations based on expression in hindbrain or liver, and 4) output as a deepTools matrix:
 ```{r, results='hide', fig.keep="none"}
 proplyrObject <- import_deepToolsMat(path_to_matrix)
 proplyrObject <- proplyrObject[, , c(1:2)]
@@ -72,45 +72,11 @@ plotHeatmap -m deepTools_export.gz -o deepTools_export.jpg --startLabel start --
 
 <img src="deepTools_export.jpg" width="300">
 
+
 ```{r, echo=F}
 unlink("deepTools_export.gz")
 ```
 
-```{r, echo=FALSE}
-library(soGGi)
-
-signalFiles <- c(system.file("extdata", 
-                             "hindbrain1_binned.bw", 
-                             package = "profileplyr"), 
-                 system.file("extdata", 
-                             "liver1_binned.bw", 
-                             package = "profileplyr"),
-                 system.file("extdata", 
-                             "kidney1_binned.bw", 
-                             package = "profileplyr"))
-
-testRanges <- system.file("extdata", 
-                          "ranges.bed", 
-                          package = "profileplyr")
-
-```
-
-The same workflow can be done all within R using a ChIPprofile object from soGGi, which like deepTools takes either a bigWig or a BAM file and quantifies the read signal over genomic intervals. Here we also demonstrate the implementation of EnrichedHeatmap with the profileplyr object so that the entire workflow remains in R.
-
-```{r, fig1, fig.height=7, fig.width=5, results='hide', fig.keep="last", warning=FALSE}
-BamBigwig_to_chipProfile(signalFiles, 
-                         testRanges, 
-                         format = "bigwig") %>%
-  as_profileplyr() %>%
-  .[, , c(1:2)] %>%
-  annotateRanges(TxDb = "mm10") %>% 
-  groupBy(group = gene_list_dataframe) %>% 
-  generateEnrichedHeatmap(extra_annotation_columns = "hindbrain_liv_stat",
-                          sample_names = c("Hindbrain",
-                                           "Liver"))
-
-
-```
 
 <a name="quickStartggplot"/>
 
@@ -127,6 +93,42 @@ import_deepToolsMat(path_to_matrix) %>%
     geom_boxplot() + 
     facet_grid(~GLoverlap_names) + 
     scale_x_discrete(labels= c("Hindbrain", "Liver"))
+```
+
+The entire workflow can also be done in R. This is done by quantifying the signal over the ranges with soGGi (using the profileplyr function BamBigwig_to_chipProfile()), converting the resulting ChIPprofile object to a profileplyr object (using the as_profileplyr() function), manipulating and annotating the object, and finishing with either heatmap generation or summarization for plotting. Below we use the profileplyr function generateEnrichedHeatmap(), which creates and EnrichedHeatmap that automatically incorporates the features stored in the profileplyr object.
+
+The following code chunk shows how to go from a BAM file all the way to a heatmap. The ranges used in this example are the ATAC-seq peaks with the largest signal difference in the hindbrain vs the liver. This also works with bigWigs, and in this case the 'format' argument in the BamBigwig_to_chipProfile() function needs to be set to 'bigwig'. This heatmap also shows the ease that annotation heatmaps can be added to the plot. Here we add a heatmap showing the expression change of the gene associated with each range in the hindbrain vs the liver. 
+
+```{r, echo=FALSE}
+
+signalFiles <- c(system.file("extdata","Sorted_Hindbrain_day_12_1_filtered.bam",package = "profileplyr"),
+                 system.file("extdata","Sorted_Liver_day_12_1_filtered.bam",package = "profileplyr"))
+
+# BAMs must be indexed
+require(Rsamtools)
+for (i in seq_along(signalFiles)){
+  indexBam(signalFiles[i])
+}
+
+testRanges <- system.file("extdata", 
+                          "newranges.bed", 
+                          package = "profileplyr")
+```
+
+```{r, fig1, fig.height=7, fig.width=5, results='hide', warning=FALSE}
+
+BamBigwig_to_chipProfile(signalFiles, 
+                         testRanges, 
+                         format = "bam",
+                         paired=FALSE,
+                         style="percentOfRegion") %>% 
+  as_profileplyr %>% 
+  annotateRanges(TxDb = "mm10")  %>%
+  groupBy(group = gene_list_dataframe) %>% 
+  generateEnrichedHeatmap(extra_annotation_columns = c("hindbrain_liv_stat"),
+                          sample_names = c("Hindbrain",
+                                           "Liver"))
+
 ```
 
 
@@ -162,25 +164,25 @@ proplyrObject <- import_deepToolsMat(example)
 The soGGi function plotRegion() allows for the quantification of signal over genomic intervals within R, and the information from this quantification is stored in a ChIPprofile object. profileplyr can take the ChIPprofile object as an input to generate a profileplyr object using the as_profileplyr() function. While the plotRegion function from soGGi does not allow for inputting multiple signal files or multiple BED files, profileplyr contains a function to do this, BamBigwig_to_ChIPprofile(). This function takes a character vector of paths to bigWig files or BAM files in the 'signalFiles' argument. Note that the files for each function call must be all BAMs or all bigWigs and not a combination of the two. The 'testRanges' argument is must be a character vector of paths to BED files. The corresponding names for each BED file that will appear on visualizations involving the resulting profileplyr object can be set with the 'testRanges_names' argument.   
 
 ```{r, warning=FALSE, message=FALSE}
-library(soGGi)
 
-signalFiles <- c(system.file("extdata", 
-                             "hindbrain1_binned.bw", 
-                             package = "profileplyr"), 
-                 system.file("extdata", 
-                             "liver1_binned.bw", 
-                             package = "profileplyr"),
-                 system.file("extdata", 
-                             "kidney1_binned.bw", 
-                             package = "profileplyr"))
+signalFiles <- c(system.file("extdata","Sorted_Hindbrain_day_12_1_filtered.bam",package = "profileplyr"),
+                 system.file("extdata","Sorted_Liver_day_12_1_filtered.bam",package = "profileplyr"))
+
+# BAMs must be indexed
+require(Rsamtools)
+for (i in seq_along(signalFiles)){
+  indexBam(signalFiles[i])
+}
 
 testRanges <- system.file("extdata", 
-                          "ranges.bed", 
+                          "newranges_small.bed", 
                           package = "profileplyr")
 
 chipProfile <- BamBigwig_to_chipProfile(signalFiles, 
-                                        testRanges, 
-                                        format = "bigwig")
+                         testRanges, 
+                         format = "bam",
+                         paired=FALSE,
+                         style="percentOfRegion")
 chipProfile
 ```
 
@@ -189,25 +191,6 @@ Once we have the ChIPprofile object, the as_profileplyr() function will generate
 proplyrObject <- as_profileplyr(chipProfile)
 metadata(proplyrObject)$rowGroupsInUse
 ```
-
-While the as_profileplyr() function provides a convenient way to go straight from BAM and bigWig files to profileplyr objects, and allows the user to use any argument that can be passed to the soGGi regionPlot() function, it is possible to directly use the regionPlot() function. This can be done in one line of code using pipes (shown below), however, note that the as_profileplyr() function adds the ability to use multiple BED files or GRanges with one command, which cannot be accomplished in the code below. 
-
-```{r, warning=FALSE, message=FALSE}
-library(BiocParallel)
-
-testRanges <- import.bed(system.file("extdata", 
-                                 "ranges.bed", 
-                                 package = "profileplyr"))
-
-proplyrObject <- bplapply(signalFiles,
-                          regionPlot,
-                          testRanges = testRanges, 
-                          format = "bigwig",
-                          style="percentOfRegion") %>% 
-  do.call(c,.) %>% 
-  as_profileplyr(names = "giID")
-```
-
 
 ```{r, echo=F}
 #vignette compiles much faster if going off of deeptools input
@@ -550,11 +533,17 @@ generateEnrichedHeatmap(anno,
 
 In addition to being exported to a deepTools matrix or Enrichedheatmap, these annotations from annotateRanges() can be further utilized with the groupBy() function, discussed below. 
 
+```{r, echo=FALSE}
+# subset object to speed up demonstration
+proplyrObject <- proplyrObject[1:5, , ]
+```
+
 ### Annotation of ranges with genes using GREAT
 
 Another common method of annotating genomic intervals with nearby genes is by using the [GREAT](https://bioconductor.org/packages/release/bioc/html/rGREAT.html) method, which defines regulatory regions for each gene and then determines whether a certain genomic interval overlaps with that genic regulatory region. The profileplyr function annotateRanges_great() takes a profileplyr object and the genome that is to be used for the annotation, and will add a column to the range metadata to indicate whether that range overlaps with the regulatory region of a gene. If a region is in regulatory regions of multiple genes, then it will have multiple rows within the profileplyr object. This function will not change the grouping of the profileplyr object. 
 
 ```{r, fig.keep="none"}
+
 anno_great <- annotateRanges_great(proplyrObject, 
                                    species = "mm10")
 rowRanges(anno_great)[1:3]
@@ -584,6 +573,14 @@ metadata(anno)$rowGroupsInUse
 anno_switchGroup <- groupBy(anno, 
                             group = "annotation_short")
 metadata(anno_switchGroup)$rowGroupsInUse
+```
+
+```{r, echo=F}
+# reload full object with all ranges
+proplyrObject <- import_deepToolsMat(example)
+rownames(sampleData(proplyrObject)) <- c("Hindbrain",
+                                         "Liver",
+                                         "Kidney")
 ```
 
 <a name="groupByGRanges"/>
@@ -644,11 +641,9 @@ plotHeatmap -m K27ac_GRoverlap.gz -o K27ac_GRoverlap.jpg --samplesLabel Hindbrai
 
 <img src="K27ac_GRoverlap.jpg" width="300">
 
-The profileplyr object can also be passed directly to the generateEnrichedHeatmap() function to be visualized in R. 
+The profileplyr object can also be passed directly to the generateEnrichedHeatmap() function to be visualized in R with the following command:
 
-```{r, fig11, fig.height=8, fig.width=5}
-generateEnrichedHeatmap(K27ac_groupByGR)
-```
+> generateEnrichedHeatmap(K27ac_groupByGR)
 
 
 <a name="groupBygenelist"/>
@@ -674,14 +669,14 @@ head(gene_list_character[[1]])
 ```
 
 
-Then we subset the profileplyr object to only include the signal data for hindbrain and liver. This is followed by gene annotation of these ranges using the 'annotateRanges_great' function which utilizes the rGREAT package. The resulting profileplyr object has range metadata columns that have gene annotation ('SYMBOL' column) and a column with the gene set that each range overlapped combined with the inherited grouping ('group_and_overlap' column). 
+Then we subset the profileplyr object to only include the signal data for hindbrain and liver. This is followed by gene annotation of these ranges using the 'annotateRanges' function which utilizes the ChIPseeker package. This can also be done with the 'annotateRanges_great' function, which uses the rGREAT package for annotation. The resulting profileplyr object has range metadata columns that have gene annotation ('SYMBOL' column) and a column with the gene set that each range overlapped combined with the inherited grouping ('group_and_overlap' column). 
 ```{r}
 proplyrObject_HB_Liv <- proplyrObject[ , , grepl("Hindbrain|Liver", 
                                                  names(assays(proplyrObject)))]
 ```
 ```{r, results='hide', fig.keep="none"}
-proplyrObject_HB_Liv <- annotateRanges_great(proplyrObject_HB_Liv, 
-                                             species = "mm10") 
+proplyrObject_HB_Liv <- annotateRanges(proplyrObject_HB_Liv, 
+                                       TxDb = "mm10") 
 
 proplyrObject_HB_Liv <- groupBy(proplyrObject_HB_Liv, 
                                 group = gene_list_character)
@@ -693,20 +688,20 @@ rowRanges(proplyrObject_HB_Liv)[1:3]
 We can export this to deepTools:
 ```{r, results='hide'}
 export_deepToolsMat(proplyrObject_HB_Liv, 
-                    con = "great_groupByGene_HB_Liv")
+                    con = "groupByGene_HB_Liv")
 ```
 
 ```{r, echo=F}
-unlink("great_groupByGene_HB_Liv.gz")
+unlink("groupByGene_HB_Liv.gz")
 ```
 
 This matrix can then be passed directly to 'plotHeatmap', either by using the terminal or by using the system() function in R . 
 Code from command line: 
 
-"plotHeatmap -m great_groupByGene_HB_Liv.gz -o great_groupByGene_HB_Liv.jpg" --startLabel start --endLabel end --xAxisLabel "distance (bp)"
+plotHeatmap -m groupByGene_HB_Liv.gz -o groupByGene_HB_Liv.jpg --startLabel start --endLabel end --xAxisLabel "distance (bp)"
 
 
-<img src="great_groupByGene_HB_Liv.jpg" width="300">
+<img src="groupByGene_HB_Liv.jpg" width="300">
 
 ### Gene set list with data frames for heatmap annotation (using pipe - %>%)
 
@@ -733,7 +728,7 @@ example <- system.file("extdata",
 
 import_deepToolsMat(example) %>%
   .[ , , grepl("hindbrain|liver", names(assays(.)))] %>%
-  annotateRanges_great(species = "mm10") %>%
+  annotateRanges(TxDb = "mm10") %>%
   groupBy(group = gene_list_dataframe,
           inherit_groups = FALSE) %>%
   generateEnrichedHeatmap(extra_annotation_columns="hindbrain_liv_stat",
@@ -749,41 +744,13 @@ import_deepToolsMat(example) %>%
 
 As a demonstration, we can combine many of the profileplyr functions and visualize more than one metadata column. From this figure we can see a number of interesting things from the data. Many of the regions with the highest ATAC-seq signal are in promoters for all clusters (the 'annotation_short' column). Cluster 2 appears to have many ranges with specific signal in the liver sample which is supported by the main heatmap, the high density of top liver K27ac peaks (red signal in the 'GRoverlap_names' column), and the high density of genes that have reduced gene expression in the liver vs the hindbrain (red signal in the 'stat' column). On the other hand Cluster 1 has specific hindbrain peaks, high overlap with hindbrain K27ac peaks, and higher expression of genes that have higher expression in the hindbrain. By extracting all of this information from the profileplyr object and displaying in a heatmap with one command, a lot can be gleaned from these data.    
  
+The generateEnrichedHeatmap() function also allows for a great deal of customization of the heatmap that is built around the profileplyr object. Notice that in the heatmap below we modify colors. The color of the heatmaps from the assay matrices is changed to a two color spectrum, and the colors of the annotation heatmaps were customized as well.
 ```{r, fig13, fig.height=8, out.width='100%', results='hide', dpi=35}
 # NOTE: could also use BamBigwig_to_chipProfile() and as_profileplyr()
 # within R to start from bigwig/BAM and BED file. 
 
 set.seed(0)
 import_deepToolsMat(example) %>%
-  annotateRanges(TxDb = "mm10") %>% # annotate with ChIPseeker
-  groupBy(group = gene_list_dataframe,
-          include_nonoverlapping = TRUE,
-          inherit_groups = FALSE) %>% # group by gene overlap
-  groupBy(group = K27ac_GRlist,
-          GRanges_names = K27ac_GRlist_names,
-          include_nonoverlapping = TRUE,
-          inherit_groups = FALSE) %>% # group by GRanges
-  clusterRanges(kmeans_k = 3) %>%
-  generateEnrichedHeatmap(extra_annotation_columns=c("annotation_short", 
-                                                       "GRoverlap_names", 
-                                                       "hindbrain_liv_stat"),
-                          sample_names = c("Hindbrain",
-                                           "Liver",
-                                           "Kidney"),
-                          extra_anno_width = c(5,5,8))
-
-```
- 
-The generateEnrichedHeatmap() function allows for a great deal of customization of the heatmap that is built around the profileplyr object. Below we modify colors. The color of the heatmaps from the assay matrices is changed to a two color spectrum, and changes to the annotation heatmaps were made as well. 
-
-The color arguments for both the matrices and the extra annotation columns can either be a character vector if all heatmaps should have the same color scheme, or a list if each individual heatmap requires different colors. If a list is used, the list must be the same length as the number of heatmaps, and each element of the list maps to the corresponding matrix in the profileplyr object (for 'matrices_color') or to the corresponding element in the 'extra_annotation_columns' argument (for 'extra_anno_color'). If the color of a particular heatmap is to be left unchanged, then that element of the list should be NULL. 
- 
-```{r, fig14, fig.height=8, out.width='100%', results='hide', dpi=35}
-# NOTE: could also use BamBigwig_to_chipProfile() and as_profileplyr()
-# within R to start from bigwig/BAM and BED file. 
-
-set.seed(0)
-import_deepToolsMat(example) %>% 
   annotateRanges(TxDb = "mm10") %>% # annotate with ChIPseeker
   groupBy(group = gene_list_dataframe,
           include_nonoverlapping = TRUE,
@@ -811,7 +778,9 @@ import_deepToolsMat(example) %>%
                                                     "#dd1c77")))
 
 ```
+The color arguments for both the matrices and the extra annotation columns can either be a character vector if all heatmaps should have the same color scheme, or a list if each individual heatmap requires different colors. If a list is used, the list must be the same length as the number of heatmaps, and each element of the list maps to the corresponding matrix in the profileplyr object (for 'matrices_color') or to the corresponding element in the 'extra_annotation_columns' argument (for 'extra_anno_color'). If the color of a particular heatmap is to be left unchanged, then that element of the list should be NULL. 
  
+
 # Acknowledgements
 
 Thank you to Ji-Dung Luo and Elitsa Stoyanova for their feedback, and David Allis for his support. 

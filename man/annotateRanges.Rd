@@ -47,11 +47,11 @@ tbd
 
 example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
 object <- import_deepToolsMat(example) 
+object <- object[1:5, , ]
+
+# annotate ranges the ranges 
+# (NOTE: can choose subset of annotations with 'annotation_subset' argument)
 
 annotateRanges(object, TxDb = "mm10")
-
-# only get ranges that overlap a specific type of annotation
-
-annotateRanges(object, TxDb = "mm10", annotation_subset = c("Promoter", "Exon", "Intron"))
 
 }

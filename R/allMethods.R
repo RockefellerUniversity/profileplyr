@@ -368,7 +368,8 @@ setMethod("clusterRanges", signature(object="profileplyr"), clusterRanges.profil
 #' 
 #' library(SummarizedExperiment)
 #' example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
-#' object <- import_deepToolsMat(example) 
+#' object <- import_deepToolsMat(example)
+#' object <- object[1:5, , ] 
 #' 
 #' great <- annotateRanges_great(object, species = "mm10")
 #' head(mcols(great))
@@ -419,13 +420,14 @@ setMethod("annotateRanges_great", signature(object="profileplyr"), annotateRange
 #'
 #' example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
 #' object <- import_deepToolsMat(example) 
+#' object <- object[1:5, , ]
+#' 
+#' # annotate ranges the ranges 
+#' # (NOTE: can choose subset of annotations with 'annotation_subset' argument)
 #' 
 #' annotateRanges(object, TxDb = "mm10")
 #' 
-#' # only get ranges that overlap a specific type of annotation
-#' 
-#' annotateRanges(object, TxDb = "mm10", annotation_subset = c("Promoter", "Exon", "Intron"))
-#' 
+
 annotateRanges.profileplyr <- function(object, annotation_subset = NULL, TxDb, tssRegion = c(-3000, 3000), changeGroupToAnnotation = FALSE, heatmap_grouping = "group", ...) {
   
   
@@ -973,7 +975,6 @@ subsetbyGeneListOverlap <- function(object, group, include_nonoverlapping = FALS
 #' # output matrix (can be used to make a heatmap)
 #' 
 #' object_sumMat <- summarize(object, fun = rowMeans, output = "matrix") 
-#' object_sumMat[1:3, ]
 #' 
 #' # output long dataframe for ggplot
 #' 
@@ -1065,6 +1066,7 @@ setMethod("summarize", signature(object="profileplyr"), summarize.profileplyr)
 #' 
 #' example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
 #' object <- import_deepToolsMat(example) 
+#' object[1:5, , ]
 #' 
 #' # group by gene list or list of data frames with genes as rownames
 #' 
@@ -1792,17 +1794,24 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @param ... pass to \code{\link[soGGi]{regionPlot}}
 #' @return A profileplyr object
 #' @examples
-#' library(rtracklayer)
-#' signalFiles <- c(system.file("extdata", 
-#'                              "hindbrain1_binned.bw", 
-#'                               package = "profileplyr"), 
-#'                  system.file("extdata", 
-#'                              "liver1_binned.bw", 
-#'                              package = "profileplyr"))
+#' signalFiles <- c(system.file("extdata",
+#'                              "Sorted_Hindbrain_day_12_1_filtered.bam",
+#'                               package = "profileplyr"),
+#'                  system.file("extdata",
+#'                              "Sorted_Liver_day_12_1_filtered.bam",
+#'                               package = "profileplyr"))
+#'require(Rsamtools)
+#'for (i in seq_along(signalFiles)){
+#'  indexBam(signalFiles[i])
+#'}
 #' testRanges <- system.file("extdata", 
-#'                           "ranges.bed", 
-#'                            package = "profileplyr")
-#' BamBigwig_to_chipProfile(signalFiles, testRanges, format = "bigwig")
+#'                           "newranges_small.bed", 
+#'                           package = "profileplyr")
+#' BamBigwig_to_chipProfile(signalFiles, 
+#'                          testRanges, 
+#'                          format = "bam",
+#'                          paired=FALSE,
+#'                          style="percentOfRegion")
 #' @importFrom BiocParallel bplapply
 #' @importFrom soGGi regionPlot
 #' @importFrom rtracklayer import.bed

@@ -25,15 +25,22 @@ A profileplyr object
 Generate a soGGi ChIPprofile object with multiple BAM/bigWig files or multiple BED files as the input
 }
 \examples{
-library(rtracklayer)
-signalFiles <- c(system.file("extdata", 
-                             "hindbrain1_binned.bw", 
-                              package = "profileplyr"), 
-                 system.file("extdata", 
-                             "liver1_binned.bw", 
-                             package = "profileplyr"))
+signalFiles <- c(system.file("extdata",
+                             "Sorted_Hindbrain_day_12_1_filtered.bam",
+                              package = "profileplyr"),
+                 system.file("extdata",
+                             "Sorted_Liver_day_12_1_filtered.bam",
+                              package = "profileplyr"))
+require(Rsamtools)
+for (i in seq_along(signalFiles)){
+ indexBam(signalFiles[i])
+}
 testRanges <- system.file("extdata", 
-                          "ranges.bed", 
-                           package = "profileplyr")
-BamBigwig_to_chipProfile(signalFiles, testRanges, format = "bigwig")
+                          "newranges_small.bed", 
+                          package = "profileplyr")
+BamBigwig_to_chipProfile(signalFiles, 
+                         testRanges, 
+                         format = "bam",
+                         paired=FALSE,
+                         style="percentOfRegion")
 }

@@ -40,7 +40,6 @@ object <- import_deepToolsMat(example)
 # output matrix (can be used to make a heatmap)
 
 object_sumMat <- summarize(object, fun = rowMeans, output = "matrix") 
-object_sumMat[1:3, ]
 
 # output long dataframe for ggplot
 

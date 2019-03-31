@@ -49,6 +49,7 @@ Takes a SE object and groups rows
 
 example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
 object <- import_deepToolsMat(example) 
+object[1:5, , ]
 
 # group by gene list or list of data frames with genes as rownames
 

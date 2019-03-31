@@ -35,7 +35,8 @@ tbd
 
 library(SummarizedExperiment)
 example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
-object <- import_deepToolsMat(example) 
+object <- import_deepToolsMat(example)
+object <- object[1:5, , ] 
 
 great <- annotateRanges_great(object, species = "mm10")
 head(mcols(great))

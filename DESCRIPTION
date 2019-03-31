@@ -15,5 +15,5 @@ License: GPL (>= 3)
 RoxygenNote: 6.1.1
 biocViews: ChIPSeq, DataImport, Sequencing, ChipOnChip
 Imports: GenomicRanges, soGGi, methods, utils, S4Vectors, R.utils, SummarizedExperiment, dplyr, magrittr, tidyr, IRanges, ggplot2, rjson,ChIPseeker,GenomicFeatures,TxDb.Hsapiens.UCSC.hg19.knownGene,TxDb.Hsapiens.UCSC.hg38.knownGene,TxDb.Mmusculus.UCSC.mm10.knownGene, TxDb.Mmusculus.UCSC.mm9.knownGene,org.Hs.eg.db,org.Mm.eg.db,rGREAT,tibble, pheatmap, EnrichedHeatmap, ComplexHeatmap, grid, circlize, BiocParallel, rtracklayer
-Suggests: BiocStyle, testthat, knitr, rmarkdown, png
+Suggests: BiocStyle, testthat, knitr, rmarkdown, png, Rsamtools
 VignetteBuilder: knitr
