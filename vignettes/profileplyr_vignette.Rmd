@@ -32,9 +32,9 @@ library(magrittr)
 library(rtracklayer)
 library(ggplot2)
 
-gene_list_hindbrain_liv_df <- system.file("extdata", "gene_list_hindbrain_liv_df.RData", package = "profileplyr") 
 
-gene_list_dataframe <- readRDS(gene_list_hindbrain_liv_df) 
+data("gene_list_dataframe")
+
 names(gene_list_dataframe)
 head(gene_list_dataframe[[1]])
 
@@ -658,12 +658,8 @@ The gene symbols will be used to determine overlap with the genes that are assoc
 
 First we read in a list of gene sets that are character vectors. This list contains the top 1000 differentially expressed genes that are higher in the liver compared to hindbrain, and the top 1000 that are higher in the hindbrain compared to the liver.
 ```{r}
+data("gene_list_character")
 
-gene_list_hindbrain_liv <- system.file("extdata", 
-                                            "gene_list_hindbrain_liv.RData", 
-                                            package = "profileplyr") 
-
-gene_list_character <- readRDS(gene_list_hindbrain_liv) 
 names(gene_list_character)
 head(gene_list_character[[1]])
 ```
