@@ -111,10 +111,10 @@ export_deepToolsMat <- function(object,con, decreasing = FALSE){
       write.table(con_prezip,row.names=FALSE,sep="",quote=FALSE,col.names=FALSE)
 
 
-  sc %>% 
-    rjson::toJSON(.) %>% 
-    as.character %>%
-    paste0("@",.)  %>% message  
+  # sc %>% 
+  #   rjson::toJSON(.) %>% 
+  #   as.character %>%
+  #   paste0("@",.)  %>% message  
   
   scoreMat <- do.call(cbind,
                       as.list(SummarizedExperiment::assays(object)))

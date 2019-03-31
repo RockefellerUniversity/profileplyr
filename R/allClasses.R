@@ -44,7 +44,6 @@ setClass("profileplyr",
     message(k)
   }
   if (!missing(i)) {
-    message("yo!")
     if (is.character(i)) {
       fmt <- paste0("<", class(x), ">[i,] index out of bounds: %s")
       i <- .profileplyr.charbound(i, rownames(x), fmt)
@@ -110,7 +109,6 @@ setClass("profileplyr",
     metaData$sampleData <- x@metadata$sampleData[k, , drop=FALSE]
     kk <- as.vector(k)
     ans_assays <- x@assays$data[kk]
-    message("hey")
     
     # names(ans_assays) <- names(x@assays)
     # x <- BiocGenerics:::replaceSlots(x, ...,
