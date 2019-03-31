@@ -26,7 +26,7 @@ knitr::opts_chunk$set(tidy=FALSE, cache=FALSE,
 ```	
 
 
-```{r, echo=FALSE, results="hide"}
+```{r, echo=FALSE, results="hide", warning=FALSE}
 library(profileplyr)
 library(magrittr)
 library(rtracklayer)
@@ -97,7 +97,7 @@ import_deepToolsMat(path_to_matrix) %>%
 
 The entire workflow can also be done in R. This is done by quantifying the signal over the ranges with soGGi (using the profileplyr function BamBigwig_to_chipProfile()), converting the resulting ChIPprofile object to a profileplyr object (using the as_profileplyr() function), manipulating and annotating the object, and finishing with either heatmap generation or summarization for plotting. Below we use the profileplyr function generateEnrichedHeatmap(), which creates and EnrichedHeatmap that automatically incorporates the features stored in the profileplyr object.
 
-The following code chunk shows how to go from a BAM file all the way to a heatmap. The ranges used in this example are the ATAC-seq peaks with the largest signal difference in the hindbrain vs the liver. This also works with bigWigs, and in this case the 'format' argument in the BamBigwig_to_chipProfile() function needs to be set to 'bigwig'. This heatmap also shows the ease that annotation heatmaps can be added to the plot. Here we add a heatmap showing the expression change of the gene associated with each range in the hindbrain vs the liver. 
+The following code chunk shows how to go from a BAM file all the way to a heatmap. The ranges used in this example are the ATAC-seq peaks with the largest signal difference in the hindbrain vs the liver, and the ranges are grouped based on overlap with genes with gene expression changes between the hindbrain and the liver. This also works with bigWigs, and in this case the 'format' argument in the BamBigwig_to_chipProfile() function needs to be set to 'bigwig'. This heatmap also shows the ease that annotation heatmaps can be added to the plot. Here we add a heatmap showing the expression change of the gene associated with each range in the hindbrain vs the liver. 
 
 ```{r, echo=FALSE}
 
