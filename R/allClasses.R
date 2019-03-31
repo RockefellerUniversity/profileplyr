@@ -244,3 +244,33 @@ setMethod("[[", c("profileplyr", "ANY", "missing"),
 .DollarNames.profileplyr <- function(object, pattern = "")
   grep(pattern, rownames(metadata(object)$sampleData), value=TRUE)
 
+
+#' Dataframe of differenetial accessible regions from hindbrain versus liver comparison.
+#'
+#' This dataset contains a data frame of the differential accessible regions from comparison of ATAC-seq signal for hindbrain versus liver
+#'
+#' \itemize{
+#' \item gene_list_dataframe
+#' }
+#'
+#' @docType data
+#' @keywords datasets
+#' @name gene_list_dataframe
+#' @usage data(gene_list_dataframe)
+#' @return A dataframe of differential accessible regions of hindbrain versus liver in a dataframe/
+NULL
+
+#' Character vector of the top  of differenetial accessible regions from hindbrain versus liver comparison.
+#'
+#' This dataset contains a character vector of the top differenetial accessible regions from comparison of ATAC-seq signal for hindbrain versus liver
+#'
+#' \itemize{
+#' \item gene_list_character
+#' }
+#'
+#' @docType data
+#' @keywords datasets
+#' @name gene_list_character
+#' @usage data(gene_list_character)
+#' @return A character vector of the top differenetial accessible regions from hindbrain versus liver comparison.
+NULL
