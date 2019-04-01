@@ -710,11 +710,7 @@ This time we will use the same list of genes as before, but this time they are i
 
 
 ```{r,message=FALSE}
-gene_list_hindVliver_df <- system.file("extdata", 
-                                       "gene_list_hindbrain_liv_df.RData", 
-                                       package = "profileplyr") 
-
-gene_list_dataframe <- readRDS(gene_list_hindVliver_df) 
+data("gene_list_dataframe")
 names(gene_list_dataframe)
 head(gene_list_dataframe[[1]])
 
