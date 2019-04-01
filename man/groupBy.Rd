@@ -3,14 +3,9 @@
 \docType{methods}
 \name{groupBy}
 \alias{groupBy}
-\alias{groupBy.profileplyr}
 \alias{groupBy,profileplyr-method}
-\title{groupBy}
+\title{group the rows and ranges of the profileplyr object}
 \usage{
-groupBy.profileplyr(object, group, GRanges_names = NULL, levels = NULL,
-  include_nonoverlapping = FALSE, separateDuplicated = TRUE,
-  inherit_groups = FALSE)
-
 groupBy(object = "profileplyr", group = "ANY",
   GRanges_names = "character", levels = "ANY",
   include_nonoverlapping = "logical", separateDuplicated = "logical",
@@ -40,11 +35,16 @@ groupBy(object = "profileplyr", group = "ANY",
 A profileplyr object with a summarized matrix, a matrix, or a long dataframe.
 }
 \description{
-group the rows (ranges) of the SE object
+group the rows and ranges of the profileplyr object
 }
 \details{
 Takes a SE object and groups rows
 }
+\section{Methods (by class)}{
+\itemize{
+\item \code{profileplyr}: group the rows and ranges of the profileplyr object
+}}
+
 \examples{
 
 example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 

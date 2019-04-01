@@ -3,16 +3,9 @@
 \docType{methods}
 \name{clusterRanges}
 \alias{clusterRanges}
-\alias{clusterRanges.profileplyr}
 \alias{clusterRanges,profileplyr-method}
 \title{Cluster Ranges}
 \usage{
-clusterRanges.profileplyr(object, fun = rowMeans, scaleRows = TRUE,
-  kmeans_k = NULL, clustering_callback = function(x, ...) {    
-  return(x) }, clustering_distance_rows = "euclidean",
-  cluster_method = "complete", cutree_rows = NULL, silent = TRUE,
-  show_rownames = FALSE)
-
 clusterRanges(object = "profileplyr", fun = "function",
   scaleRows = "logical", kmeans_k = "integer",
   clustering_callback = "function", clustering_distance_rows = "ANY",
@@ -55,6 +48,11 @@ Cluster the ranges in a deepTools object based on signal within each range
 \details{
 tbd
 }
+\section{Methods (by class)}{
+\itemize{
+\item \code{profileplyr}: Cluster Ranges
+}}
+
 \examples{
 example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
 object <- import_deepToolsMat(example) 

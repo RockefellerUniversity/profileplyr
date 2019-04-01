@@ -121,7 +121,9 @@ BamBigwig_to_chipProfile(signalFiles,
                          testRanges, 
                          format = "bam",
                          paired=FALSE,
-                         style="percentOfRegion") %>% 
+                         style="percentOfRegion",
+                         nOfWindows=20,
+                         distanceAround=40) %>% 
   as_profileplyr %>% 
   annotateRanges(TxDb = "mm10")  %>%
   groupBy(group = gene_list_dataframe) %>% 
@@ -182,7 +184,10 @@ chipProfile <- BamBigwig_to_chipProfile(signalFiles,
                          testRanges, 
                          format = "bam",
                          paired=FALSE,
-                         style="percentOfRegion")
+                         style="percentOfRegion",
+                         nOfWindows=20,
+                         distanceAround=40
+                         )
 chipProfile
 ```
 

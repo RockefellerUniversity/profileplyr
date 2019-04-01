@@ -3,12 +3,9 @@
 \docType{methods}
 \name{summarize}
 \alias{summarize}
-\alias{summarize.profileplyr}
 \alias{summarize,profileplyr-method}
-\title{summarize}
+\title{summarize the rows of a deepTools matrix}
 \usage{
-summarize.profileplyr(object, fun, output, keep_all_mcols = FALSE)
-
 summarize(object = "profileplyr", fun = "function",
   output = "character", keep_all_mcols = "logical")
 
@@ -33,6 +30,11 @@ summarize the rows of a deepTools matrix
 \details{
 Takes a SE object and outputs a summarized experiment object with a matrix containing ranges as rows and each sample having one column with summary statistic
 }
+\section{Methods (by class)}{
+\itemize{
+\item \code{profileplyr}: summarize the rows of a deepTools matrix
+}}
+
 \examples{
 example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
 object <- import_deepToolsMat(example)
@@ -52,5 +54,4 @@ ggplot(object_long, aes(x = Sample, y = log(Signal))) + geom_boxplot()
 # output profileplyr object containing summarized matrix
 
 summarize(object, fun = rowMeans, output = "object")
-
 }

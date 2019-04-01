@@ -1,30 +1,11 @@
-#' Export profileplyr object
-#'
-#' Export profileplyr object to deepTools matrix file
-#' 
-#' @docType methods
-#' @name export
-#' @rdname export
-#' @return  The path to deepTools matrix file
-export.profileplyr <-  function (object,con)
-{
-  export_deepToolsMat(object,con)
-}  
 
-
-setGeneric("export", function(object="profileplyr",con="character") standardGeneric("export"))
-
-#' @rdname export
-#' @export
-setMethod("export", signature(object="profileplyr",con="character"), export.profileplyr)
-
-#' Export Files.
+#' Export and import profileplyr from/to deeptools
 #'
 #' Export and Import files
 #'
-#' @rdname export
+#' @rdname export_deepToolsMat
 #' @param object A profileplyr object
-#' @param con Connection to write to.
+#' @param con Connection to write/read deeptools data to/from.
 #' @param decreasing If metadata(object)$mcolToOrderBy has been set and not NULL, then the ranges will be ordered by the column indicated in this slot of the metadata. By default, the order will be increasing for the factor or numeric value. For decreasing order, choose decreasing = TRUE.
 #' @importFrom R.utils gzip
 #' @importFrom rjson toJSON
@@ -36,7 +17,14 @@ setMethod("export", signature(object="profileplyr",con="character"), export.prof
 #' @importFrom utils combn read.delim write.table
 #' @import S4Vectors ggplot2
 #' @export
-export_deepToolsMat <- function(object,con, decreasing = FALSE){
+#' @docType methods
+#' @return  The path to deepTools matrix file
+setGeneric("export_deepToolsMat", function(object="profileplyr",con="character",decreasing = "logical") standardGeneric("export_deepToolsMat"))
+
+#' @export
+#' @describeIn export_deepToolsMat Export and import profileplyr from/to deeptools
+setMethod("export_deepToolsMat", signature="profileplyr",
+                                           function(object,con, decreasing = FALSE){
   con_prezip <- gsub("\\.gz","",con)
   con <- paste0(con_prezip,".gz")
 
@@ -134,14 +122,12 @@ export_deepToolsMat <- function(object,con, decreasing = FALSE){
   gzip(con_prezip,con,overwrite=TRUE,remove=FALSE)
   if(con_prezip !=con) unlink(con_prezip)
   return(con_prezip)
-}
-
+})
 
 #' Import
 #'
 #'
-#' @rdname export
-#' @param deeptools_matrix Path to deepTools matrix
+#' @rdname export_deepToolsMat
 #' @details A profileplyr object
 #' @return A profileplyr object
 #' @examples
@@ -151,9 +137,9 @@ export_deepToolsMat <- function(object,con, decreasing = FALSE){
 #' export_deepToolsMat(object,"ATAC_Example.MAT")
 #' @importFrom rjson fromJSON
 #' @export 
-import_deepToolsMat <- function(deeptools_matrix){
-  myTempH <- scan(deeptools_matrix,nlines = 1,what = "character",sep="\n")
-  myTemp <- read.delim(deeptools_matrix,sep="\t",comment.char="@",header=FALSE)
+import_deepToolsMat <- function(con){
+  myTempH <- scan(con,nlines = 1,what = "character",sep="\n")
+  myTemp <- read.delim(con,sep="\t",comment.char="@",header=FALSE)
   myTempM <- as.matrix(myTemp[,-seq(6)])
   
   if(sum(is.na(myTempM)) > 0) {
@@ -261,8 +247,18 @@ import_deepToolsMat <- function(deeptools_matrix){
 #' # hierarchical clustering, print heatmap, yet still return profileplyr object
 #' clusterRanges(object, fun = rowMeans, cutree_rows = 3, silent = FALSE)
 #'  
+#' @export
 #' @import tibble IRanges pheatmap
-clusterRanges.profileplyr <- function(object, fun = rowMeans, scaleRows = TRUE, kmeans_k = NULL, clustering_callback = function(x, ...){return(x)}, clustering_distance_rows = "euclidean", cluster_method = "complete", cutree_rows = NULL, silent = TRUE, show_rownames = FALSE) {
+#' @rdname clusterRanges
+setGeneric("clusterRanges", function(object="profileplyr",fun="function",scaleRows="logical",
+                                     kmeans_k="integer",clustering_callback="function",clustering_distance_rows="ANY",
+                                     cluster_method="function",cutree_rows="integer",silent="logical",show_rownames="logical"
+) standardGeneric("clusterRanges"))
+
+#' @export
+#' @describeIn clusterRanges Cluster Ranges
+setMethod("clusterRanges", signature="profileplyr",
+          function(object, fun = rowMeans, scaleRows = TRUE, kmeans_k = NULL, clustering_callback = function(x, ...){return(x)}, clustering_distance_rows = "euclidean", cluster_method = "complete", cutree_rows = NULL, silent = TRUE, show_rownames = FALSE) {
 
   # could use profileplyr::summarize function here and would give you the ranges with the groups pasted, so all names would be unique. Dont think this helps tho cause we want to cluster all ranges
   # could remove duplicates for this though? If so, which to keep?
@@ -341,27 +337,17 @@ clusterRanges.profileplyr <- function(object, fun = rowMeans, scaleRows = TRUE, 
   colnames(mcols(object)) <- make.unique(colnames(mcols(object)))
   return(object)
 }
-
-#' @rdname clusterRanges
-setGeneric("clusterRanges", function(object="profileplyr",fun="function",scaleRows="logical",
-                                     kmeans_k="integer",clustering_callback="function",clustering_distance_rows="ANY",
-                                     cluster_method="function",cutree_rows="integer",silent="logical",show_rownames="logical"
-) standardGeneric("clusterRanges"))
-
-#' @rdname clusterRanges
-#' @export
-setMethod("clusterRanges", signature(object="profileplyr"), clusterRanges.profileplyr)
+)
 
 
-#' Subset ranges based on overlap with gene list
+#' Annotate profileplyr ranges to genes using rGREAT or ChIPseeker
 #'
 #' The ranges from the deepTools matrix will be subset based on whether they overlap with specified annotated regions related to a user defined gene list.
 #' @docType methods
 #' @name annotateRanges_great
-#' @rdname annotateRanges_great
-#' @param object A profileplyr object
+#' @rdname annotateRanges
 #' @param species GREAT accepts "hg19", "mm10", "mm9", "danRer7" (zebrafish)
-#' @param ... pass to \code{\link[rGREAT]{submitGreatJob}}
+#' @param ... pass to \code{\link[rGREAT]{submitGreatJob}} or \code{\link[ChIPseeker]{annotatePeak}}
 #' @details tbd
 #' @return A profileplyr object
 #' @examples
@@ -374,8 +360,19 @@ setMethod("clusterRanges", signature(object="profileplyr"), clusterRanges.profil
 #' great <- annotateRanges_great(object, species = "mm10")
 #' head(mcols(great))
 #' 
+#' # annotate ranges the ranges 
+#' # (NOTE: can choose subset of annotations with 'annotation_subset' argument)
+#' 
+#' annotateRanges(object, TxDb = "mm10")
+#' 
 #' @import TxDb.Hsapiens.UCSC.hg19.knownGene TxDb.Hsapiens.UCSC.hg38.knownGene TxDb.Mmusculus.UCSC.mm9.knownGene TxDb.Mmusculus.UCSC.mm10.knownGene org.Hs.eg.db org.Mm.eg.db ChIPseeker rGREAT GenomicFeatures 
-annotateRanges_great.profileplyr <- function(object, species, ...) {
+#' @rdname annotateRanges
+setGeneric("annotateRanges_great", function(object="profileplyr",species="character",...)standardGeneric("annotateRanges_great"))
+
+
+#' @describeIn annotateRanges Annotate profileplyr ranges to genes using rGREAT or ChIPseeker
+#' @export
+setMethod("annotateRanges_great", signature(object="profileplyr"),function(object, species, ...) {
 
   great <- submitGreatJob(rowRanges(object), request_interval = 0, species = species, ...)
   genomic_regions <- plotRegionGeneAssociationGraphs(great)
@@ -389,19 +386,13 @@ annotateRanges_great.profileplyr <- function(object, species, ...) {
   colnames(mcols(object)) <- make.unique(colnames(mcols(object)))
   return(object)
 
-}
-
-
-#' @rdname annotateRanges_great
-setGeneric("annotateRanges_great", function(object="profileplyr",species="character",...)standardGeneric("annotateRanges_great"))
-
-#' @rdname annotateRanges_great
-#' @export
-setMethod("annotateRanges_great", signature(object="profileplyr"), annotateRanges_great.profileplyr)
+})
 
 
 
-#' Group ranges based on annotation
+
+
+#' Annotate profileplyr ranges to genes using rGREAT or ChIPseeker
 #'
 #' The ranges from the deepTools matrix will be subset based on whether they overlap with specified annotated regions (using ChIPseeker) throughout the genome
 #' @docType methods
@@ -413,22 +404,15 @@ setMethod("annotateRanges_great", signature(object="profileplyr"), annotateRange
 #' @param tssRegion This needs to be a vector of two numbers that will define promoter regions. The first number must be negative, while the second number must be positive. Default values are  c(-3000, 3000) - SHOULD WE CHANGE THIS, SEEMS BIG!)
 #' @param changeGroupToAnnotation If the grouping should be changed to the annotations (typically when the ranges will be exported for visualization based on this annotation), this should be TRUE. The default if FALSE, which will keep the grouping that existed before annotating the object. This is typical if the output will be used for finding overlaps with gene lists in the 'groupBy' function.
 #' @param heatmap_grouping Only relevant if 'keepAnnotationAsGroup' is set to TRUE. This argument needs to be either "group", or "annotation". This will determine how the ranges are grouped in the resulting object. Default is heatmap_grouping = "Group". If there are no groups in the deepTools matrix that was used in the function, this argument is unnecessary
-#' @param ... pass to \code{\link[ChIPseeker]{annotatePeak}} 
 #' @details tbd
 #' @return A profileplyr object
-#' @examples
-#'
-#' example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
-#' object <- import_deepToolsMat(example) 
-#' object <- object[1:5, , ]
-#' 
-#' # annotate ranges the ranges 
-#' # (NOTE: can choose subset of annotations with 'annotation_subset' argument)
-#' 
-#' annotateRanges(object, TxDb = "mm10")
-#' 
+#' @rdname annotateRanges 
+#' @export
+setGeneric("annotateRanges", function(object="profileplyr",annotation_subset = "character", TxDb, tssRegion = "numeric", changeGroupToAnnotation = "logical", heatmap_grouping = "character", ...)standardGeneric("annotateRanges"))
 
-annotateRanges.profileplyr <- function(object, annotation_subset = NULL, TxDb, tssRegion = c(-3000, 3000), changeGroupToAnnotation = FALSE, heatmap_grouping = "group", ...) {
+#' @describeIn annotateRanges Annotate profileplyr ranges to genes using rGREAT or ChIPseeker
+#' @export
+setMethod("annotateRanges", signature(object="profileplyr"),function(object, annotation_subset = NULL, TxDb, tssRegion = c(-3000, 3000), changeGroupToAnnotation = FALSE, heatmap_grouping = "group", ...) {
   
   
   # which species for annotation?
@@ -508,14 +492,8 @@ annotateRanges.profileplyr <- function(object, annotation_subset = NULL, TxDb, t
   colnames(mcols(object)) <- make.unique(colnames(mcols(object)))
   return(object)
   
-}
+})
 
-#' @rdname annotateRanges
-setGeneric("annotateRanges", function(object="profileplyr",annotation_subset = "character", TxDb, tssRegion = "numeric", changeGroupToAnnotation = "logical", heatmap_grouping = "character", ...)standardGeneric("annotateRanges"))
-
-#' @rdname annotateRanges
-#' @export
-setMethod("annotateRanges", signature(object="profileplyr"), annotateRanges.profileplyr)
 
 
 
@@ -956,7 +934,7 @@ subsetbyGeneListOverlap <- function(object, group, include_nonoverlapping = FALS
   
 }
 
-#' summarize
+#' summarize the rows of a deepTools matrix
 #'
 #' summarize the rows of a deepTools matrix
 #' @docType methods
@@ -987,8 +965,12 @@ subsetbyGeneListOverlap <- function(object, group, include_nonoverlapping = FALS
 #' # output profileplyr object containing summarized matrix
 #' 
 #' summarize(object, fun = rowMeans, output = "object")
-#' 
-summarize.profileplyr <- function(object, fun, output, keep_all_mcols = FALSE){
+#' @export 
+setGeneric("summarize", function(object="profileplyr",fun = "function", output = "character", keep_all_mcols = "logical")standardGeneric("summarize"))
+
+#' @describeIn  summarize summarize the rows of a deepTools matrix
+#' @export
+setMethod("summarize", signature(object="profileplyr"), function(object, fun, output, keep_all_mcols = FALSE){
   summ <- lapply(assays(object), fun)
   summ_mat <- as.matrix(do.call(cbind,summ))
   rowGroupsInUse <- metadata(object)$rowGroupsInUse
@@ -1036,20 +1018,16 @@ summarize.profileplyr <- function(object, fun, output, keep_all_mcols = FALSE){
     message("objectToReturn")
     return(objectToReturn)
   }
-}
+})
 
 
-#' @rdname summarize
-setGeneric("summarize", function(object="profileplyr",fun = "function", output = "character", keep_all_mcols = "logical")standardGeneric("summarize"))
-
-#' @rdname summarize
-#' @export
-setMethod("summarize", signature(object="profileplyr"), summarize.profileplyr)
 
 
-#' groupBy
+
+
+#' group the rows and ranges of the profileplyr object
 #'
-#' group the rows (ranges) of the SE object
+#' group the rows and ranges of the profileplyr object
 #' @docType methods
 #' @name groupBy
 #' @rdname groupBy
@@ -1095,7 +1073,13 @@ setMethod("summarize", signature(object="profileplyr"), summarize.profileplyr)
 #' 
 #' switchGroup <- groupBy(K27ac_groupByGR, group = "GRoverlap_names")
 #' metadata(switchGroup)$rowGroupsInUse
-groupBy.profileplyr <- function(object, group, GRanges_names = NULL, levels = NULL, include_nonoverlapping = FALSE, separateDuplicated = TRUE, inherit_groups = FALSE){
+#' @export
+setGeneric("groupBy", function(object="profileplyr",group="ANY", GRanges_names = "character", levels = "ANY", 
+                               include_nonoverlapping = "logical", separateDuplicated = "logical", inherit_groups = "logical")standardGeneric("groupBy"))
+
+#' @describeIn groupBy group the rows and ranges of the profileplyr object
+#' @export
+setMethod("groupBy", signature(object="profileplyr"),function(object, group, GRanges_names = NULL, levels = NULL, include_nonoverlapping = FALSE, separateDuplicated = TRUE, inherit_groups = FALSE){
   
   if(missing(group)){
     stop("Enter 'group' argument")
@@ -1124,18 +1108,12 @@ groupBy.profileplyr <- function(object, group, GRanges_names = NULL, levels = NU
     return(subsetbyGeneListOverlap(object, group = group, include_nonoverlapping, separateDuplicated, inherit_groups))
   }
  
-}
-
-#' @rdname groupBy
-setGeneric("groupBy", function(object="profileplyr",group="ANY", GRanges_names = "character", levels = "ANY", 
-                               include_nonoverlapping = "logical", separateDuplicated = "logical", inherit_groups = "logical")standardGeneric("groupBy"))
-
-#' @rdname groupBy
-#' @export
-setMethod("groupBy", signature(object="profileplyr"), groupBy.profileplyr)
+})
 
 
-#' orderBy
+
+
+#' choose the column by which to order the ranges by within each group
 #'
 #' choose the column by which to order the ranges by within each group
 #' @docType methods
@@ -1153,8 +1131,13 @@ setMethod("groupBy", signature(object="profileplyr"), groupBy.profileplyr)
 #' cluster <- clusterRanges(object, fun = rowMeans, cutree_rows = 3)
 #' cluster_order <- orderBy(cluster, column = "hierarchical_order")
 #' metadata(cluster_order)$mcolToOrderBy
-#' 
-orderBy.profileplyr <- function(object, column){
+#'
+#' @export
+setGeneric("orderBy", function(object="profileplyr",column = "character")standardGeneric("orderBy"))
+
+#' @describeIn orderBy choose the column by which to order the ranges by within each group
+#' @export
+setMethod("orderBy", signature(object="profileplyr"),function(object, column){
 
     if(!(column %in% colnames(mcols(object)))) {
       stop("The 'column' argument does not match the name of any range metadata columns")
@@ -1162,22 +1145,13 @@ orderBy.profileplyr <- function(object, column){
     metadata(object)$mcolToOrderBy <- column
     
     return(object)
-}
+})
 
 
 
-#' @rdname orderBy
-setGeneric("orderBy", function(object="profileplyr",column = "character")standardGeneric("orderBy"))
-
-#' @rdname orderBy
-#' @export
-setMethod("orderBy", signature(object="profileplyr"), orderBy.profileplyr)
 
 
-setGeneric("convertToEnrichedHeatmapMat", function(object="profileplyr",sample_names="character") standardGeneric("convertToEnrichedHeatmapMat"))
-
-
-#' convertToEnrichedHeatmapMat
+#' export a profileplyr object to a list of matrices that can be used as an input for EnrichedHeatmap
 #'
 #' export a profileplyr object to a list of matrices that can be used as an input for EnrichedHeatmap
 #'
@@ -1196,8 +1170,11 @@ setGeneric("convertToEnrichedHeatmapMat", function(object="profileplyr",sample_n
 #' EnrichedHeatmap(EH_mat[[1]], name = names(EH_mat[1]), column_title = names(EH_mat[1]))
 #' @import EnrichedHeatmap ComplexHeatmap grid circlize
 #' @export
+setGeneric("convertToEnrichedHeatmapMat", function(object="profileplyr",sample_names="character") standardGeneric("convertToEnrichedHeatmapMat"))
 
-convertToEnrichedHeatmapMat = function(object, sample_names = NULL){
+#' @describeIn convertToEnrichedHeatmapMat export a profileplyr object to a list of matrices that can be used as an input for EnrichedHeatmap
+#' @export
+setMethod("convertToEnrichedHeatmapMat", signature(object="profileplyr"),function(object, sample_names = NULL){
   
   if (is.null(sample_names)){
     sample_names <- rownames(sampleData(object))
@@ -1244,7 +1221,7 @@ convertToEnrichedHeatmapMat = function(object, sample_names = NULL){
   names(enrichMAT) <- sample_names
   
   return(enrichMAT)
-}
+})
 
 
 #' generateEnrichedHeatmap
@@ -1792,9 +1769,6 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @examples
 #' signalFiles <- c(system.file("extdata",
 #'                              "Sorted_Hindbrain_day_12_1_filtered.bam",
-#'                               package = "profileplyr"),
-#'                  system.file("extdata",
-#'                              "Sorted_Liver_day_12_1_filtered.bam",
 #'                               package = "profileplyr"))
 #'require(Rsamtools)
 #'for (i in seq_along(signalFiles)){
@@ -1807,7 +1781,8 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #'                          testRanges, 
 #'                          format = "bam",
 #'                          paired=FALSE,
-#'                          style="percentOfRegion")
+#'                          style="percentOfRegion",
+#'                          )
 #' @importFrom BiocParallel bplapply
 #' @importFrom soGGi regionPlot
 #' @importFrom rtracklayer import.bed
