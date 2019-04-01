@@ -780,7 +780,8 @@ The color arguments for both the matrices and the extra annotation columns can e
 
 # Acknowledgements
 
-Thank you to Ji-Dung Luo and Elitsa Stoyanova for their feedback, and David Allis for his support. 
+Thank you to Ji-Dung Luo for testing/vignette review/critical feedback, Elitsa Stoyanova for critical feedback/vignette review and David Allis for his support. 
+
 
 # Session info
 
