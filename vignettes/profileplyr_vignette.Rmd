@@ -469,7 +469,7 @@ This matrix can then be passed directly to 'plotHeatmap', either by using the te
 
 Code from command line :
 
-plotHeatmap -m kmeans_cluster_mat.gz -o kmeans_cluster_mat.jpg --samplesLabel Hindbrain Liver Kidney --startLabel start --endLabel end --xAxisLabel "distance (bp)"
+plotHeatmap -m kmeans_cluster_mat.gz -o kmeans_cluster_mat.jpg --startLabel start --endLabel end --xAxisLabel "distance (bp)"
 
 <img src="kmeans_cluster_mat.jpg" width="350">
 
@@ -642,7 +642,7 @@ This matrix can then be passed directly to 'plotHeatmap', either by using the te
 
 Code from command line:
 
-plotHeatmap -m K27ac_GRoverlap.gz -o K27ac_GRoverlap.jpg --samplesLabel Hindbrain Liver Kidney --startLabel start --endLabel end --xAxisLabel "distance (bp)"
+plotHeatmap -m K27ac_GRoverlap.gz -o K27ac_GRoverlap.jpg --startLabel start --endLabel end --xAxisLabel "distance (bp)"
 
 <img src="K27ac_GRoverlap.jpg" width="300">
 
