@@ -16,7 +16,7 @@ BamBigwig_to_chipProfile(signalFiles, testRanges,
 
 \item{format}{character vector of "bam", "bigwig", "RleList" or "PWM"}
 
-\item{...}{pass to \code{\link[soGGi]{regionPlot}}}
+\item{...}{pass to regionPlot() within the soGGi package}
 }
 \value{
 A profileplyr object

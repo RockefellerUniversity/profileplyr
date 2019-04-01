@@ -53,26 +53,16 @@ object[1:5, , ]
 
 # group by gene list or list of data frames with genes as rownames
 
-data("gene_list_dataframe")
+data("gene_list_dataframe") # load data frame with genes and gene expression data
 
 library(magrittr)
-library(rtracklayer)
 annotateRanges(object, TxDb = "mm10", annotation_subset = c("Promoter")) \%>\% 
         groupBy(group = gene_list_dataframe)
 
 # group by GRanges
 
-hindbrain_K27ac <- import.bed(system.file("extdata", 
-                              "K27ac_hindbrain_top5000.bed", 
-                               package = "profileplyr") )
-
-liver_K27ac <- import.bed(system.file("extdata", 
-                                      "K27ac_liver_top5000.bed", 
-                                      package = "profileplyr") )
-K27ac_GRlist <- GRangesList(hindbrain_K27ac, liver_K27ac)
-K27ac_GRlist_names <- c("hindbrain_K27ac", "liver_K27ac")
-
-K27ac_groupByGR <- groupBy(object, group = K27ac_GRlist, GRanges_names = K27ac_GRlist_names)
+data("K27ac_GRlist_hind_liver_top5000") # load pre-made GRanges
+K27ac_groupByGR <- groupBy(object, group = K27ac_GRlist_hind_liver_top5000)
 
 # switch rowGroupsInUse
 

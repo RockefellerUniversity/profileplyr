@@ -66,14 +66,16 @@ tbd
 library(SummarizedExperiment)
 example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
 object <- import_deepToolsMat(example)
-object <- object[1:5, , ] 
+object <- object[1:2, , ] 
 
-great <- annotateRanges_great(object, species = "mm10")
-head(mcols(great))
-
-# annotate ranges the ranges 
+# annotate ranges with genes using ChIPseeker 
 # (NOTE: can choose subset of annotations with 'annotation_subset' argument)
 
 annotateRanges(object, TxDb = "mm10")
+
+# annotate ranges with genes using GREAT with follwoing command (not run):
+# annotateRanges_great(object, species = "mm10")
+
+
 
 }

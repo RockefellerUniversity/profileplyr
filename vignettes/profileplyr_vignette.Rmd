@@ -29,14 +29,10 @@ knitr::opts_chunk$set(tidy=FALSE, cache=FALSE,
 ```{r, echo=FALSE, results="hide", warning=FALSE}
 library(profileplyr)
 library(magrittr)
-library(rtracklayer)
 library(ggplot2)
 
 
 data("gene_list_dataframe")
-
-names(gene_list_dataframe)
-head(gene_list_dataframe[[1]])
 
 path_to_matrix <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr")
 ```
@@ -52,33 +48,26 @@ proplyrObject <- import_deepToolsMat(path_to_matrix)
 proplyrObject <- proplyrObject[, , c(1:2)]
 proplyrObject <- annotateRanges(proplyrObject, TxDb = "mm10") 
 proplyrObject <- groupBy(proplyrObject, group = gene_list_dataframe)
-export_deepToolsMat(proplyrObject, con = "./deepTools_export")
+export_deepToolsMat(proplyrObject, con = "./groupByGene_HB_Liv")
 ```
-<a name="quickStartpipe"/>
 
-The pipe function (%>%) from the magrittr package can also be used to simplify this same code:
-```{r, results='hide', fig.keep="none"}
-import_deepToolsMat(path_to_matrix) %>%
-  .[ , , c(1:2)] %>%
-  annotateRanges(TxDb = "mm10")  %>%
-  groupBy(group = gene_list_dataframe) %>% 
-export_deepToolsMat(con = "./deepTools_export")
-```
-The output from either of the previous two code chunks can then be used to produce the following figure using the deepTools 'plotHeatmap' function.
+The output from the previous code chunk can then be used to produce the following figure using the deepTools 'plotHeatmap' function.
 
 Code from command line: 
 
-plotHeatmap -m deepTools_export.gz -o deepTools_export.jpg --startLabel start --endLabel end --xAxisLabel "distance (bp)"
+plotHeatmap -m groupByGene_HB_Liv.gz -o groupByGene_HB_Liv.jpg --startLabel start --endLabel end --xAxisLabel "distance (bp)"
 
-<img src="deepTools_export.jpg" width="300">
+<img src="groupByGene_HB_Liv.jpg" width="300">
 
 
 ```{r, echo=F}
 unlink("deepTools_export.gz")
 ```
 
-
+<a name="quickStartpipe"/>
 <a name="quickStartggplot"/>
+
+Since the profileplyr object is used as both an input and output for most functions within the package, using the pipe (%>%) from the magrittr package can make the code much simpler. This is shown in the following two code chunks. 
 
 Further, the signal in the ranges can be summarized with the mean (or any other summary statistic) of the entire range using the profileplyr summarize() function. This summarized signal can be visualized with ggplot (assuming the 'output' argument of summarize() is set to 'long').
 ```{r, results='hide', fig.keep='last'}
@@ -326,11 +315,26 @@ unlink("test_output.gz")
 
 To generate a heatmap within R directly from the profileplyr object, the  generateEnrichedHeatmap() function should be used. This function takes a profileplyr object and produces a heatmap using the EnrichedHeatmap package. It allows for easy export from the profileplyr object and simple inclusion of the metadata as heatmap annotations. So far the profileplyr object used in this vignette is relatively basic (no groups or additional metadata), but this function generates a multipanel heatmap with a variety of arguments that have been tailored to visualizing the profileplyr object. As we explore more functionality within profileplyr, some of these features will be demonstrated. 
 
-By default, if the ranges are divided into multiple groups (e.g. multiple BED files were input) the heatmap will automatically be divided and annotated to reflect these groups. Here we have no groups so we can set the 'include_group_annotation' argument to be FALSE. If this were set to TRUE, then colored annotation bars would exist to the left of the heatmaps. The maximum value for the y-axis in the line plots at the top of each heatmap are also automatically set based on the highest mean range signal from all of the samples. This can be set manually with the 'ylim' argument, or if ylim = NULL, the maximum will be inferred (i.e. be different) for each individual heatmap. 
-
-```{r, fig3, fig.height = 6, fig.width = 4}
-generateEnrichedHeatmap(proplyrObject, include_group_annotation = FALSE)
+```{r, echo = FALSE}
+proplyrObject <- proplyrObject[1:2,1:2,1]
 ```
+
+```{r, fig3, fig.height = 6, fig.width = 4, fig.keep='none'}
+# heatmap not printed, see below for examples of rendered heatmaps from this function
+heatmap <- generateEnrichedHeatmap(proplyrObject)
+class(heatmap)
+```
+
+```{r, echo=FALSE}
+example <- system.file("extdata", 
+                       "example_deepTools_MAT", 
+                       package = "profileplyr") 
+proplyrObject <- import_deepToolsMat(example) 
+rownames(sampleData(proplyrObject)) <- c("Hindbrain",
+                                         "Liver",
+                                         "Kidney")
+```
+
 
 <a name="convertToEnrichedHeatmapMat"/>
 
@@ -338,8 +342,8 @@ generateEnrichedHeatmap(proplyrObject, include_group_annotation = FALSE)
 
 profileplyr also facilitates direct use of the EnrichedHeatmap() function within the EnrichedHeatmap package, allowing the user further flexibility in the heatmaps that can be generated from a profileplyr object.EnrichedHeatmap uses a special type of matrix of the 'normalizedMatrix' class to generate heatmaps. The convertToEnrichedHeatmapMat() function within profileplyr takes a profileplyr object as the only required input, and then converts the matrices contained within the assays slot to a list of 'normalizedMatrix' class objects that can be used in the EnrichedHeatmap() function. See the [EnrichedHeatmap](http://www.bioconductor.org/packages/devel/bioc/vignettes/EnrichedHeatmap/inst/doc/EnrichedHeatmap.html#toc_10) vignette for detailed examples for how heatmaps can be concatenated together to visualize all of the data in one figure. Importantly, the metadata stored in the rowRanges slot of the profileplyr object can also be utilized to annotate these heatmaps. NOTE: While this function provides the most flexibility for the user to build a custom set of heatmaps, a more useful function for quick visualization of data stored in a profileplyr object is the generateEnrichedHeatmap() function, which builds these heatmaps with one command using the profileplyr object (see the previous section).
 
-```{r, fig2, fig.height=8, fig.width=4, results='hide', fig.keep='none'}
-library(EnrichedHeatmap)
+```{r, fig2, fig.height=8, fig.width=4, fig.keep='none'}
+
 EH_mat <- convertToEnrichedHeatmapMat(proplyrObject)
 EH_mat[[1]]
 
@@ -475,7 +479,10 @@ plotHeatmap -m kmeans_cluster_mat.gz -o kmeans_cluster_mat.jpg --startLabel star
 
 ## Generate group-annotated heatmap in R directly with generateEnrichedHeatmap()
 
-After clustering the profileplyr object can be passed directly as an argument into the generateEnrichedHeatmap() function, and by default the heatmap will be grouped and annotated by these clusters, which were automatically set as the 'rowGroupsInUse' in the clusterRanges() function. Assuming that the 'include_group_annotation' argument of this function is set to the default value of TRUE, whichever metadata column is set to the 'rowGroupsInUse' slot will be used for the grouping and annotation seen below. 
+After clustering the profileplyr object can be passed directly as an argument into the generateEnrichedHeatmap() function, and by default the heatmap will be grouped and annotated by these clusters, which were automatically set as the 'rowGroupsInUse' in the clusterRanges() function. Assuming that the 'include_group_annotation' argument of this function is set to the default value of TRUE, whichever metadata column is set to the 'rowGroupsInUse' slot will be used for the grouping and annotation seen below to the left of the heatmap. If there are no range groups, then the user can set this argument to be FALSE, and those color annotations will be absent. 
+
+Further, the maximum value for the y-axis in the line plots at the top of each heatmap are also automatically set based on the highest mean range signal from all of the samples. This can be set manually with the 'ylim' argument, or if ylim = NULL, the maximum will be inferred (i.e. be different) for each individual heatmap. 
+
 
 ```{r, fig9, fig.height=6, fig.width=4}
 generateEnrichedHeatmap(kmeans)
@@ -566,18 +573,15 @@ The groupBy() function within profileplyr allows for a range of grouping mechani
 
 ## Switch output grouping columns within existing range metadata
 
-If the 'group' argument is a character string then it must match a name of one of the columns in mcols(proplyrObject). In this case the groupBy function will change the column that will be used for grouping a profileplyr object during visualization. While many of the profileplyr functions shown above will set the grouping column (specified in the 'rowGroupsInUse' section of metadata(proplyrObject)) to the appropriate column for that function, the user may want to use another column for the grouping of the deepTools matrix to be output. The user may have added an additional column to the range metadata that can be used, or a column that is generated in one of the above functions, but is not the default grouping column, might be useful. For example, the default grouping for the annotateRanges() function is a combination of the inherited groups and the annotations, however, maybe the user wants to disregard the inherited grouping of ranges and group all of the ranges by the new annotation. In this case they would change the grouping to the 'annotation_short' column, as shown below.  
+If the 'group' argument is a character string then it must match a name of one of the columns in mcols(proplyrObject). In this case the groupBy function will change the column that will be used for grouping a profileplyr object during visualization. While many of the profileplyr functions shown above will set the grouping column (specified in the 'rowGroupsInUse' section of metadata(proplyrObject)) to the appropriate column for that function, the user may want to use another column for the grouping of the deepTools matrix to be output. The user may have added an additional column to the range metadata that can be used, or a column that is generated in one of the above functions, but is not the default grouping column, might be useful. Here we add a column of random numbers to demonstate both adding a column and then swithcing to use this column in grouping. 
 
-```{r, results='hide'}
-anno <- annotateRanges(proplyrObject,
-                       TxDb = "mm10")
-```
 ```{r}
-metadata(anno)$rowGroupsInUse
+mcols(proplyrObject)$newColumn <- rnorm(n = nrow(proplyrObject))
 
-anno_switchGroup <- groupBy(anno, 
-                            group = "annotation_short")
-metadata(anno_switchGroup)$rowGroupsInUse
+metadata(proplyrObject)$rowGroupsInUse
+switchGroup <- groupBy(proplyrObject, 
+                            group = "newColumn")
+metadata(switchGroup)$rowGroupsInUse
 ```
 
 ```{r, echo=F}
@@ -598,18 +602,8 @@ One consideration with this function is what should be done with ranges that ove
 
 Here we import BED files containing the top 5000 H3K27ac peaks from [hindbrain](https://www.encodeproject.org/files/ENCFF409CQX/) and [liver](https://www.encodeproject.org/files/ENCFF538RYO/) using the rtracklayer package. These peaks sets were adapted from BED files that were downloaded from ENCODE using the provided links. The GRanges are then combined into a GRangesList to be used in the 'group' argument for the groupBy() function.  
 ```{r, results='hide'}
-library(rtracklayer)
-
-# import bed files as GRanges
-hindbrain_K27ac <- import.bed(system.file("extdata", 
-                                          "K27ac_hindbrain_top5000.bed", 
-                                          package = "profileplyr") )
-liver_K27ac <- import.bed(system.file("extdata", 
-                                      "K27ac_liver_top5000.bed", 
-                                      package = "profileplyr") )
-# make GRangesList
-K27ac_GRlist <- GRangesList(hindbrain_K27ac, 
-                            liver_K27ac)
+#import pre-made GRangesList 
+data("K27ac_GRlist_hind_liver_top5000")
 K27ac_GRlist_names <- c("hindbrain_K27ac", 
                         "liver_K27ac")
 
@@ -617,7 +611,7 @@ K27ac_GRlist_names <- c("hindbrain_K27ac",
 # and group by GRanges
 K27ac_groupByGR <- proplyrObject[,,grepl("Hindbrain|Liver", 
                                          names(assays(proplyrObject)))] %>%
-                   groupBy(group = K27ac_GRlist,
+                   groupBy(group = K27ac_GRlist_hind_liver_top5000,
                            GRanges_names = K27ac_GRlist_names, 
                            include_nonoverlapping = FALSE,
                            inherit_groups = FALSE)
@@ -752,7 +746,7 @@ import_deepToolsMat(example) %>%
   groupBy(group = gene_list_dataframe,
           include_nonoverlapping = TRUE,
           inherit_groups = FALSE) %>% # group by gene overlap
-  groupBy(group = K27ac_GRlist,
+  groupBy(group = K27ac_GRlist_hind_liver_top5000,
           GRanges_names = K27ac_GRlist_names,
           include_nonoverlapping = TRUE,
           inherit_groups = FALSE) %>% # group by GRanges

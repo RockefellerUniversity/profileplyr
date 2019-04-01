@@ -355,15 +355,17 @@ setMethod("clusterRanges", signature="profileplyr",
 #' library(SummarizedExperiment)
 #' example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
 #' object <- import_deepToolsMat(example)
-#' object <- object[1:5, , ] 
+#' object <- object[1:2, , ] 
 #' 
-#' great <- annotateRanges_great(object, species = "mm10")
-#' head(mcols(great))
-#' 
-#' # annotate ranges the ranges 
+#' # annotate ranges with genes using ChIPseeker 
 #' # (NOTE: can choose subset of annotations with 'annotation_subset' argument)
 #' 
 #' annotateRanges(object, TxDb = "mm10")
+#' 
+#' # annotate ranges with genes using GREAT with follwoing command (not run):
+#' # annotateRanges_great(object, species = "mm10")
+#' 
+#' 
 #' 
 #' @import TxDb.Hsapiens.UCSC.hg19.knownGene TxDb.Hsapiens.UCSC.hg38.knownGene TxDb.Mmusculus.UCSC.mm9.knownGene TxDb.Mmusculus.UCSC.mm10.knownGene org.Hs.eg.db org.Mm.eg.db ChIPseeker rGREAT GenomicFeatures 
 #' @rdname annotateRanges
@@ -1048,26 +1050,16 @@ setMethod("summarize", signature(object="profileplyr"), function(object, fun, ou
 #' 
 #' # group by gene list or list of data frames with genes as rownames
 #' 
-#' data("gene_list_dataframe")
+#' data("gene_list_dataframe") # load data frame with genes and gene expression data
 #' 
 #' library(magrittr)
-#' library(rtracklayer)
 #' annotateRanges(object, TxDb = "mm10", annotation_subset = c("Promoter")) %>% 
 #'         groupBy(group = gene_list_dataframe)
 #' 
 #' # group by GRanges
 #' 
-#' hindbrain_K27ac <- import.bed(system.file("extdata", 
-#'                               "K27ac_hindbrain_top5000.bed", 
-#'                                package = "profileplyr") )
-#' 
-#' liver_K27ac <- import.bed(system.file("extdata", 
-#'                                       "K27ac_liver_top5000.bed", 
-#'                                       package = "profileplyr") )
-#' K27ac_GRlist <- GRangesList(hindbrain_K27ac, liver_K27ac)
-#' K27ac_GRlist_names <- c("hindbrain_K27ac", "liver_K27ac")
-#' 
-#' K27ac_groupByGR <- groupBy(object, group = K27ac_GRlist, GRanges_names = K27ac_GRlist_names)
+#' data("K27ac_GRlist_hind_liver_top5000") # load pre-made GRanges
+#' K27ac_groupByGR <- groupBy(object, group = K27ac_GRlist_hind_liver_top5000)
 #' 
 #' # switch rowGroupsInUse
 #' 
@@ -1764,7 +1756,7 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @param testRanges Either a character vector with paths to BED files.
 #' @param format character vector of "bam", "bigwig", "RleList" or "PWM"
 #' @param testRanges_names A character vector with the desired names of the regions corresponding to each element of the 'testRanges' argument. If this is left NULL, the name of each BED file will be used.  
-#' @param ... pass to \code{\link[soGGi]{regionPlot}}
+#' @param ... pass to regionPlot() within the soGGi package
 #' @return A profileplyr object
 #' @examples
 #' signalFiles <- c(system.file("extdata",
