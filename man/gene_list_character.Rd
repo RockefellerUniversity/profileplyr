@@ -3,12 +3,12 @@
 \docType{data}
 \name{gene_list_character}
 \alias{gene_list_character}
-\title{Character vector of the top differenetially expressed genes from hindbrain versus liver as measured by RNA-seq}
+\title{Character vector of the top differentially expressed genes from hindbrain versus liver as measured by RNA-seq}
 \usage{
 data(gene_list_character)
 }
 \value{
-A character vector of the top differenetial accessible regions from hindbrain versus liver comparison/
+A character vector of the top differenetially expressed genes in the hindbrain versus liver as measured by RNA-seq/
 }
 \description{
 This dataset contains a character vector of the top differenetially expressed genes in the hindbrain versus liver as measured by RNA-seq (both genes that go up and those that go down). Data was downloaded from ENCODE.

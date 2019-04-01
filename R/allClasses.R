@@ -243,9 +243,9 @@ setMethod("[[", c("profileplyr", "ANY", "missing"),
   grep(pattern, rownames(metadata(object)$sampleData), value=TRUE)
 
 
-#' Dataframe of top differenetially expressed genes from hindbrain versus liver as measured by RNA-seq
+#' Dataframe of top differentially expressed genes from hindbrain versus liver as measured by RNA-seq
 #'
-#' This dataset contains a dataframe of the top differenetially expressed genes in the hindbrain versus liver as measured by RNA-seq (both genes that go up and those that go down). The gene names are the rownames, and the first column is the 'stat' column from DESeq2. Data was downloaded from ENCODE.
+#' This dataset contains a dataframe of the top differentially expressed genes in the hindbrain versus liver as measured by RNA-seq (both genes that go up and those that go down). The gene names are the rownames, and the first column is the 'stat' column from DESeq2. Data was downloaded from ENCODE.
 #'
 #' \itemize{
 #' \item gene_list_dataframe
@@ -255,10 +255,10 @@ setMethod("[[", c("profileplyr", "ANY", "missing"),
 #' @keywords datasets
 #' @name gene_list_dataframe
 #' @usage data(gene_list_dataframe)
-#' @return A dataframe of top differenetially expressed genes from hindbrain versus liver as measured by RNA-seq/
+#' @return A dataframe of top differentially expressed genes from hindbrain versus liver as measured by RNA-seq/
 NULL
 
-#' Character vector of the top differenetially expressed genes from hindbrain versus liver as measured by RNA-seq
+#' Character vector of the top differentially expressed genes from hindbrain versus liver as measured by RNA-seq
 #'
 #' This dataset contains a character vector of the top differenetially expressed genes in the hindbrain versus liver as measured by RNA-seq (both genes that go up and those that go down). Data was downloaded from ENCODE.
 #'
@@ -270,7 +270,7 @@ NULL
 #' @keywords datasets
 #' @name gene_list_character
 #' @usage data(gene_list_character)
-#' @return A character vector of the top differenetial accessible regions from hindbrain versus liver comparison/
+#' @return A character vector of the top differenetially expressed genes in the hindbrain versus liver as measured by RNA-seq/
 NULL
 
 #' GRangesList of the top 5000 H3K27ac peaks from hindbrain and liver downloaded from ENCODE

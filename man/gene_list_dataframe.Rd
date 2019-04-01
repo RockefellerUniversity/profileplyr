@@ -3,15 +3,15 @@
 \docType{data}
 \name{gene_list_dataframe}
 \alias{gene_list_dataframe}
-\title{Dataframe of top differenetially expressed genes from hindbrain versus liver as measured by RNA-seq}
+\title{Dataframe of top differentially expressed genes from hindbrain versus liver as measured by RNA-seq}
 \usage{
 data(gene_list_dataframe)
 }
 \value{
-A dataframe of top differenetially expressed genes from hindbrain versus liver as measured by RNA-seq/
+A dataframe of top differentially expressed genes from hindbrain versus liver as measured by RNA-seq/
 }
 \description{
-This dataset contains a dataframe of the top differenetially expressed genes in the hindbrain versus liver as measured by RNA-seq (both genes that go up and those that go down). The gene names are the rownames, and the first column is the 'stat' column from DESeq2. Data was downloaded from ENCODE.
+This dataset contains a dataframe of the top differentially expressed genes in the hindbrain versus liver as measured by RNA-seq (both genes that go up and those that go down). The gene names are the rownames, and the first column is the 'stat' column from DESeq2. Data was downloaded from ENCODE.
 }
 \details{
 \itemize{
