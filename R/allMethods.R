@@ -13,9 +13,34 @@
 #' @importFrom tidyr gather separate
 #' @importFrom magrittr "%>%"
 #' @importClassesFrom methods  ANY character list missing
+#' @importClassesFrom GenomicRanges GenomicRanges_OR_GRangesList
+#' @importClassesFrom S4Vectors character_OR_NULL DataFrame
+#' @importMethodsFrom GenomicFeatures as.list
+#' @importMethodsFrom ComplexHeatmap draw
+#' @importMethodsFrom GenomicRanges as.data.frame as.factor duplicated end findOverlaps match order score seqnames start strand
+#' @importMethodsFrom IRanges as.matrix cbind colnames "colnames<-" diff gsub lapply ncol nrow paste quantile rbind rownames "rownames<-" subsetByOverlaps table unique which
+#' @importMethodsFrom S4Vectors "%in%" mcols "mcols<-" do.call expand.grid grep grepl head levels metadata "metadata<-" Reduce subset t tail
+#' @importFrom circlize colorRamp2
+#' @importFrom ComplexHeatmap anno_summary Heatmap HeatmapAnnotation
+#' @importFrom dplyr mutate select
+#' @importFrom EnrichedHeatmap anno_enriched EnrichedHeatmap
+#' @importFrom GenomicFeatures makeTxDbFromGFF
+#' @importFrom GenomicRanges GRanges GRangesList
+#' @importFrom grid gpar unit
+#' @importFrom IRanges IRanges
+#' @importFrom magrittr "%>%"
+#' @importFrom methods as is new
+#' @importFrom pheatmap pheatmap
+#' @importFrom R.utils gzip
+#' @importFrom rGREAT submitGreatJob
+#' @importFrom rjson fromJSON
+#' @importFrom S4Vectors DataFrame queryHits subjectHits
+#' @importFrom soGGi regionPlot
+#' @importFrom stats cutree
+
 #' @importFrom methods as new
 #' @importFrom utils combn read.delim write.table
-#' @import S4Vectors ggplot2
+#' @import SummarizedExperiment BiocGenerics
 #' @export
 #' @docType methods
 #' @return  The path to deepTools matrix file
@@ -248,7 +273,9 @@ import_deepToolsMat <- function(con){
 #' clusterRanges(object, fun = rowMeans, cutree_rows = 3, silent = FALSE)
 #'  
 #' @export
-#' @import tibble IRanges pheatmap
+#' @import IRanges
+#' @importFrom pheatmap pheatmap
+#' @importFrom GenomicFeatures makeTxDbFromGFF
 #' @rdname clusterRanges
 setGeneric("clusterRanges", function(object="profileplyr",fun="function",scaleRows="logical",
                                      kmeans_k="integer",clustering_callback="function",clustering_distance_rows="ANY",

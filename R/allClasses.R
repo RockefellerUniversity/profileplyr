@@ -4,7 +4,7 @@ if(getRversion() >= "2.15.1")  utils::globalVariables(c("Sample","Signal","myTem
 
 
 #' @rdname profileplyr
-#' @import GenomicRanges SummarizedExperiment
+#' @import GenomicRanges
 #' @export
 setClass("profileplyr",
          contains = "RangedSummarizedExperiment",
