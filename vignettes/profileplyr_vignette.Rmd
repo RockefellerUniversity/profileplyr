@@ -3,10 +3,7 @@
 title: "Visualization and annotation of read signal over genomic ranges with profileplyr"
 author: "Doug Barrows and Tom Carroll"
 date: "`r format(Sys.Date(), '%m/%d/%Y')`"
-abstract: >
-  Quick and straightforward visualization of read signal over genomic intervals is key for generating hypotheses from sequencing data sets (e.g. ChIP-seq, ATAC-seq, bisulfite/methyl-seq). Many tools both inside and outside of R and Bioconductor are available to explore these types of data, and they typically start with a bigWig or BAM file and end with some representation of the signal (e.g. heatmap). profileplyr leverages many Bioconductor tools to allow for both flexibility and additional functionality in workflows that end with visualization of the read signal. Signal over select genomic intervals can be quantified with Biocondictor packages in R (e.g. [soGGi](https://bioconductor.org/packages/release/bioc/html/soGGi.html), [EnrichedHeatmap](http://bioconductor.org/packages/release/bioc/html/EnrichedHeatmap.html), [genomation](https://bioconductor.org/packages/release/bioc/html/genomation.html) or via the command line (e.g. [deepTools](https://deeptools.readthedocs.io/en/develop/index.html), [ngs.plot](https://github.com/shenlab-sinai/ngsplot)). profileplyr takes the signal quantification over ranges coming from either soGGi or deepTools, as well as the metadata associated with the ranges and the input bigWig or BAM files and stores this information in a RangedSummarizedExperiment object. profileplyr then uses this object to summarize and plot the signal within these ranges, and also to group and subset these ranges based on clustering, overlap with GRanges objects, overlap with gene lists, and genomic annotations. After manipulation with established Bioconductor tools, the profileplyr object can then be either directly visualized as a customized heatmap in R using EnrichedHeatmap or exported in a format that can be visualized with deepTools. While many users prefer to use deepTools certain steps of sequencing analysis (the handling of BAM files and utilizing computeMatrix/plotHeatmap), by staying outside of R one cannot take advantage of the many Bioconductor packages used to analyze genomic range data. The profileplyr object serves as an intermediate that can be easily manipulated and annotated using Bioconductor tools, and the integration of this object with deepTools, soGGi, and EnrichedHeatmap functions enhances the user's ability to visualize genomic signal. 
 
-  profileplyr package version: `r packageVersion("profileplyr")`
 output:
   BiocStyle::html_document:
      number_sections: yes
@@ -25,6 +22,9 @@ knitr::opts_chunk$set(tidy=FALSE, cache=FALSE,
                       message=FALSE, error=FALSE, warning=TRUE)
 ```	
 
+# Introduction
+
+Quick and straightforward visualization of read signal over genomic intervals is key for generating hypotheses from sequencing data sets (e.g. ChIP-seq, ATAC-seq, bisulfite/methyl-seq). Many tools both inside and outside of R and Bioconductor are available to explore these types of data, and they typically start with a bigWig or BAM file and end with some representation of the signal (e.g. heatmap). profileplyr leverages many Bioconductor tools to allow for both flexibility and additional functionality in workflows that end with visualization of the read signal. Signal over select genomic intervals can be quantified with Biocondictor packages in R (e.g. [soGGi](https://bioconductor.org/packages/release/bioc/html/soGGi.html), [EnrichedHeatmap](http://bioconductor.org/packages/release/bioc/html/EnrichedHeatmap.html), [genomation](https://bioconductor.org/packages/release/bioc/html/genomation.html) or via the command line (e.g. [deepTools](https://deeptools.readthedocs.io/en/develop/index.html), [ngs.plot](https://github.com/shenlab-sinai/ngsplot)). profileplyr takes the signal quantification over ranges coming from either soGGi or deepTools, as well as the metadata associated with the ranges and the input bigWig or BAM files and stores this information in a RangedSummarizedExperiment object. profileplyr then uses this object to summarize and plot the signal within these ranges, and also to group and subset these ranges based on clustering, overlap with GRanges objects, overlap with gene lists, and genomic annotations. After manipulation with established Bioconductor tools, the profileplyr object can then be either directly visualized as a customized heatmap in R using EnrichedHeatmap or exported in a format that can be visualized with deepTools. While many users prefer to use deepTools certain steps of sequencing analysis (the handling of BAM files and utilizing computeMatrix/plotHeatmap), by staying outside of R one cannot take advantage of the many Bioconductor packages used to analyze genomic range data. The profileplyr object serves as an intermediate that can be easily manipulated and annotated using Bioconductor tools, and the integration of this object with deepTools, soGGi, and EnrichedHeatmap functions enhances the user's ability to visualize genomic signal. 
 
 # Import signal quantification from deepTools or soGGi
 
@@ -184,7 +184,7 @@ Importantly, this also changes the names of the matricies stored in the assays()
 
 ## Connecting profileplyr functions using the pipe (%>%) operator
 
-Code involving profileplyr objects can be made clearer using the pipe operator from the magrittr package. This is aided by the fact that the profileplyr object is both the output and input of most functions within the package. This is demonstrated in the [Quick Start](#quickStartpipe) section, as well as some of the more complex visualizations [later in this vignette](#laterPipe). The user can go all the way from importing a deepTools matrix or soGGi object, through annotation and grouping, and ending with export to either the generateEnrichedHeatmap() (shown below) or export_deepToolsMat() function
+Code involving profileplyr objects can be made clearer using the pipe operator from the magrittr package. This is aided by the fact that the profileplyr object is both the output and input of most functions within the package. This is demonstrated throughout the vignette, including the more complex visualizations [later in this vignette](#laterPipe). The user can go all the way from importing a deepTools matrix or soGGi object, through annotation and grouping, and ending with export to either the generateEnrichedHeatmap() (shown below) or export_deepToolsMat() function
 
 # Export/Conversion of profileplyr object for heatmap visualization of ranges
 
@@ -256,7 +256,7 @@ EH_mat[[1]]
 
 # Summarize signal for ggplot or heatmap visualization
 
-Oftentimes it will be important to use some kind of summary statistic for the entire range when trying to understand and visualize differences between samples. This is often going to be done using the summarize() function. The summarize function requires the name of a profileplyr object, the function used to summarize the ranges (e.g. rowMeans or rowMax), and the type of output. Here the basic options will be demonstrated with the example data which contains no groups, however, note how it is used [later](#ggplotGroups) in the vignette or in the [quick start](#quickStartggplot) when additional grouping options are discussed and summarizing the data in this way becomes especially useful. 
+Oftentimes it will be important to use some kind of summary statistic for the entire range when trying to understand and visualize differences between samples. This is often going to be done using the summarize() function. The summarize function requires the name of a profileplyr object, the function used to summarize the ranges (e.g. rowMeans or rowMax), and the type of output. Here the basic options will be demonstrated with the example data which contains no groups, however, note how it is used [later](#ggplotGroups) in the vignette when additional grouping options are discussed and summarizing the data in this way becomes especially useful. 
 
 
 ## Matrix output for heatmaps  
@@ -446,11 +446,10 @@ proplyrObject <- proplyrObject[1:5, , ]
 
 Another common method of annotating genomic intervals with nearby genes is by using the [GREAT](https://bioconductor.org/packages/release/bioc/html/rGREAT.html) method, which defines regulatory regions for each gene and then determines whether a certain genomic interval overlaps with that genic regulatory region. The profileplyr function annotateRanges_great() takes a profileplyr object and the genome that is to be used for the annotation, and will add a column to the range metadata to indicate whether that range overlaps with the regulatory region of a gene. If a region is in regulatory regions of multiple genes, then it will have multiple rows within the profileplyr object. This function will not change the grouping of the profileplyr object. 
 
-A profileplyr object that has been annotated with GREAT is loaded below and the annotations can be seen in the range metadata. Just one line of code was required to make this object: anno_great = annotateRanges_great(proplyrObject, species = "mm10")
-
 ```{r, fig.keep="none"}
 
-data("anno_great")
+anno_great <- annotateRanges_great(proplyrObject, 
+                                   species = "mm10")
 rowRanges(anno_great)[1:3]
 ```
 
@@ -610,19 +609,29 @@ As a demonstration, we can combine many of the profileplyr functions and visuali
  
 The generateEnrichedHeatmap() function also allows for a great deal of customization of the heatmap that is built around the profileplyr object. Notice that in the heatmap below we modify colors. The color of the heatmaps from the assay matrices is changed to a two color spectrum, and the colors of the annotation heatmaps were customized as well.
 ```{r, fig13, fig.height=8, out.width='100%', results='hide', dpi=35}
-data("annotated_object")
-colnames(mcols(annotated_object))
+# NOTE: could also use BamBigwig_to_chipProfile() and as_profileplyr()
+# within R to start from bigwig/BAM and BED file.
 
-generateEnrichedHeatmap(annotated_object,
-                        extra_annotation_columns=c("annotation_short", 
-                                                   "GRoverlap_names", 
-                                                   "hindbrain_liv_stat"),
-                        sample_names = c("Hindbrain",
-                                         "Liver",
-                                         "Kidney"),
-                        extra_anno_width = c(5,5,8),
-                        matrices_color = c("white", "red"),
-                        extra_anno_color = list(NULL,
+set.seed(0)
+annotated_object <- import_deepToolsMat(example) %>%
+  annotateRanges(TxDb = "mm10") %>% # annotate with ChIPseeker
+  groupBy(group = gene_list_dataframe,
+          include_nonoverlapping = TRUE,
+          inherit_groups = FALSE) %>% # group by gene overlap
+  groupBy(group = K27ac_GRlist_hind_liver_top5000,
+          GRanges_names = K27ac_GRlist_names,
+          include_nonoverlapping = TRUE,
+          inherit_groups = FALSE) %>% # group by GRanges
+  clusterRanges(kmeans_k = 3)%>%
+  generateEnrichedHeatmap(extra_annotation_columns=c("annotation_short", 
+                                                    "GRoverlap_names", 
+                                                    "hindbrain_liv_stat"),
+                          sample_names = c("Hindbrain",
+                                           "Liver",
+                                           "Kidney"),
+                          extra_anno_width = c(5,5,8),
+                          matrices_color = c("white", "red"),
+                          extra_anno_color = list(NULL,
                                                 c("black",
                                                   "red", 
                                                   "green",

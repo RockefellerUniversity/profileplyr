@@ -48,10 +48,7 @@ Takes a SE object and groups rows
 \examples{
 
 # group by gene list or list of data frames with genes as rownames
-
-data("gene_list_dataframe") # load data frame with genes and gene expression data
-data("anno_great")
-groupBy(anno_great, group = gene_list_dataframe)
+## not shown here but see vignette for grouping by gene lists
 
 # group by GRanges
 
