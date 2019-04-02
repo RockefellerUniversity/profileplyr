@@ -47,20 +47,16 @@ Takes a SE object and groups rows
 
 \examples{
 
-example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
-object <- import_deepToolsMat(example) 
-object[1:5, , ]
-
 # group by gene list or list of data frames with genes as rownames
 
 data("gene_list_dataframe") # load data frame with genes and gene expression data
-
-library(magrittr)
-annotateRanges(object, TxDb = "mm10", annotation_subset = c("Promoter")) \%>\% 
-        groupBy(group = gene_list_dataframe)
+data("anno_great")
+groupBy(anno_great, group = gene_list_dataframe)
 
 # group by GRanges
 
+example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
+object <- import_deepToolsMat(example)
 data("K27ac_GRlist_hind_liver_top5000") # load pre-made GRanges
 K27ac_groupByGR <- groupBy(object, group = K27ac_GRlist_hind_liver_top5000)
 

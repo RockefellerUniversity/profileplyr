@@ -287,3 +287,34 @@ NULL
 #' @usage data(K27ac_GRlist_hind_liver_top5000)
 #' @return A GRangesList of the top 5000 H3K27ac peaks from hindbrain and liver downloaded from ENCODE/
 NULL
+
+#' A profileplyr object that has been annotated with annotateRanges_great()
+#'
+#' A profileplyr object that has been annotated with annotateRanges_great(), the profileplyr object from the vignette was used
+#'
+#' \itemize{
+#' \item anno_great
+#' }
+#'
+#' @docType data
+#' @keywords datasets
+#' @name anno_great
+#' @usage data(anno_great)
+#' @return A profileplyr object that has been annotated with annotateRanges_great()/
+NULL
+
+#' A profileplyr object that has been annotated with gene list, GRanges overlap, and genomic annotation types.
+#'
+#' profileplyr object that has been annotated with annotateRanges_great(), the profileplyr object from the vignette was used
+#'
+#' \itemize{
+#' \item annotated_object
+#' }
+#'
+#' @docType data
+#' @keywords datasets
+#' @name annotated_object
+#' @usage data(annotated_object)
+#' @return  A profileplyr object that has been annotated with gene list, GRanges overlap, and genomic annotation types./
+NULL
+
