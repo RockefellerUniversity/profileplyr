@@ -8,7 +8,7 @@ matrix:
       dist: trusty
       r: bioc-devel
     - os: osx
-      r: bioc-release
+      r: bioc-devel
   allow_failures:
     - os: osx
 
