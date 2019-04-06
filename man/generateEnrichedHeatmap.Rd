@@ -15,9 +15,9 @@ generateEnrichedHeatmap(object, include_group_annotation = TRUE,
   group_anno_width = 3, group_anno_row_title_gp = gpar(fontsize = 10),
   group_anno_column_names_gp = gpar(fontsize = 10),
   extra_anno_color = vector(mode = "list", length =
-  length(extra_annotation_columns)), extra_anno_numeric_boxplot = TRUE,
+  length(extra_annotation_columns)), extra_anno_top_annotation = TRUE,
   extra_anno_width = (rep(6, length(extra_annotation_columns))),
-  gap = 2)
+  gap = 2, genes_to_label = NULL)
 }
 \arguments{
 \item{object}{A profileplyr object}
@@ -58,7 +58,7 @@ generateEnrichedHeatmap(object, include_group_annotation = TRUE,
 
 \item{extra_anno_color}{This will specify colors for the annotation columns added by the 'extra_annotation_columns' argument. This must be a list that is of equal length to the 'extra_annotation_columns' argument. Each element of this list will be used to specify the color scheme for the corresponding element of the 'extra_annotation_columns' vector. If an element is NULL, the default colors will be used for the column annotation. For a column with discrete variables this will typically be a vector of numbers or a vector of color names. By default, numeric vectors use the colors in palette(), however this can be expanded with other R color lists(e.g. colors()). For columns with continuous variables, this can also be a a vector of numbers or a vector of color names to signify the color progression, or it can be color mapping function using colorRamp2() from the circlize package.}
 
-\item{extra_anno_numeric_boxplot}{If any of the extra annotation columns are numeric, then by default a boxplot will appear on the top of the column showing the plot of those values by the grouping. If FALSE, boxplot will not be there.}
+\item{extra_anno_top_annotation}{This is a logical vector that determines whether annotation plots are shown on top of the heatmaps for the extra annotations. This must either be a length of 1, in which case all of the heatamps will abide by this value. Otherwise this must be a vector of equal length to the 'extra_annotation_columns' argument and the elements of this vector will correspond to the equvalent elements in 'extra annotation_columns'}
 
 \item{extra_anno_width}{This will set the width of the individual extra annotation columns on the right side of the figure. This must be a numeric vector with each element setting the width for the corresponding element in the 'extra_annotation_columns' argument.}
 

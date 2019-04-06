@@ -596,6 +596,8 @@ subsetbyRangeOverlap <- function(object, group, GRanges_names = NULL, include_no
   }
   rowRanges(object)$GRoverlap_names <- GRoverlap_names
   
+  object_no_overlap <- object[no_overlap]
+  
   if(separateDuplicated == TRUE) {
     
     # generate all possible combinations of the input GRanges (since and overlapping)
@@ -683,7 +685,7 @@ subsetbyRangeOverlap <- function(object, group, GRanges_names = NULL, include_no
   if (include_nonoverlapping == TRUE) {
     
     # subset rowRanges based on not overlapping
-    object_no_overlap <- object[no_overlap]
+    #object_no_overlap <- object[no_overlap_index]
     
     # get a vector of the breakdown of groups within the non-overlapping ranges to make the same 'group_overlap' column we have the the overlap ranges above
     no_overlap_groups <- as.data.frame(mcols(object_no_overlap)[colnames(mcols(object_no_overlap)) %in% rowGroupsInUse])[,1]
@@ -829,6 +831,8 @@ subsetbyGeneListOverlap <- function(object, group, include_nonoverlapping = FALS
   }
   rowRanges(object)$GLoverlap_names <- GLoverlap_names
   
+  object_no_overlap <- object[no_overlap]
+  
   if(separateDuplicated == TRUE) {
     
     # generate all possible combinations of the input GRanges (since and overlapping)
@@ -920,7 +924,7 @@ subsetbyGeneListOverlap <- function(object, group, include_nonoverlapping = FALS
   if (include_nonoverlapping == TRUE) {
     
     # subset rowRanges based on not overlapping
-    object_no_overlap <- object[no_overlap]
+    #object_no_overlap <- object[no_overlap_index]
     
     # get a vector of the breakdown of groups within the non-overlapping ranges to make the same 'group_overlap' column we have the the overlap ranges above
     no_overlap_groups <- as.data.frame(mcols(object_no_overlap)[colnames(mcols(object_no_overlap)) %in% rowGroupsInUse])[,1]
@@ -1260,7 +1264,7 @@ setMethod("convertToEnrichedHeatmapMat", signature(object="profileplyr"),functio
 #' @param group_anno_row_title_gp Graphics parameters for the labels of the groups on the side of the heatmap. Should be set with the gpar() function from the grid() package. 
 #' @param group_anno_column_names_gp Graphics parameters for the label of the grouping annotation column. Should be set with the gpar() function from the grid() package.
 #' @param extra_anno_color This will specify colors for the annotation columns added by the 'extra_annotation_columns' argument. This must be a list that is of equal length to the 'extra_annotation_columns' argument. Each element of this list will be used to specify the color scheme for the corresponding element of the 'extra_annotation_columns' vector. If an element is NULL, the default colors will be used for the column annotation. For a column with discrete variables this will typically be a vector of numbers or a vector of color names. By default, numeric vectors use the colors in palette(), however this can be expanded with other R color lists(e.g. colors()). For columns with continuous variables, this can also be a a vector of numbers or a vector of color names to signify the color progression, or it can be color mapping function using colorRamp2() from the circlize package.
-#' @param extra_anno_numeric_boxplot If any of the extra annotation columns are numeric, then by default a boxplot will appear on the top of the column showing the plot of those values by the grouping. If FALSE, boxplot will not be there.
+#' @param extra_anno_top_annotation This is a logical vector that determines whether annotation plots are shown on top of the heatmaps for the extra annotations. This must either be a length of 1, in which case all of the heatamps will abide by this value. Otherwise this must be a vector of equal length to the 'extra_annotation_columns' argument and the elements of this vector will correspond to the equvalent elements in 'extra annotation_columns'
 #' @param extra_anno_width This will set the width of the individual extra annotation columns on the right side of the figure. This must be a numeric vector with each element setting the width for the corresponding element in the 'extra_annotation_columns' argument.
 #' @param gap The size of the gap between heatmaps and annotations. Only relevant if return_ht_list = FALSE
 #' @details Takes a profileplyr object and generated heatmap that can be annotated by group or by range metadata columns of the profileplyr object
@@ -1276,8 +1280,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                     decreasing = FALSE, all_color_scales_equal = TRUE, matrices_color, matrices_pos_line = TRUE, matrices_pos_line_gp = gpar(lty = 2), 
                                     matrices_show_heatmap_legend = TRUE, matrices_column_title_gp =  gpar(fontsize = 10, fontface = "bold"), matrices_axis_name_gp = gpar(fontsize = 8), 
                                     group_anno_color = NULL, group_anno_width = 3, group_anno_row_title_gp = gpar(fontsize = 10), group_anno_column_names_gp = gpar(fontsize = 10),
-                                    extra_anno_color = vector(mode = "list", length = length(extra_annotation_columns)), extra_anno_numeric_boxplot = TRUE, 
-                                    extra_anno_width = (rep(6, length(extra_annotation_columns))), gap = 2){
+                                    extra_anno_color = vector(mode = "list", length = length(extra_annotation_columns)), extra_anno_top_annotation = TRUE, 
+                                    extra_anno_width = (rep(6, length(extra_annotation_columns))), gap = 2, genes_to_label = NULL){
 
   # want to order by group, and then within each group order by mean signal
   scoreMat <- do.call(cbind,
@@ -1498,6 +1502,23 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     sample_names <- names(enrichMAT)
   }  
 
+  if (!(is.null(genes_to_label))){
+  # add text row annotation of genes to label
+  genes_overlap <- mcols(object)$SYMBOL
+  
+  index <- vector()
+  for (i in seq_along(genes_overlap)){
+    if(genes_overlap[i] %in% genes_to_label){
+      index <- c(index, i)
+    }
+  }
+  gene_annotation <- rowAnnotation(labels = anno_mark(at = index, 
+                                                      labels = genes_overlap[index],
+                                                      labels_gp = gpar(fontsize = 6)))
+  } else{
+    gene_annotation = NULL
+  }
+  
   heatmap_list <- list()
   
   if (include_group_annotation == TRUE){
@@ -1562,7 +1583,43 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     }
   }
   
+  # this will add gene annotation labels to the last heatmap only is there are no additional annotation columns
+  if(is.null(extra_annotation_columns) & !(is.null(genes_to_label))){
+    if (include_group_annotation == TRUE){
+      i = length(enrichMAT) + 1
+    }
+    if (include_group_annotation == FALSE){
+      i = length(enrichMAT)
+    }
+    
+    heatmap_list[[i]] <- EnrichedHeatmap(enrichMAT[[i-1]], 
+                                         col = matrices_color[[i-1]],
+                                         name = sample_names[i-1],
+                                         column_title = sample_names[i-1],
+                                         top_annotation = HeatmapAnnotation(lines = anno_enriched(gp = gpar(col = group_anno_color),
+                                                                                                  ylim = ylim, 
+                                                                                                  axis_param = list(side = yaxis_side[i-1],
+                                                                                                                    facing = "outside"),
+                                                                                                  yaxis = yaxis[i-1])),
+                                         show_heatmap_legend = matrices_show_heatmap_legend[i-1],
+                                         heatmap_legend_param = list(title = heatmap_legend_param[i-1]),
+                                         column_title_gp = matrices_column_title_gp,
+                                         axis_name_gp = matrices_axis_name_gp,
+                                         pos_line = matrices_pos_line,
+                                         pos_line_gp = matrices_pos_line_gp,
+                                         right_annotation = gene_annotation)
+    
+  }
+  
+  
   if (!is.null(extra_annotation_columns)){
+    if (length(extra_anno_top_annotation) == 1){
+      extra_anno_top_annotation <- rep(extra_anno_top_annotation, length(extra_annotation_columns))
+    } else{
+      if (!(length(extra_anno_top_annotation) == length(extra_annotation_columns))){
+        stop("Length of 'extra_anno_top_annotation' argument must have a length of one or equal to the length of 'extra_annotation_columns'")
+      }
+    }
     
     if(!is(extra_anno_color,"list")){
       stop("The 'extra_anno_color' argument must be a list")
@@ -1588,40 +1645,52 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
         if(!(length(extra_anno_color[[i]]) == length(seq_along(table(column))))){
           stop("The length of the 'extra_anno_color' argument for the '", extra_annotation_columns[i], "' column is not the same length as the number of discrete names in that column of the range metadata.")
         }
-        
-        heatmap_list[[length(heatmap_list)+1]] <- Heatmap(column,
-                                                          col = structure(extra_anno_color[[i]],
-                                                                          names = names(table(column))),
-                                                          name = extra_annotation_columns[i],
-                                                          show_row_names = FALSE, 
-                                                          width = unit(extra_anno_width[i], "mm"),
-                                                          column_names_gp = gpar(fontsize = 10))
+        if (extra_anno_top_annotation[i]){
+          top_annotation <- HeatmapAnnotation(summary = anno_summary(axis = FALSE))
+        }else {
+          top_annotation <- NULL
+        }
       }else if (is.numeric(column)){
         
         if(is.null(extra_anno_color[[i]])){
           extra_anno_color[[i]] = c("white", "red")
         }
         
-        if (extra_anno_numeric_boxplot){
+        if (extra_anno_top_annotation[i]){
           top_annotation <- HeatmapAnnotation(summary = anno_summary(gp = gpar(fill = group_anno_color),
                                                                      outline = FALSE, 
-                                                                     axis_param = list(side = "right")))
+                                                                     axis = FALSE))
         } else {
           top_annotation <- NULL
         }
-        
-        heatmap_list[[length(heatmap_list)+1]] <- Heatmap(column,
-                                                          col = extra_anno_color[[i]],
-                                                          name = extra_annotation_columns[i],
-                                                          show_row_names = FALSE, 
-                                                          width = unit(extra_anno_width[i], "mm"),
-                                                          column_names_gp = gpar(fontsize = 10),
-                                                          top_annotation = top_annotation)
+
       }else {
         stop(" additional column to be used for annotation must be a numeric, character, or factor variable")
       }
+      
+      heatmap_list[[length(heatmap_list)+1]] <- Heatmap(column,
+                                                        col = extra_anno_color[[i]],
+                                                        name = extra_annotation_columns[i],
+                                                        show_row_names = FALSE, 
+                                                        width = unit(extra_anno_width[i], "mm"),
+                                                        column_names_gp = gpar(fontsize = 10),
+                                                        top_annotation = top_annotation)
+    }
+    if(!is.null(genes_to_label)){
+      i = length(extra_annotation_columns)
+      heatmap_list[[length(heatmap_list)]] <- Heatmap(column,
+                                                        col = extra_anno_color[[i]],
+                                                        name = extra_annotation_columns[i],
+                                                        show_row_names = FALSE, 
+                                                        width = unit(extra_anno_width[i], "mm"),
+                                                        column_names_gp = gpar(fontsize = 10),
+                                                        top_annotation = top_annotation,
+                                                        right_annotation = gene_annotation)
     }
   }
+  
+  
+  
   ht_list <- Reduce("+", heatmap_list) 
   
   ifelse(return_ht_list, return(ht_list), return(draw(ht_list, 
