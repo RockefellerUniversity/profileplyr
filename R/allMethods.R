@@ -1869,68 +1869,75 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @importFrom rtracklayer import.bed
 #' @export
 #' 
-BamBigwig_to_chipProfile <- function(signalFiles, testRanges, testRanges_names = NULL, format, ...){
-
+BamBigwig_to_chipProfile <- function(signalFiles, testRanges, testRanges_names = NULL, format, ...) {
+  
   if (missing(format)){
     stop("'format' argument is missing, it must be entered")
   }
-  # this is in here from when I thought we could use GRanges, but I'll leave it in here to make it easier to do this in future, still will only use BED paths
-  group_labels <- vector()
-  if(grepl("GRanges", class(testRanges))) {
-    stop("'testRanges' must be a character vector of paths to BED files") # could just convert to RleLists here?
-    #testRanges_GR <- GRangesList(testRanges)
-    #set the names of the elements of the GRanges if they don't exist already
-    if(!(is.null(names(testRanges_GR)))){
-      group_labels <- names(testRanges_GR)
-    }else if(is.null(names(testRanges_GR)) & is.null(testRanges_names)){
-      message("The argument 'testRanges_names' was not set so the GRanges will be given generic names. To name GRanges, set them using the 'testRanges_names' argument")
-      group_labels <- vector()
-      for(i in seq_along(testRanges_GR)) {
-        temp <- paste0("RegionSet_", i)
-        group_labels <- c(group_labels, temp)
+  
+  if (format == "bigwig"){
+    add_chr <- function(genomeCov){
+      if (!(any(grepl("chr", names(genomeCov))))) {
+        oddChrom <- grepl("GL", names(genomeCov))
+        for (i in seq_along(names(genomeCov))){
+          if(!oddChrom[i]){
+            names(genomeCov)[i] <- paste0("chr", names(genomeCov)[i])
+          } else{
+            names(genomeCov)[i] <- names(genomeCov)[i]
+          }
+        }
       }
-    }else {
-      group_labels <- testRanges_names
+      return(genomeCov)
     }
-  } else if(is.character(testRanges)){
+    
+    genomeCov_list <- lapply(signalFiles, import.bw, as = "RleList")
+    genomeCov_list <- lapply(genomeCov_list, add_chr)
+    genomeCov_names <- lapply(genomeCov_list, names)
+    common_names <- Reduce(intersect, genomeCov_names)
+    
+    signalFiles_list <- lapply(genomeCov_list, function(x) x[names(x) %in% common_names])
+    #names(signalFiles_list) <- signalFiles
+    
+    group_labels <- vector()
     testRanges_GR <- GRangesList()
     for(i in seq_along(testRanges)){
-      testRanges_GR[[i]] <- import.bed(testRanges[i])
+      temp <- import.bed(testRanges[i])
+      seqlevelsStyle(temp) <- "UCSC"
+      temp <- temp[seqnames(temp) %in% common_names]
+      temp <- temp 
+      seqlevels(temp) <- seqlevelsInUse(temp)
+      testRanges_GR[[i]] <- temp
       group_labels[i] <- basename(testRanges[i])
     }
-  } else {
-    stop("'testRanges' argument must be a characer vector containing paths to BED files")
+    format <- "rlelist"
   }
   
-  if(!is.null(testRanges_names)){
-    if (length(testRanges_names) != length(testRanges)){
-      stop("'testRanges_names' argument must be the same length as 'testRanges' argument")
-    }
-    group_labels <- testRanges_names
+  if(format == "bam"){
+    signalFiles_list <- as.list(signalFiles)
+  }
+  # Construct the group boundaries
+  group_boundaries <- c(0)
+  for(i in seq_along(testRanges_GR)){
+    group_boundaries <- c(group_boundaries, group_boundaries[i] + length(testRanges_GR[[i]]))
   }
   
-# Construct the group boundaries
-group_boundaries <- c(0)
-for(i in seq_along(testRanges_GR)){
-  group_boundaries <- c(group_boundaries, group_boundaries[i] + length(testRanges_GR[[i]]))
-}
-
-testRanges_GR_unlist <- unlist(testRanges_GR)
-names(testRanges_GR_unlist) <- NULL
-
-signalFiles_list <- as.list(signalFiles)
-ChIPprofile_combined <- bplapply(signalFiles_list, regionPlot, testRanges = testRanges_GR_unlist, format = format, ...)
-ChIPprofile_for_proplyr <- do.call(c,ChIPprofile_combined)
-
-metadata(ChIPprofile_for_proplyr)$group_boundaries <- group_boundaries
-
-rowRanges(ChIPprofile_for_proplyr)$sgGroup <- factor(
-  rep(group_labels,
-      times=diff(group_boundaries) # Doug changed this too, before was 'each=diff(info$group_boundaries)' and this threw a warning that only first elsemnt was used. I think if you have different group sizes this wouldn't work, and 'times' fixes that
-      ),
-  levels = group_labels
-)
-
-
-return(ChIPprofile_for_proplyr)
+  testRanges_GR_unlist <- unlist(testRanges_GR)
+  names(testRanges_GR_unlist) <- NULL
+  
+  ChIPprofile_combined <- bplapply(signalFiles_list, regionPlot, testRanges = testRanges_GR_unlist, format = format, ...)
+  ChIPprofile_for_proplyr <- do.call(c,ChIPprofile_combined)
+  
+  metadata(ChIPprofile_for_proplyr)$group_boundaries <- group_boundaries
+  
+  if(is.character(signalFiles)){
+    metadata(ChIPprofile_for_proplyr)$names <- signalFiles
+  }
+  
+  rowRanges(ChIPprofile_for_proplyr)$sgGroup <- factor(
+    rep(group_labels,
+        times=diff(group_boundaries) # Doug changed this too, before was 'each=diff(info$group_boundaries)' and this threw a warning that only first elsemnt was used. I think if you have different group sizes this wouldn't work, and 'times' fixes that
+    ),
+    levels = group_labels
+  )
+  return(ChIPprofile_for_proplyr)
 }
