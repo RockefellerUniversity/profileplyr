@@ -63,6 +63,8 @@ generateEnrichedHeatmap(object, include_group_annotation = TRUE,
 \item{extra_anno_width}{This will set the width of the individual extra annotation columns on the right side of the figure. This must be a numeric vector with each element setting the width for the corresponding element in the 'extra_annotation_columns' argument.}
 
 \item{gap}{The size of the gap between heatmaps and annotations. Only relevant if return_ht_list = FALSE}
+
+\item{genes_to_label}{A character vector of gene symbols that should match character strings in the 'SYMBOL' column that results from either 'annotateRanges' or 'annotateRanges_great'. Genes that are both in this vector and in the 'SYMBOL' column will be labeled on the heatmap.}
 }
 \value{
 By default a customized version of a heatmap from EnrichedHeatmap, if return_ht_list = TRUE then a heatmap list is returned that can be modified and then entered as an input for the \code{\link[EnrichedHeatmap]{EnrichedHeatmap}} function
