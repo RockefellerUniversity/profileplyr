@@ -1914,7 +1914,15 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, testRanges_names =
   
   if(format == "bam"){
     signalFiles_list <- as.list(signalFiles)
+    testRanges_GR <- GRangesList()
+    group_labels <- vector()
+    for(i in seq_along(testRanges)){
+      testRanges_GR[[i]] <- import.bed(testRanges[i])
+      seqlevelsStyle(testRanges_GR[[i]]) <- "UCSC"
+      group_labels[i] <- basename(testRanges[i])
+    }
   }
+  
   # Construct the group boundaries
   group_boundaries <- c(0)
   for(i in seq_along(testRanges_GR)){
