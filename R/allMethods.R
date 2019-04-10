@@ -1867,7 +1867,8 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #'                          )
 #' @importFrom BiocParallel bplapply
 #' @importFrom soGGi regionPlot
-#' @importFrom rtracklayer import.bed
+#' @importFrom rtracklayer import.bed import.bw
+#' @importFrom GenomeInfoDb seqlevelsStyle<- seqlevelsInUse seqlevels
 #' @export
 #' 
 BamBigwig_to_chipProfile <- function(signalFiles, testRanges, testRanges_names = NULL, format, ...) {

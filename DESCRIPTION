@@ -14,8 +14,7 @@ Description:Quick and straighforward visualization of read signal over genomic i
   visualization of the read signal.
 License: GPL (>= 3)
 RoxygenNote: 6.1.1
-LazyData: true
 biocViews: ChIPSeq, DataImport, Sequencing, ChipOnChip, Coverage
-Imports: GenomicRanges, stats, soGGi, methods, utils, S4Vectors, R.utils, dplyr, magrittr, tidyr, IRanges, rjson, ChIPseeker,GenomicFeatures,TxDb.Hsapiens.UCSC.hg19.knownGene,TxDb.Hsapiens.UCSC.hg38.knownGene,TxDb.Mmusculus.UCSC.mm10.knownGene, TxDb.Mmusculus.UCSC.mm9.knownGene,org.Hs.eg.db,org.Mm.eg.db,rGREAT, pheatmap, EnrichedHeatmap, ComplexHeatmap, grid, circlize, BiocParallel, rtracklayer
+Imports: GenomicRanges, stats, soGGi, methods, utils, S4Vectors, R.utils, dplyr, magrittr, tidyr, IRanges, rjson, ChIPseeker,GenomicFeatures,TxDb.Hsapiens.UCSC.hg19.knownGene,TxDb.Hsapiens.UCSC.hg38.knownGene,TxDb.Mmusculus.UCSC.mm10.knownGene, TxDb.Mmusculus.UCSC.mm9.knownGene,org.Hs.eg.db,org.Mm.eg.db,rGREAT, pheatmap, EnrichedHeatmap, ComplexHeatmap, grid, circlize, BiocParallel, rtracklayer, GenomeInfoDb
 Suggests: BiocStyle, testthat, knitr, rmarkdown, png, Rsamtools, ggplot2
 VignetteBuilder: knitr
