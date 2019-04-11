@@ -1,0 +1,31 @@
+# Brief description.
+Data used in the profileplyr vignette and examples were retrieved in fastq formats from the Encode portal and reprocessed using R/Bioconductor as described in the workshop link below.
+
+ATAC-seq workshop (HTML with code) - https://rockefelleruniversity.github.io/RU_ATAC_Workshop.html
+
+# Data source
+ATAC-seq reads in fastq formats were retrieved from the Encode portal at these links.
+
+Liver day 12 - ENCSR302LIV,  https://www.encodeproject.org/experiments/ENCSR302LIV/
+Kidney day 15 - ENCSR023QZX, https://www.encodeproject.org/experiments/ENCSR023QZX/
+Hindbrain day 12 - ENCSR088UYE, https://www.encodeproject.org/experiments/ENCSR088UYE/
+
+
+# Data processing.
+ATAC-seq reads were reprocessed from fastq downloaded from the Encode portal. Reads were aligned to the mm10 genome, peaks called and differential analysis performed as described in our R/Bioconductor workshop.
+
+ATAC-seq workshop (HTML with code) - https://rockefelleruniversity.github.io/RU_ATAC_Workshop.html
+
+# Data description
+
+newranges.bed - This is a random subsample of regions found to be differentially accessible across Liver, Kidney or Hindbrain. The creation of the  differentially accessible regions is described here in full (https://rockefelleruniversity.github.io/RU_ATAC_Workshop.html#greenleaf-dataset---finding-open-regions.)
+newranges_small.bed - A sample of 3 BED entries taken from newranges.bed
+Sorted_Hindbrain_day_12_1_filtered.bam - The BAM file was created for hindbrain replicate as described in our workshop (https://rockefelleruniversity.github.io/RU_ATAC_Workshop.html#working-with-atac-seq-data-in-rbioconductor). This BAM file was further subsampled to reduce size for packaging.
+Sorted_Liver_day_12_1_filtered.bam - The BAM file was created for liver replicate as described in our workshop (https://rockefelleruniversity.github.io/RU_ATAC_Workshop.html#working-with-atac-seq-data-in-rbioconductor). This BAM file was further subsampled to reduce size for packaging.
+example_deepTools_MAT - This deeptools2 matrix was created using bigwigs processed from BAM as described in our workshop (https://rockefelleruniversity.github.io/RU_ATAC_Workshop.html#working-with-atac-seq-data-in-rbioconductor) and a BED file of a subsampled set of differentially accessible regions (also described in workshop). The deeptools matrix was created using computeMatrix tool as shown below.
+
+computeMatrix reference-point -S Sorted_Hindbrain_day_12_1_filtered Sorted_Liver_day_12_1_filtered Sorted_Kidney_day_12_1_filtered  -R  sampledDE.bed -o example_deepTools_MAT--referencePoint center -b 200 -a 200 -bs 50 -p 7
+
+
+
+
