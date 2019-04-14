@@ -624,7 +624,7 @@ annotated_object <- import_deepToolsMat(example) %>%
           inherit_groups = FALSE) %>% # group by GRanges
   clusterRanges(kmeans_k = 3)%>%
   generateEnrichedHeatmap(extra_annotation_columns=c("annotation_short", 
-                                                    "GRoverlap_names", 
+                                                    "overlap_names", 
                                                     "hindbrain_liv_stat"),
                           sample_names = c("Hindbrain",
                                            "Liver",
@@ -633,6 +633,7 @@ annotated_object <- import_deepToolsMat(example) %>%
                           matrices_color = c("white", "red"),
                           extra_anno_color = list(NULL,
                                                 c("black",
+                                                  "green",
                                                   "red",
                                                   "white"),
                                                 c("#e7e1ef", 

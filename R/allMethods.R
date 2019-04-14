@@ -584,116 +584,103 @@ subsetbyRangeOverlap <- function(object, group, GRanges_names = NULL, include_no
   rowData(object)$overlap_matrix <- overlap_matrix # add column in rowData containing this matrix
   
   # following code serves purpose of adding a column to rowData that will show the grouping, including all combinations of overlaps. So each range only has one assignment
-  GRoverlap_names <- vector()
+  overlap_names <- vector()
   for (i in seq_len(nrow(overlap_matrix))){
     if (sum(overlap_matrix[i,]) == 0) {
-      GRoverlap_names[i] <- "no_overlap"
+      overlap_names[i] <- "no_overlap"
     } else {
-      GRoverlap_names[i] <- names(overlap_matrix[1,]) %>%
+      overlap_names[i] <- names(overlap_matrix[1,]) %>%
         .[as.logical(overlap_matrix[i,])] %>% #this will index the names the input GRanges based on each row of the matrix
         paste(., collapse = "_")
     }
   }
-  rowRanges(object)$GRoverlap_names <- GRoverlap_names
+  rowRanges(object)$overlap_names <- overlap_names
+  rowRanges(object)$overlap_names <- ordered(rowRanges(object)$overlap_names, 
+                                             levels = rowRanges(object)$overlap_names[!duplicated(rowRanges(object)$overlap_names)])
   
-  object_no_overlap <- object[no_overlap]
+  object_overlap <-  object[which(!no_overlap)]
+  object_no_overlap <- object[which(no_overlap)]
   
-  if(separateDuplicated == TRUE) {
-    
-    # generate all possible combinations of the input GRanges (since and overlapping)
-    all_names <- vector()
-    for(i in seq_along(GRanges_names)) {
-      temp <- as.data.frame(combn(GRanges_names,i)) %>%
-        lapply(., paste, collapse = "_") %>%
-        unlist(.) %>%
-        unname(.)
-      all_names <- c(all_names, temp)
+  if (separateDuplicated == TRUE) {
+    if(inherit_groups == TRUE){
+      rowGroupsInUse <- metadata(object_overlap)$rowGroupsInUse
+      mcols(object_overlap)$group_and_overlap <- paste(mcols(object_overlap)[ ,colnames(mcols(object_overlap)) %in% rowGroupsInUse], 
+                                               mcols(object_overlap)$overlap_names, sep = "_")
+      metadata(object_overlap)$rowGroupsInUse <- "group_and_overlap"
+      rowRanges(object_overlap)$group_and_overlap <- ordered(rowRanges(object_overlap)$group_and_overlap, 
+                                                     levels = rowRanges(object_overlap)$group_and_overlap[!duplicated(rowRanges(object_overlap)$group_and_overlap)])
+      message("A column has been added to the range metadata with the column name 'group_and_overlap' that combines the inherited groups with the GRanges each range overlaps with. The 'rowGroupsInUse' has been set to this column.")      
     }
-    all_names <- c(all_names, "no_overlap")
     
-    # add groups to all of these name combinations and will be used to set levels of the column we add to the rowData
-    rowGroupsInUse <- metadata(object)$rowGroupsInUse
-    input_groups <- rowData(object)[,colnames(rowData(object)) %in% rowGroupsInUse] %>%
-      levels()
-    all_combined_names <- apply(expand.grid(input_groups, all_names), 1, paste, collapse="_") %>%
-      ordered(., levels = .)
-    
-    rowGroupsInUse <- metadata(object)$rowGroupsInUse
-    GroupNames <- mcols(object)[,colnames(mcols(object)) %in% rowGroupsInUse]
-    rowRanges(object)$group_and_GRoverlap <- paste(GroupNames, rowRanges(object)$GRoverlap_names, sep = "_")
-    
-    rowRanges(object)$group_and_GRoverlap <- ordered(rowRanges(object)$group_and_GRoverlap, levels = levels(all_combined_names)) #this will use the levels of the contructed 'all_combine_names' above to set the levels of the elements in this column which will allow us to get the right order in the output
-    
-    order <- order(rowRanges(object)$group_and_GRoverlap) # since this is now a factor, this will give us the indexes when ordered by the factor levels
-    
-    object <- object[order]
-    
-    no_overlap_index <- grepl("no_overlap", mcols(rowRanges(object))$group_and_GRoverlap)
-    
-    #############
-    # following code will append the metadata of the input GRanges
-    #NOTE: as it stands right now, if a range from the DT matrix overlaps multiple ranges in the input subsetting GRanges, only the first instance will be represented in the metadata
-    
-    object_overlap <- object[!no_overlap_index]
-    
-    region_list_GRanges_unlist <- unlist(region_list_GRanges)
-    
-    hits <- findOverlaps(object_overlap, region_list_GRanges_unlist) # get the indecies of both subject and query that overlap
-    uniqueInQuery <- subjectHits(hits) %>%
-      .[!duplicated(queryHits(hits))] # this will give us indecies of the input GRanges for subsetting (query) that overlap the deepTools SE (subject).
-    query_mcols <- mcols(region_list_GRanges_unlist)[uniqueInQuery, ] # get the metadata from the GRanges for subsetting (query) that corresponds to the ranges that overlap with the deepTools SE (subject). If multiple input regions overlap with the SE, metadata from only the first one will be caught here
-    mcols(object_overlap) <-  c( mcols(object_overlap), query_mcols) # combine the metadata from the subsetting GRanges with the metadata in the SE DT
-    
+    if(inherit_groups == FALSE){
+      metadata(object_overlap)$rowGroupsInUse <- "overlap_names"
+      message("A column has been added to the range metadata with the column name 'overlap_names' that specifies the GRanges each range overlaps with, but the inherited groups are not included. The 'rowGroupsInUse' has been set to this column.")      
+    }
   }
   if (separateDuplicated == FALSE) {
+   
+    overlap_matrix_df <- as.data.frame(overlap_matrix)
+    overlap_list <- lapply(overlap_matrix_df, function(x) object_overlap[which(as.logical(x))])
     
-    # get a logical vector for each combination of group and overlap vector
-    rowGroupsInUse <- metadata(object)$rowGroupsInUse
-    GroupNames <- mcols(object)[,colnames(mcols(object)) %in% rowGroupsInUse]
-    allGroups_overlaps_logical <- vector("list")
-    for (i in seq_along(levels(GroupNames))) {
-      for (x in seq_along(overlap)){
-        temp <- paste(levels(GroupNames)[i], GRanges_names[x], sep = "_")
-        allGroups_overlaps_logical[[temp]] <- GroupNames == levels(GroupNames)[i] & overlap[[x]]
-      }
+    # make a vector with the names of each GRanges with the length of each overlap profileplyr object
+    overlap_nosep_names <- vector()
+    for(i in seq_along(overlap_list)){
+      temp <- rep(colnames(overlap_matrix)[i], length(overlap_list[[i]]))
+      overlap_nosep_names <- c(overlap_nosep_names, temp)
     }
     
-    # subset the rowRanges based on overlaps
-    names <- names(allGroups_overlaps_logical)
-    overlap_ranges_list <- list()
-    for(i in seq_along(allGroups_overlaps_logical)){
-      overlap_ranges_list[[i]] <- object[allGroups_overlaps_logical[[i]]]
-      rowRanges(overlap_ranges_list[[i]])$group_and_GRoverlap <- rep(names[i], length(overlap_ranges_list[[i]]))
+    object_overlap <- do.call(rbind, overlap_list)
+    mcols(object_overlap)$overlap_nosep_names <- overlap_nosep_names
+    rowRanges(object_overlap)$overlap_nosep_names <- ordered(rowRanges(object_overlap)$overlap_nosep_names, 
+                                               levels = rowRanges(object_overlap)$overlap_nosep_names[!duplicated(rowRanges(object_overlap)$overlap_nosep_names)])
+    
+    if(inherit_groups == TRUE){
+      rowGroupsInUse <- metadata(object_overlap)$rowGroupsInUse
+      mcols(object_overlap)$group_and_overlap_nosep <- paste(mcols(object_overlap)[ ,colnames(mcols(object_overlap)) %in% rowGroupsInUse], 
+                                                     mcols(object_overlap)$overlap_nosep_names, sep = "_")
+      metadata(object_overlap)$rowGroupsInUse <- "group_and_overlap_nosep"
+      rowRanges(object_overlap)$group_and_overlap_nosep <- ordered(rowRanges(object_overlap)$group_and_overlap_nosep, 
+                                                     levels = rowRanges(object_overlap)$group_and_overlap_nosep[!duplicated(rowRanges(object_overlap)$group_and_overlap_nosep)])
+      message("A column has been added to the range metadata with the column name 'group_and_overlap' that combines the inherited groups with the GRanges each range overlaps with. The 'rowGroupsInUse' has been set to this column.")      
     }
     
-    object_overlap <- do.call(rbind, overlap_ranges_list)
-    
-    region_list_GRanges_unlist <- unlist(region_list_GRanges)
-    
-    hits <- findOverlaps(region_list_GRanges_unlist, rowRanges(object_overlap)) # get the indecies of both subject and query that overlap
-    uniqueInQuery <- queryHits(hits) %>%
-      .[!duplicated(subjectHits(hits))]
-    query_mcols <- mcols(region_list_GRanges_unlist)[uniqueInQuery,]
-    mcols(object_overlap) <-  c(mcols(object_overlap), query_mcols)
+    if(inherit_groups == FALSE){
+      metadata(object_overlap)$rowGroupsInUse <- "overlap_nosep_names"
+      message("A column has been added to the range metadata with the column name 'overlap_names' that specifies the GRanges each range overlaps with, but the inherited groups are not included. The 'rowGroupsInUse' has been set to this column.")      
+    }
     
   }
     
+  # add metadata columns from the overlapping GRanges to the profile plyr object
+  region_list_GRanges_unlist <- unlist(region_list_GRanges)
+  
+  hits <- findOverlaps(object_overlap, region_list_GRanges_unlist) # get the indecies of both subject and query that overlap
+  uniqueInQuery <- subjectHits(hits) %>%
+    .[!duplicated(queryHits(hits))] # this will give us indecies of the input GRanges for subsetting (query) that overlap the deepTools SE (subject).
+  query_mcols <- mcols(region_list_GRanges_unlist)[uniqueInQuery, ] # get the metadata from the GRanges for subsetting (query) that corresponds to the ranges that overlap with the deepTools SE (subject). If multiple input regions overlap with the SE, metadata from only the first one will be caught here
+  mcols(object_overlap) <-  c( mcols(object_overlap), query_mcols) # combine the metadata from the subsetting GRanges with the metadata in the SE DT
+  
   if (include_nonoverlapping == FALSE) {
     object <- object_overlap
   }
   
   if (include_nonoverlapping == TRUE) {
-    
-    # subset rowRanges based on not overlapping
-    #object_no_overlap <- object[no_overlap_index]
-    
+    rowGroupsInUse <- metadata(object)$rowGroupsInUse
     # get a vector of the breakdown of groups within the non-overlapping ranges to make the same 'group_overlap' column we have the the overlap ranges above
     no_overlap_groups <- as.data.frame(mcols(object_no_overlap)[colnames(mcols(object_no_overlap)) %in% rowGroupsInUse])[,1]
     
     # create a column in the non overlapping GRanges that has the group and non-overlapping indication
-    rowRanges(object_no_overlap)$group_and_GRoverlap <- paste(no_overlap_groups,
+    if (separateDuplicated == TRUE){
+      rowRanges(object_no_overlap)$group_and_overlap <- paste(no_overlap_groups,
                                                               "no_overlap",
                                                               sep = "_")
+    }
+    if (separateDuplicated == FALSE){
+      rowRanges(object_no_overlap)$group_and_overlap_nosep <- paste(no_overlap_groups,
+                                                              "no_overlap",
+                                                              sep = "_")
+    }
+    
     # here I just populate the metadata columns in the non-overlapping regions with NAs
     no_overlap_mcols <- list()
     for (i in seq_along(query_mcols)) {
@@ -706,32 +693,7 @@ subsetbyRangeOverlap <- function(object, group, GRanges_names = NULL, include_no
     object <- rbind(object_overlap, object_no_overlap)
   }
   
-  rowRanges(object)$group_and_GRoverlap <- ordered(rowRanges(object)$group_and_GRoverlap, 
-                                                   levels = rowRanges(object)$group_and_GRoverlap[!duplicated(rowRanges(object)$group_and_GRoverlap)])
-  
-  rowRanges(object)$GRoverlap_names <- ordered(rowRanges(object)$GRoverlap_names, 
-                                               levels = rowRanges(object)$GRoverlap_names[!duplicated(rowRanges(object)$GRoverlap_names)])
-  
-  if(inherit_groups == TRUE){
-    metadata(object)$rowGroupsInUse <- "group_and_GRoverlap"
-    message("A column has been added to the range metadata with the column name 'group_and_GRoverlap' that combines the inherited groups with the GRanges each range overlaps with. The 'rowGroupsInUse' has been set to this column.")      
-  }
-  
-  if(inherit_groups == FALSE){
-    metadata(object)$rowGroupsInUse <- "GRoverlap_names"
-    message("A column has been added to the range metadata with the column name 'GRoverlap_names' that specifies the GRanges each range overlaps with, but the inherited groups are not included. The 'rowGroupsInUse' has been set to this column.")      
-  }
-  
-  ### MOVED THIS TO GENERATEENRICHEDHEATMAP FUNCTION
-  #this will sort the ranges by signal and group so when we output to EnrichedHeatmap it will look nice on the heatmap
-  #scoreMat <- do.call(cbind,
-  #                    as.list(assays(object)))
-  
-  #means <- rowMeans(scoreMat)
-  #means_rev <- max(means) - means
-  #rowRanges(object)$bin_means_rev <- means_rev
-  
-  #object <- object[order(rowRanges(object)$group_and_GRoverlap, rowRanges(object)$bin_means_rev)]
+
   
   colnames(mcols(object)) <- make.unique(colnames(mcols(object)))
   return(object)
@@ -819,101 +781,82 @@ subsetbyGeneListOverlap <- function(object, group, include_nonoverlapping = FALS
   rowData(object)$overlap_matrix <- overlap_matrix # add column in rowData containing this matrix
   
   # following code serves purpose of adding a column to rowData that will show the grouping, including all combinations of overlaps. So each range only has one assignment
-  GLoverlap_names <- vector()
+  overlap_names <- vector()
   for (i in seq_len(nrow(overlap_matrix))){
     if (sum(overlap_matrix[i,]) == 0) {
-      GLoverlap_names[i] <- "no_overlap"
+      overlap_names[i] <- "no_overlap"
     } else {
-      GLoverlap_names[i] <- names(overlap_matrix[1,]) %>%
+      overlap_names[i] <- names(overlap_matrix[1,]) %>%
         .[as.logical(overlap_matrix[i,])] %>% #this will index the names the input GRanges based on each row of the matrix
         paste(., collapse = "_")
     }
   }
-  rowRanges(object)$GLoverlap_names <- GLoverlap_names
+  rowRanges(object)$overlap_names <- overlap_names
+  rowRanges(object)$overlap_names <- ordered(rowRanges(object)$overlap_names, 
+                                             levels = rowRanges(object)$overlap_names[!duplicated(rowRanges(object)$overlap_names)])
   
-  object_no_overlap <- object[no_overlap]
+  object_overlap <-  object[which(!no_overlap)]
+  object_no_overlap <- object[which(no_overlap)]
   
-  if(separateDuplicated == TRUE) {
-    
-    # generate all possible combinations of the input GRanges (since and overlapping)
-    all_names <- vector()
-    for(i in seq_along(gene_list_names)) {
-      temp <- as.data.frame(combn(gene_list_names,i)) %>%
-        lapply(., paste, collapse = "_") %>%
-        unlist(.) %>%
-        unname(.)
-      all_names <- c(all_names, temp)
-    }
-    all_names <- c(all_names, "no_overlap")
-    
-    # add groups to all of these name combinations and will be used to set levels of the column we add to the rowData
-    rowGroupsInUse <- metadata(object)$rowGroupsInUse
-    input_groups <- rowData(object)[,colnames(rowData(object)) %in% rowGroupsInUse] %>%
-      as.factor() %>%
-      levels()
-    all_combined_names <- apply(expand.grid(input_groups, all_names), 1, paste, collapse="_") %>%
-      ordered(., levels = .)
-    
-    rowGroupsInUse <- metadata(object)$rowGroupsInUse
-    GroupNames <- mcols(object)[,colnames(mcols(object)) %in% rowGroupsInUse]
-    rowRanges(object)$group_and_GLoverlap <- paste(GroupNames, rowRanges(object)$GLoverlap_names, sep = "_")
-    
-    rowRanges(object)$group_and_GLoverlap <- ordered(rowRanges(object)$group_and_GLoverlap, levels = levels(all_combined_names)) #this will use the levels of the contructed 'all_combine_names' above to set the levels of the elements in this column which will allow us to get the right order in the output
-    
-    order <- order(rowRanges(object)$group_and_GLoverlap) # since this is now a factor, this will give us the indexes when ordered by the factor levels
-    
-    object <- object[order]
-    
-    no_overlap_index <- grepl("no_overlap", mcols(rowRanges(object))$group_and_GLoverlap)
-    
-    object_overlap <- object[!no_overlap_index]
-    
-    if(keep_columns){
-      overlap_in_gene_list <- vector(mode = "list", length = length(group))
-      for (i in seq_along(group)){
-        index <- match(rowRanges(object_overlap)$SYMBOL, row.names(group[[i]]))
-        index <- index[!is.na(index)]
-        overlap_in_gene_list[[i]] <- group[[i]][index, , drop = FALSE]
-      }
-      overlap_in_gene <- do.call(rbind, overlap_in_gene_list)
-      mcols(object_overlap) <- cbind(mcols(object_overlap), overlap_in_gene)
+  if (separateDuplicated == TRUE) {
+    if(inherit_groups == TRUE){
+      rowGroupsInUse <- metadata(object_overlap)$rowGroupsInUse
+      mcols(object_overlap)$group_and_overlap <- paste(mcols(object_overlap)[ ,colnames(mcols(object_overlap)) %in% rowGroupsInUse], 
+                                               mcols(object_overlap)$overlap_names, sep = "_")
+      metadata(object_overlap)$rowGroupsInUse <- "group_and_overlap"
+      rowRanges(object_overlap)$group_and_overlap <- ordered(rowRanges(object_overlap)$group_and_overlap, 
+                                                           levels = rowRanges(object_overlap)$group_and_overlap[!duplicated(rowRanges(object_overlap)$group_and_overlap)])
+      message("A column has been added to the range metadata with the column name 'group_and_overlap' that combines the inherited groups with the GRanges each range overlaps with. The 'rowGroupsInUse' has been set to this column.")      
     }
     
+    if(inherit_groups == FALSE){
+      metadata(object_overlap)$rowGroupsInUse <- "overlap_names"
+      message("A column has been added to the range metadata with the column name 'overlap_names' that specifies the GRanges each range overlaps with, but the inherited groups are not included. The 'rowGroupsInUse' has been set to this column.")      
+    }
   }
   
   if (separateDuplicated == FALSE) {
     
-    # get a logical vector for each combination of group and overlap vector
-    rowGroupsInUse <- metadata(object)$rowGroupsInUse
-    GroupNames <- mcols(object)[,colnames(mcols(object)) %in% rowGroupsInUse]
-    allGroups_overlaps_logical <- vector("list")
-    for (i in seq_along(levels(GroupNames))) {
-      for (x in seq_along(overlap)){
-        temp <- paste(levels(GroupNames)[i], gene_list_names[x], sep = "_") # get a column with a combination of group and overlap
-        allGroups_overlaps_logical[[temp]] <- GroupNames == levels(GroupNames)[i] & overlap[[x]]
-      }
+    overlap_matrix_df <- as.data.frame(overlap_matrix)
+    overlap_list <- lapply(overlap_matrix_df, function(x) object_overlap[which(as.logical(x))])
+    
+    # make a vector with the names of each GRanges with the length of each overlap profileplyr object
+    overlap_nosep_names <- vector()
+    for(i in seq_along(overlap_list)){
+      temp <- rep(colnames(overlap_matrix)[i], length(overlap_list[[i]]))
+      overlap_nosep_names <- c(overlap_nosep_names, temp)
     }
     
-    # subset the rowRanges based on overlaps
-    names <- names(allGroups_overlaps_logical)
-    overlap_ranges_list <- list()
-    for(i in seq_along(allGroups_overlaps_logical)){
-      overlap_ranges_list[[i]] <- object[allGroups_overlaps_logical[[i]]]
-      rowRanges(overlap_ranges_list[[i]])$group_and_GLoverlap <- rep(names[i], length(overlap_ranges_list[[i]]))
+    object_overlap <- do.call(rbind, overlap_list)
+    mcols(object_overlap)$overlap_nosep_names <- overlap_nosep_names
+    rowRanges(object_overlap)$overlap_nosep_names <- ordered(rowRanges(object_overlap)$overlap_nosep_names, 
+                                                     levels = rowRanges(object_overlap)$overlap_nosep_names[!duplicated(rowRanges(object_overlap)$overlap_nosep_names)])
+    
+    if(inherit_groups == TRUE){
+      rowGroupsInUse <- metadata(object_overlap)$rowGroupsInUse
+      mcols(object_overlap)$group_and_overlap_nosep <- paste(mcols(object_overlap)[ ,colnames(mcols(object_overlap)) %in% rowGroupsInUse], 
+                                                 mcols(object_overlap)$overlap_nosep_names, sep = "_")
+      metadata(object_overlap)$rowGroupsInUse <- "group_and_overlap_nosep"
+      rowRanges(object_overlap)$group_and_overlap_nosep <- ordered(rowRanges(object_overlap)$group_and_overlap_nosep, 
+                                                     levels = rowRanges(object_overlap)$group_and_overlap_nosep[!duplicated(rowRanges(object_overlap)$group_and_overlap_nosep)])
+      message("A column has been added to the range metadata with the column name 'group_and_overlap' that combines the inherited groups with the GRanges each range overlaps with. The 'rowGroupsInUse' has been set to this column.")      
     }
     
-    object_overlap <- do.call(rbind, overlap_ranges_list)
-    
-    if(keep_columns){
-      overlap_in_gene_list <- vector(mode = "list", length = length(group))
-      for (i in seq_along(group)){
-        index <- match(rowRanges(object_overlap)$SYMBOL, row.names(group[[i]]))
-        index <- index[!is.na(index)]
-        overlap_in_gene_list[[i]] <- group[[i]][index, , drop = FALSE]
-      }
-      overlap_in_gene <- do.call(rbind, overlap_in_gene_list)
-      mcols(object_overlap) <- cbind(mcols(object_overlap), overlap_in_gene)
+    if(inherit_groups == FALSE){
+      metadata(object_overlap)$rowGroupsInUse <- "overlap_nosep_names"
+      message("A column has been added to the range metadata with the column name 'overlap_names' that specifies the GRanges each range overlaps with, but the inherited groups are not included. The 'rowGroupsInUse' has been set to this column.")      
     }
+    
+  }
+
+  if(keep_columns){
+    temp <- group
+    names(temp) <- NULL
+    temp <- do.call(rbind, temp)
+    
+    index <- match(rowRanges(object_overlap)$SYMBOL, row.names(temp))
+    overlap_in_gene <- temp[index, , drop = FALSE]
+    mcols(object_overlap) <- cbind(mcols(object_overlap), overlap_in_gene)
   }
   
   if (include_nonoverlapping == FALSE) {
@@ -922,46 +865,26 @@ subsetbyGeneListOverlap <- function(object, group, include_nonoverlapping = FALS
   
   
   if (include_nonoverlapping == TRUE) {
-    
-    # subset rowRanges based on not overlapping
-    #object_no_overlap <- object[no_overlap_index]
-    
+    rowGroupsInUse <- metadata(object)$rowGroupsInUse
     # get a vector of the breakdown of groups within the non-overlapping ranges to make the same 'group_overlap' column we have the the overlap ranges above
     no_overlap_groups <- as.data.frame(mcols(object_no_overlap)[colnames(mcols(object_no_overlap)) %in% rowGroupsInUse])[,1]
     
     # create a column in the non overlapping GRanges that has the group and non-overlapping indication
-    rowRanges(object_no_overlap)$group_and_GLoverlap <- paste(no_overlap_groups,
+    if (separateDuplicated == TRUE){
+      rowRanges(object_no_overlap)$group_and_overlap <- paste(no_overlap_groups,
                                                               "no_overlap",
                                                               sep = "_")
+    }
+    if (separateDuplicated == FALSE){
+      rowRanges(object_no_overlap)$group_and_overlap_nosep <- paste(no_overlap_groups,
+                                                                    "no_overlap",
+                                                                    sep = "_")
+    }
+    
     object <- rbind(object_overlap, object_no_overlap)
     
   }
-  rowRanges(object)$group_and_GLoverlap <- ordered(rowRanges(object)$group_and_GLoverlap, 
-                                                 levels = rowRanges(object)$group_and_GLoverlap[!duplicated(rowRanges(object)$group_and_GLoverlap)])
   
-  rowRanges(object)$GLoverlap_names <- ordered(rowRanges(object)$GLoverlap_names, 
-                                               levels = rowRanges(object)$GLoverlap_names[!duplicated(rowRanges(object)$GLoverlap_names)])
-  
-  if(inherit_groups == TRUE){
-  metadata(object)$rowGroupsInUse <- "group_and_GLoverlap"
-  message("A column has been added to the range metadata with the column name 'group_and_GLoverlap' that combines the inherited groups with the GRanges each range overlaps with. The 'rowGroupsInUse' has been set to this column.")      
-  }
-  
-  if(inherit_groups == FALSE){
-    metadata(object)$rowGroupsInUse <- "GLoverlap_names"
-    message("A column has been added to the range metadata with the column name 'GLoverlap_names' that specifies the GRanges each range overlaps with, but the inherited groups are not included. The 'rowGroupsInUse' has been set to this column.")      
-  }
-  ### MOVED THIS TO GENERATEENRICHEDHEATMAP FUNCTION
-  #this will sort the ranges by signal and group so when we output to EnrichedHeatmap it will look nice on the heatmap
-  #scoreMat <- do.call(cbind,
-  #                    as.list(assays(object)))
-  
-  #means <- rowMeans(scoreMat)
-  #means_rev <- max(means) - means
-  #rowRanges(object)$bin_means_rev <- means_rev
-  
-  #object <- object[order(rowRanges(object)$group_and_GLoverlap, rowRanges(object)$bin_means_rev)]
-
   colnames(mcols(object)) <- make.unique(colnames(mcols(object)))
   return(object)
   
@@ -1087,7 +1010,7 @@ setMethod("summarize", signature(object="profileplyr"), function(object, fun, ou
 #' 
 #' # switch rowGroupsInUse
 #' 
-#' switchGroup <- groupBy(K27ac_groupByGR, group = "GRoverlap_names")
+#' switchGroup <- groupBy(K27ac_groupByGR, group = "overlap_names")
 #' metadata(switchGroup)$rowGroupsInUse
 #' @export
 setGeneric("groupBy", function(object="profileplyr",group="ANY", GRanges_names = "character", levels = "ANY", 
@@ -1641,9 +1564,9 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
       if (is.factor(column) | is.character(column)){
         
         if(is.null(extra_anno_color[[i]])){
-          extra_anno_color[[i]] = seq_along(table(column))
+          extra_anno_color[[i]] = seq_along(table(as.character(column)))
         }
-        if(!(length(extra_anno_color[[i]]) == length(seq_along(table(column))))){
+        if(!(length(extra_anno_color[[i]]) == length(seq_along(table(as.character(column)))))){
           stop("The length of the 'extra_anno_color' argument for the '", extra_annotation_columns[i], "' column is not the same length as the number of discrete names in that column of the range metadata.")
         }
         if (extra_anno_top_annotation[i]){
