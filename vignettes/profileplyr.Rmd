@@ -204,11 +204,8 @@ Any profileplyr object can be exported as a matrix formatted for the deepTools '
 
 
 ```{r, eval=T, results='hide'}
-export_deepToolsMat(proplyrObject, "test_output")
-```
-
-```{r, echo=F}
-unlink("test_output.gz")
+output_path <- file.path(tempdir(),"ATAC_example.MAT.gz")
+export_deepToolsMat(proplyrObject, con = output_path)
 ```
 
 
@@ -360,12 +357,10 @@ hclust <- clusterRanges(proplyrObject,
 
 The profileplyr object that is the output of clusterRanges() can be exported as a deepTools matrix, which can then be used as an input for plotHeatmap. 
 ```{r, results='hide'}
-export_deepToolsMat(kmeans, "kmeans_cluster_mat")
+output_path <- file.path(tempdir(),"kmeans_cluster_mat.gz")
+export_deepToolsMat(kmeans, con = output_path)
 ```
 
-```{r, echo=F}
-unlink("kmeans_cluster_mat.gz")
-```
 
 This matrix can then be passed directly to 'plotHeatmap', either by using the terminal or by using the system() function in R.
 
@@ -516,13 +511,11 @@ rowRanges(K27ac_groupByGR)[1:3]
 As with any profileplyr object, this can be exported to deepTools 'plotHeatmap' using the profileplyr function export_deepToolsMat()
 
 ```{r, results='hide'}
-export_deepToolsMat(K27ac_groupByGR, 
-                    con = "K27ac_GRoverlap.gz")
+output_path <- file.path(tempdir(),"K27ac_GRoverlap.gz")
+export_deepToolsMat(K27ac_groupByGR, con = output_path)
+
 ```
 
-```{r, echo=F}
-unlink("K27ac_GRoverlap.gz")
-```
 
 This matrix can then be passed directly to 'plotHeatmap', either by using the terminal or by using the system() function in R. 
 
