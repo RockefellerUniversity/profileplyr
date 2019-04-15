@@ -622,9 +622,9 @@ annotated_object <- import_deepToolsMat(example) %>%
           GRanges_names = K27ac_GRlist_names,
           include_nonoverlapping = TRUE,
           inherit_groups = FALSE) %>% # group by GRanges
-  clusterRanges(kmeans_k = 3)%>%
+  clusterRanges(kmeans_k = 3) %>%
   generateEnrichedHeatmap(extra_annotation_columns=c("annotation_short", 
-                                                    "overlap_names", 
+                                                    "GR_overlap_names", 
                                                     "hindbrain_liv_stat"),
                           sample_names = c("Hindbrain",
                                            "Liver",
