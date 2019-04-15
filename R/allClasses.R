@@ -39,9 +39,7 @@ setClass("profileplyr",
   if (missing(i) && missing(j) && missing(k))
     return(x)
   
-  if (!missing(k)) {
-    message(k)
-  }
+
   if (!missing(i)) {
     if (is.character(i)) {
       fmt <- paste0("<", class(x), ">[i,] index out of bounds: %s")
@@ -53,7 +51,7 @@ setClass("profileplyr",
     ans_assays <- x@assays[ii,]$data
     
     x  <- profileplyr_Dataset(ans_assays,ans_rowRanges,
-                                         sampleData(x),sampleParams(x), x@params)
+                                         sampleData(x),sampleParams(x), params(x))
 
     
   }
@@ -67,7 +65,7 @@ setClass("profileplyr",
     ans_assays <- x@assays[,jj]$data
     
     x  <- profileplyr_Dataset(ans_assays,rowRanges(x),
-                              sampleData(x),sampleParams(x),x@params)
+                              sampleData(x),sampleParams(x),params(x))
 
     
   }
@@ -83,7 +81,7 @@ setClass("profileplyr",
     ans_assays <- x@assays$data[kk]
 
     x  <- profileplyr_Dataset(ans_assays,rowRanges(x),
-                              sampleDataTmp,sampleParamsTmp,x@params)
+                              sampleDataTmp,sampleParamsTmp,params(x))
 
   }
   return(x)
@@ -136,6 +134,20 @@ sampleParams <- function (x)
             return(x@sampleParams)
           }
 
+#' Retrieve and set parameters in profileplyr object
+#' @rdname params
+#' @param object A profileplyr object
+#' @return  A list containing parameters for profileplyr object.
+#' @examples
+#' example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
+#' object <- import_deepToolsMat(example) 
+#' params(object)
+#' @export
+params <- function (object)
+{
+  return(object@params)
+}
+
 
 #' Join, subset and manipulate ChIPprofile objects
 #' @rdname profileplyr
@@ -160,7 +172,7 @@ setMethod("c", "profileplyr",
             dpAssays <- SummarizedExperiment(assayList,rowRanges=rowRanges(x))
 
             x <- new("profileplyr", dpAssays,
-                     params=x@params,
+                     params=params(x),
                      sampleParams=newSampleParams,
                      sampleData=newSampleData)
             metadata(x) <- metaX

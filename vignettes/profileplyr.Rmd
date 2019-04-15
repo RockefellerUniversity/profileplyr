@@ -83,10 +83,10 @@ chipProfile <- BamBigwig_to_chipProfile(signalFiles,
 chipProfile
 ```
 
-Once we have the ChIPprofile object, the as_profileplyr() function will generate the profileplyr object that can be used in the many downstream functions described below. Similar to when you import from deepTools, the grouping of the ranges after using the as_profileplyr() function is stored in the 'rowGroupsInUse' section of metadata(proplyrObject). Further, if the object is derived from a soGGi ChIPprofile object, the inherited group column will be called 'sgGroup'.
+Once we have the ChIPprofile object, the as_profileplyr() function will generate the profileplyr object that can be used in the many downstream functions described below. Similar to when you import from deepTools, the grouping of the ranges after using the as_profileplyr() function is stored in the 'rowGroupsInUse' section of params(proplyrObject). Further, if the object is derived from a soGGi ChIPprofile object, the inherited group column will be called 'sgGroup'.
 ```{r}
 proplyrObject <- as_profileplyr(chipProfile)
-metadata(proplyrObject)$rowGroupsInUse
+params(proplyrObject)$rowGroupsInUse
 ```
 
 ```{r, echo=F}
@@ -126,25 +126,25 @@ The information associated with each sample is stored as a Dataframe within with
 sampleData(proplyrObject)
 ```
 
-The 'rowGroupsInUse' accessor for the metadata indicates which column of the range metadata (mcols() or rowRanges()) that will be used for grouping in the final output if that object were used for visualization. For a profileplyr object created from a deepTools computeMatrix output or from a soGGi ChIPprofile object, the inherited groups correspond to the BED files over which the signal was quantified, and these groups are contained in the 'dpGroup' column. 
+The 'rowGroupsInUse' element for the params slot indicates which column of the range metadata (mcols() or rowRanges()) that will be used for grouping in the final output if that object were used for visualization. For a profileplyr object created from a deepTools computeMatrix output or from a soGGi ChIPprofile object, the inherited groups correspond to the BED files over which the signal was quantified, and these groups are contained in the 'dpGroup' column. 
 ```{r}
-metadata(proplyrObject)$rowGroupsInUse
+params(proplyrObject)$rowGroupsInUse
 ```
 
-The 'mcolToOrderBy' slot of the metadata indicates which column of the range metadata will be used for ordering the ranges as they are exported to either deepTools or to EnrichedHeatmap (with the generateEnrichedHeatmap() function within profileplyr). This can be set using the orderBy() function, which requires a profileplyr object and a character string matching a column name of the range metadata as arguments. If groupBy is never used on an object, the default will be to order by the mean signal of each range (within each group). In addition, until groupBy() has been used on a profileplyr object, the 'mcolToOrderBy' slot of the metadata will be NULL and will not be seen with metadata(proplyrObject).
+The 'mcolToOrderBy' element of the params slot indicates which column of the range metadata will be used for ordering the ranges as they are exported to either deepTools or to EnrichedHeatmap (with the generateEnrichedHeatmap() function within profileplyr). This can be set using the orderBy() function, which requires a profileplyr object and a character string matching a column name of the range metadata as arguments. If groupBy is never used on an object, the default will be to order by the mean signal of each range (within each group). In addition, until groupBy() has been used on a profileplyr object, the 'mcolToOrderBy' slot of the metadata will be NULL and will not be seen with params(proplyrObject).
 
-NOTE: If you are exporting to deepTools and want to order by something other than mean range signal (or other [deepTools ordering options](https://deeptools.readthedocs.io/en/develop/content/tools/plotHeatmap.html)), then make sure to set the --sortRegions argument of deepTools 'plotHeatmap' to "no" so your custom ordering will be used. generateEnrichedHeatmap() will always use the column indicated by metadata(proplyrObject)$mcolToOrderBy, or the mean signal if that value is NULL. 
+NOTE: If you are exporting to deepTools and want to order by something other than mean range signal (or other [deepTools ordering options](https://deeptools.readthedocs.io/en/develop/content/tools/plotHeatmap.html)), then make sure to set the --sortRegions argument of deepTools 'plotHeatmap' to "no" so your custom ordering will be used. generateEnrichedHeatmap() will always use the column indicated by params(proplyrObject)$mcolToOrderBy, or the mean signal if that value is NULL. 
 
 ```{r}
-metadata(proplyrObject)$mcolToOrderBy
+params(proplyrObject)$mcolToOrderBy
 
 proplyrObject <- orderBy(proplyrObject, "score")
-metadata(proplyrObject)$mcolToOrderBy
+params(proplyrObject)$mcolToOrderBy
 ```
 
 ```{r, echo=FALSE}
 # change back to NULL for any other functions relying on this object
-metadata(proplyrObject)$mcolToOrderBy <- NULL
+proplyrObject@params$mcolToOrderBy <- NULL
 ```
 
 
@@ -200,7 +200,7 @@ For heatmap visualization of the signal over the genomic intervals this object c
 
 ## Export to a deepTools matrix
 
-Any profileplyr object can be exported as a matrix formatted for the deepTools 'plotHeatmap' function using the export_deepToolsMat() function. This simply requires the name of the profileplyr object and the path to the desired destination of the gzipped matrix. This function will build the metadata for the deepTools matrix based on the metadata in the profileplyr object. Importantly, the range metadata column of profileplyr object (accessed with rowRanges(object)) that is specified in the 'rowGroupsInUse' section of metadata for the whole object (found using metadata(object)$rowGroupsInUse) is automatically used to set the grouping of the exported deepTools matrix. The 'rowGroupsInUse' can be changed using the groupBy() function (see more details [below](#switchMetadataColumn)). 
+Any profileplyr object can be exported as a matrix formatted for the deepTools 'plotHeatmap' function using the export_deepToolsMat() function. This simply requires the name of the profileplyr object and the path to the desired destination of the gzipped matrix. This function will build the metadata for the deepTools matrix based on the metadata in the profileplyr object. Importantly, the range metadata column of profileplyr object (accessed with rowRanges(object)) that is specified in the 'rowGroupsInUse' section of params slot for the whole object (found using params(object)$rowGroupsInUse) is automatically used to set the grouping of the exported deepTools matrix. The 'rowGroupsInUse' can be changed using the groupBy() function (see more details [below](#switchMetadataColumn)). 
 
 
 ```{r, eval=T, results='hide'}
@@ -272,7 +272,7 @@ This matrix can be used directly in other heatmap generating packages, including
 
 ## Long output for ggplot 
 
-If the 'output' argument is set to 'long', then the output will be a long data frame that can be used for plotting with ggplot. The grouping column of the range metadata as specified by 'metadata(proplyrObject)$rowGroupsInUse' will automatically be included in the data frame. If the other range metadata columns should be included in the data frame, then the 'keep_all_mcols' argument should be set to TRUE. Additionally, columns specifying the range, as well as the sample and the summarized signal that correspond to that range are included by default.
+If the 'output' argument is set to 'long', then the output will be a long data frame that can be used for plotting with ggplot. The grouping column of the range metadata as specified by 'params(proplyrObject)$rowGroupsInUse' will automatically be included in the data frame. If the other range metadata columns should be included in the data frame, then the 'keep_all_mcols' argument should be set to TRUE. Additionally, columns specifying the range, as well as the sample and the summarized signal that correspond to that range are included by default.
 
 ```{r}
 proplyrObject_long <- summarize(proplyrObject, 
@@ -330,7 +330,7 @@ kmeans <- clusterRanges(proplyrObject,
 
 rowRanges(kmeans)[1:3]
 
-metadata(kmeans)$rowGroupsInUse
+params(kmeans)$rowGroupsInUse
 ```
 
 To visually inspect the clusters, the heatmap can also be printed (though it will not be returned) if the 'silent' argument is set to FALSE. A profileplyr object will still be returned even if silent is set to FALSE. 
@@ -415,7 +415,7 @@ The annotateRanges() function passes the ranges of a profileplyr object to the a
 2) a TxDb object
 3) a character string that is a path to a GTF or GFF file, in which case a TxDb object will be made using the makeTxDbFromGFF() function from the [Genomic Features](http://bioconductor.org/packages/release/bioc/html/GenomicFeatures.html) package. 
 
-Note that the default action of this function will not change the 'rowGroupsInUse' slot of the metadata. However, if changeGroupToAnnotation = TRUE, a newly generated metadata column will be added that combines the inherited grouping of the ranges and the genomic annotation that was determined by ChIPseeker. If this object is exported as a deepTools matrix, the heatmap will group the ranges first by the inherited grouping, followed by the annotation groups (e.g. promoter, intron, etc). This can be modified by setting the 'heatmap_grouping' argument to 'annotation', which will force the ranges to be grouped first by annotation, followed by the inherited grouping. 
+Note that the default action of this function will not change the 'rowGroupsInUse' element of the params slot. However, if changeGroupToAnnotation = TRUE, a newly generated metadata column will be added that combines the inherited grouping of the ranges and the genomic annotation that was determined by ChIPseeker. If this object is exported as a deepTools matrix, the heatmap will group the ranges first by the inherited grouping, followed by the annotation groups (e.g. promoter, intron, etc). This can be modified by setting the 'heatmap_grouping' argument to 'annotation', which will force the ranges to be grouped first by annotation, followed by the inherited grouping. 
 
 ```{r}
 anno <- annotateRanges(proplyrObject, 
@@ -460,15 +460,15 @@ The groupBy() function within profileplyr allows for a range of grouping mechani
 
 ## Switch output grouping columns within existing range metadata
 
-If the 'group' argument is a character string then it must match a name of one of the columns in mcols(proplyrObject). In this case the groupBy function will change the column that will be used for grouping a profileplyr object during visualization. While many of the profileplyr functions shown above will set the grouping column (specified in the 'rowGroupsInUse' section of metadata(proplyrObject)) to the appropriate column for that function, the user may want to use another column for the grouping of the deepTools matrix to be output. The user may have added an additional column to the range metadata that can be used, or a column that is generated in one of the above functions, but is not the default grouping column, might be useful. Here we add a column of random numbers to demonstate both adding a column and then swithcing to use this column in grouping. 
+If the 'group' argument is a character string then it must match a name of one of the columns in mcols(proplyrObject). In this case the groupBy function will change the column that will be used for grouping a profileplyr object during visualization. While many of the profileplyr functions shown above will set the grouping column (specified in the 'rowGroupsInUse' section of params(proplyrObject)) to the appropriate column for that function, the user may want to use another column for the grouping of the deepTools matrix to be output. The user may have added an additional column to the range metadata that can be used, or a column that is generated in one of the above functions, but is not the default grouping column, might be useful. Here we add a column of random numbers to demonstate both adding a column and then swithcing to use this column in grouping. 
 
 ```{r}
 mcols(proplyrObject)$newColumn <- rnorm(n = nrow(proplyrObject))
 
-metadata(proplyrObject)$rowGroupsInUse
+params(proplyrObject)$rowGroupsInUse
 switchGroup <- groupBy(proplyrObject, 
                             group = "newColumn")
-metadata(switchGroup)$rowGroupsInUse
+params(switchGroup)$rowGroupsInUse
 ```
 
 ```{r, echo=F}
@@ -639,7 +639,7 @@ The color arguments for both the matrices and the extra annotation columns can e
 
 # Acknowledgements
 
-Thank you to Ji-Dung Luo for testing/vignette review/critical feedback, Elitsa Stoyanova for critical feedback/vignette review and David Allis for his support. 
+Thank you to Ji-Dung Luo for testing/vignette review/critical feedback, Elitsa Stoyanova for critical feedback/vignette review and David Allis and Ziwei Liang for their support. 
 
 
 # Session info

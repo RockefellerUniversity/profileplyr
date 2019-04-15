@@ -44,5 +44,5 @@ A profileplyr object
 
 example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
 object <- import_deepToolsMat(example) 
-export_deepToolsMat(object,"ATAC_Example.MAT")
+export_deepToolsMat(object,file.path(tempdir(),"ATAC_Example.MAT"))
 }
