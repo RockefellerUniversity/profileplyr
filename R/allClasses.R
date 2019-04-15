@@ -52,8 +52,8 @@ setClass("profileplyr",
     ans_rowRanges <- x@rowRanges[i]
     ans_assays <- x@assays[ii,]$data
     
-    x  <- profileplyr_Dataset(ans_assays,ans_rowRanges,metadata(x)$info,
-                                         sampleData(x),sampleParams(x), metadata(x)$rowGroupsInUse)
+    x  <- profileplyr_Dataset(ans_assays,ans_rowRanges,
+                                         sampleData(x),sampleParams(x), x@params)
 
     
   }
@@ -66,8 +66,8 @@ setClass("profileplyr",
     jj <- as.vector(j)
     ans_assays <- x@assays[,jj]$data
     
-    x  <- profileplyr_Dataset(ans_assays,rowRanges(x),metadata(x)$info,
-                              sampleData(x),sampleParams(x),metadata(x)$rowGroupsInUse)
+    x  <- profileplyr_Dataset(ans_assays,rowRanges(x),
+                              sampleData(x),sampleParams(x),x@params)
 
     
   }
@@ -82,8 +82,8 @@ setClass("profileplyr",
     kk <- as.vector(k)
     ans_assays <- x@assays$data[kk]
 
-    x  <- profileplyr_Dataset(ans_assays,rowRanges(x),metadata(x)$info,
-                              sampleDataTmp,sampleParamsTmp,metadata(x)$rowGroupsInUse)
+    x  <- profileplyr_Dataset(ans_assays,rowRanges(x),
+                              sampleDataTmp,sampleParamsTmp,x@params)
 
   }
   return(x)
@@ -198,7 +198,7 @@ setMethod("[[", c("profileplyr", "ANY", "missing"),
             metadata(subsetProfile)$AlignedReadsInBam <- metadata(x)$AlignedReadsInBam[i]
             metadata(subsetProfile)$info <- c(info)
             metadata(subsetProfile)$sampleData <- sampleData[i,,drop=FALSE]
-            metadata(subsetProfile)$info$group_boundaries <- c(which(!duplicated(myTempGR$dpGroup))-1,length(myTempGR))
+            # metadata(subsetProfile)$info$group_boundaries <- c(which(!duplicated(myTempGR$dpGroup))-1,length(myTempGR))
             tempDou <- new("profileplyr", subsetProfile)
             
             return(tempDou)                        

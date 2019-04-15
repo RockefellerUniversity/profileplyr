@@ -54,8 +54,8 @@ setMethod("export_deepToolsMat", signature="profileplyr",
   con_prezip <- gsub("\\.gz","",con)
   con <- paste0(con_prezip,".gz")
 
-  rowGroupsInUse <- metadata(object)$rowGroupsInUse
-  mcolToOrderBy <- metadata(object)$mcolToOrderBy
+  rowGroupsInUse <- object@params$rowGroupsInUse
+  mcolToOrderBy <- object@params$mcolToOrderBy
   if(is.null(mcolToOrderBy)){
     order <- order(mcols(object)[, rowGroupsInUse])
   } else {
@@ -222,7 +222,12 @@ import_deepToolsMat <- function(con){
     levels = info$group_labels
   )
   
-  proplyDataset <- profileplyr_Dataset(myTempM_L,myTempGR,info,sampleData,sampleParam=sampleData,"dpGroup")
+  perSampleDPParams <- info[lengths(info) == length(info$sample_labels)] %>% .[!(names(.) %in% c("group_labels", "group_boundaries"))] %>%
+    names %>% make.names
+  rowGroupsInUse <- "dpGroup"
+  params <- list(perSampleDPParams=perSampleDPParams,rowGroupsInUse=rowGroupsInUse,mcolToOrderBy=rowGroupsInUse)
+  
+  proplyDataset <- profileplyr_Dataset(myTempM_L,myTempGR,sampleData,sampleParam=sampleData,params=params)
   return(proplyDataset)
 }
 
@@ -1142,6 +1147,7 @@ setMethod("orderBy", signature(object="profileplyr"),function(object, column){
       stop("The 'column' argument does not match the name of any range metadata columns")
     }
     metadata(object)$mcolToOrderBy <- column
+    object@params$mcolToOrderBy <- column
     
     return(object)
 })
@@ -1777,9 +1783,9 @@ as_profileplyr <- function(chipProfile,names = NULL){
                `bin avg type`="mean",
                `missing data as zero`=FALSE)
   
-  if(!is.null(metadata(chipProfile)$group_boundaries)){
-    info$group_boundaries <- metadata(chipProfile)$group_boundaries
-  }
+  # if(!is.null(metadata(chipProfile)$group_boundaries)){
+  #   info$group_boundaries <- metadata(chipProfile)$group_boundaries
+  # }
   
   info_for_sampleData <- info[!(names(info) %in% c("group_labels", "group_boundaries"))] # Doug added this - I think its better to remove right away because group labels doesn't get included if theres multiple groups so it threw an error when you removed it afterwards (removed that code)
   if(length(sample_labels) > 1){
@@ -1793,7 +1799,13 @@ as_profileplyr <- function(chipProfile,names = NULL){
     row.names = sample_labels) 
   }
   sampleData$max.threshold <- sampleData$min.threshold <- replicate(nrow(sampleData),NULL)
-  profileplyrDataset <- profileplyr_Dataset(forDP_Assays,forDP_ranges,info,sampleData,sampleParam=sampleData,"sgGroup")
+  
+  
+  params <- list(perSampleDPParams= standard_DPparams()$perSampleDPParams,
+                 rowGroupsInUse="sgGroup",
+                 mcolToOrderBy="sgGroup")
+  
+  profileplyrDataset <- profileplyr_Dataset(forDP_Assays,forDP_ranges,sampleData,sampleParam=sampleData,params=params)
   return(profileplyrDataset)
 }
 
@@ -1915,24 +1927,41 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, testRanges_names =
 
 
 
-profileplyr_Dataset <-function(matrix,granges,info,sampleData,sampleParam,groupColumn=NULL){
+profileplyr_Dataset <-function(matrix,granges,sampleData,sampleParam,params=NULL){
   tempDou <- SummarizedExperiment(matrix,
                                   rowRanges=granges)
   
-  metadata(tempDou)$info <- c(info)
-  if(!is.null(groupColumn)){
-    metadata(tempDou)$info$group_boundaries <- c(which(!duplicated(granges[,groupColumn]))-1,length(granges))
+  # metadata(tempDou)$info <- c(info)
+  if(is.null(params)){
+    params <- list(perSampleDPParams= standard_DPparams()$perSampleDPParams,
+                   rowGroupsInUse=NULL,
+                   mcolToOrderBy=NULL
+                  )
   }
+  
+  # if(!is.null(groupColumn)){
+  #   metadata(tempDou)$info$group_boundaries <- c(which(!duplicated(granges[,groupColumn]))-1,length(granges))
+  # }
   metadata(tempDou)$sampleData <- sampleData 
-  metadata(tempDou)$rowGroupsInUse <- groupColumn
+  metadata(tempDou)$rowGroupsInUse <- params$rowGroupsInUse
+  metadata(tempDou)$mcolToOrderBy <- params$mcolToOrderBy
   proplyDataset <- new("profileplyr", tempDou,
-              params=list(),
+              params=params,
               sampleData=sampleData,
               sampleParams=sampleParam)
   
   
   
-  proplyDataset@params$perSampleDPParams <- info[lengths(info) == length(info$sample_labels)] %>% .[!(names(.) %in% c("group_labels", "group_boundaries"))] %>% 
-    names %>% make.names 
+  # proplyDataset@params$perSampleDPParams <- info[lengths(info) == length(info$sample_labels)] %>% .[!(names(.) %in% c("group_labels", "group_boundaries"))] %>% 
+  #   names %>% make.names 
   return(proplyDataset)
+}
+
+
+standard_DPparams <- function(){
+  perSampleDPParams <- c("upstream","downstream","body","bin.size","ref.point","unscaled.5.prime","unscaled.3.prime","sample_labels")
+  perComputeDPParams <- c("verbose","bin.avg.type","missing.data.as.zero","scale","skip.zeros","nan.after.end","proc.number","sort.regions","sort.using","min.threshold","max.threshold")
+  DPparams <- list(perSampleDPParams=perSampleDPParams,
+                   perComputeDPParams=perComputeDPParams)
+  return(DPparams)
 }
