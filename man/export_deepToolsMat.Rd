@@ -8,10 +8,10 @@
 \title{Export and import profileplyr from/to deeptools}
 \usage{
 export_deepToolsMat(object = "profileplyr", con = "character",
-  decreasing = "logical")
+  decreasing = "logical", overwrite = "logical")
 
 \S4method{export_deepToolsMat}{profileplyr}(object = "profileplyr",
-  con = "character", decreasing = FALSE)
+  con = "character", decreasing = FALSE, overwrite = FALSE)
 
 import_deepToolsMat(con)
 }
@@ -21,6 +21,8 @@ import_deepToolsMat(con)
 \item{con}{Connection to write/read deeptools data to/from.}
 
 \item{decreasing}{If metadata(object)$mcolToOrderBy has been set and not NULL, then the ranges will be ordered by the column indicated in this slot of the metadata. By default, the order will be increasing for the factor or numeric value. For decreasing order, choose decreasing = TRUE.}
+
+\item{overwrite}{Logical specifying whether to overwite output if it exists.}
 }
 \value{
 The path to deepTools matrix file

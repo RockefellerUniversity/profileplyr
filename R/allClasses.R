@@ -34,8 +34,7 @@ setClass("profileplyr",
 
 .subsetprofileplyr <- function(x, i, j, k, ..., drop = FALSE)
 {
-  # if (1L != length(drop) || (!missing(drop) && drop))
-  #   warning("'drop' ignored '[,", class(x), ",ANY,ANY-method'")
+
   
   if (missing(i) && missing(j) && missing(k))
     return(x)
@@ -52,25 +51,10 @@ setClass("profileplyr",
     ans_elementMetadata <- x@elementMetadata[i, , drop=FALSE]
     ans_rowRanges <- x@rowRanges[i]
     ans_assays <- x@assays[ii,]$data
-    # x <- BiocGenerics:::replaceSlots(x, ...,
-    #                                    elementMetadata=ans_elementMetadata,
-    #                                    rowRanges=ans_rowRanges,
-    #                                    assays=ans_assays,
-    #                                    check=FALSE)
-    tempDou <- SummarizedExperiment(ans_assays,
-                                    rowRanges=ans_rowRanges)
     
-    metadata(tempDou)$info <- metadata(x)$info
-    
-    metadata(tempDou)$info$group_boundaries <- c(which(!duplicated(mcols(tempDou)$dpGroup))-1,length(mcols(tempDou)))
-    metadata(tempDou)$sampleData <- metadata(x)$sampleData
-    metadata(tempDou)$rowGroupsInUse <- metadata(x)$rowGroupsInUse
-    
-    x <- new("profileplyr", tempDou,params=x@params,
-             sampleParams=x@sampleParams,
-             sampleData=x@sampleData)
-    
-  
+    x  <- profileplyr_Dataset(ans_assays,ans_rowRanges,
+                                         sampleData(x),sampleParams(x), x@params)
+
     
   }
   if (!missing(j)) {
@@ -81,23 +65,10 @@ setClass("profileplyr",
     ans_colData <- x@colData[j, , drop=FALSE]
     jj <- as.vector(j)
     ans_assays <- x@assays[,jj]$data
-    # x <- BiocGenerics:::replaceSlots(x, ...,
-    #                                    colData=ans_colData,
-    #                                    assays=ans_assays,
-    #                                    check=FALSE)
     
-    tempDou <- SummarizedExperiment(ans_assays,
-                                    rowRanges=rowRanges(x))
-    
-    metadata(tempDou)$info <- metadata(x)$info
-    
-    metadata(tempDou)$info$group_boundaries <- c(which(!duplicated(mcols(tempDou)$dpGroup))-1,length(mcols(tempDou)))
-    metadata(tempDou)$sampleData <- metadata(x)$sampleData
-    metadata(tempDou)$rowGroupsInUse <- metadata(x)$rowGroupsInUse
-    
-    x <- new("profileplyr", tempDou,params=x@params,
-             sampleParams=x@sampleParams,
-             sampleData=x@sampleData)
+    x  <- profileplyr_Dataset(ans_assays,rowRanges(x),
+                              sampleData(x),sampleParams(x),x@params)
+
     
   }
   if (!missing(k)) {
@@ -106,26 +77,15 @@ setClass("profileplyr",
       k <- .profileplyr.charbound(k, assayNames(x), fmt)
     }
     metaData <- x@metadata
-    metaData$sampleData <- x@metadata$sampleData[k, , drop=FALSE]
+    sampleDataTmp <- sampleData(x)[k, , drop=FALSE]
+    sampleParamsTmp <- sampleParams(x)[k, , drop=FALSE]
     kk <- as.vector(k)
     ans_assays <- x@assays$data[kk]
-    
-    # names(ans_assays) <- names(x@assays)
-    # x <- BiocGenerics:::replaceSlots(x, ...,
-    #                                  metadata=metaData,
-    #                                  assays=ans_assays,
-    #                                  check=FALSE)
-    tempDou <- SummarizedExperiment(ans_assays,
-                                    rowRanges=rowRanges(x))
-    
-    metadata(tempDou) <- metaData
-    
-    x <- new("profileplyr", tempDou,params=x@params,
-             sampleParams=metaData$sampleData,
-             sampleData=metaData$sampleData)
-  }
-  
 
+    x  <- profileplyr_Dataset(ans_assays,rowRanges(x),
+                              sampleDataTmp,sampleParamsTmp,x@params)
+
+  }
   return(x)
 }
 
@@ -162,9 +122,14 @@ setGeneric("sampleData<-", function(object, value)
 setReplaceMethod("sampleData", c("profileplyr", "DataFrame"),
                  function(object, value) {
                    if(nrow(sampleData(object)) != nrow(value)) stop("Replacement sampleData must have same number of rows as current sampleData")
-                   if(is.null(rownames(sampleData(object)))) stop("Replacement sampleData must rownames")
+                   if(is.null(rownames(sampleData(object)))) stop("Replacement sampleData must have rownames")
+                   
+                   ### Remove this section - obsolete
                    metadata(object)$sampleData <- value
+                   ###
+                   
                    object@sampleData <- value
+                   
                    names(assays(object)) <- rownames(value)
                    return(object)
                  })
@@ -233,7 +198,7 @@ setMethod("[[", c("profileplyr", "ANY", "missing"),
             metadata(subsetProfile)$AlignedReadsInBam <- metadata(x)$AlignedReadsInBam[i]
             metadata(subsetProfile)$info <- c(info)
             metadata(subsetProfile)$sampleData <- sampleData[i,,drop=FALSE]
-            metadata(subsetProfile)$info$group_boundaries <- c(which(!duplicated(myTempGR$dpGroup))-1,length(myTempGR))
+            # metadata(subsetProfile)$info$group_boundaries <- c(which(!duplicated(myTempGR$dpGroup))-1,length(myTempGR))
             tempDou <- new("profileplyr", subsetProfile)
             
             return(tempDou)                        
