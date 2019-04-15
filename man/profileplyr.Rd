@@ -5,14 +5,11 @@
 \alias{profileplyr-class}
 \alias{c,profileplyr-method}
 \alias{[,profileplyr,ANY,ANY,ANY-method}
-\alias{[[,profileplyr,ANY,missing-method}
 \title{Join, subset and manipulate ChIPprofile objects}
 \usage{
 \S4method{c}{profileplyr}(x, ...)
 
 \S4method{[}{profileplyr,ANY,ANY,ANY}(x, i, j, k, ..., drop = FALSE)
-
-\S4method{[[}{profileplyr,ANY,missing}(x, i, j, ...)
 }
 \arguments{
 \item{x}{profileplyr object}

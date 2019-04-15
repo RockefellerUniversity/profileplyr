@@ -123,11 +123,7 @@ setReplaceMethod("sampleData", c("profileplyr", "DataFrame"),
                  function(object, value) {
                    if(nrow(sampleData(object)) != nrow(value)) stop("Replacement sampleData must have same number of rows as current sampleData")
                    if(is.null(rownames(sampleData(object)))) stop("Replacement sampleData must have rownames")
-                   
-                   ### Remove this section - obsolete
-                   metadata(object)$sampleData <- value
-                   ###
-                   
+
                    object@sampleData <- value
                    
                    names(assays(object)) <- rownames(value)
@@ -168,7 +164,6 @@ setMethod("c", "profileplyr",
                      sampleParams=newSampleParams,
                      sampleData=newSampleData)
             metadata(x) <- metaX
-            metadata(x)$sampleData <- newSampleData
             return(x)
             }else{
               stop("All profileplyr objects must have same rowData")
@@ -188,24 +183,8 @@ setMethod("c", "profileplyr",
 setMethod("[", c("profileplyr", "ANY", "ANY", "ANY"),
           .subsetprofileplyr)
 
-#' @rdname profileplyr
-#' @export
-setMethod("[[", c("profileplyr", "ANY", "missing"),
-          function(x, i, j, ...)
-          {
-            subsetProfile <- SummarizedExperiment(assays(x)[[i, ...]],rowRanges=rowRanges(x))
-            metadata(subsetProfile)$names <- metadata(x)$names[i]
-            metadata(subsetProfile)$AlignedReadsInBam <- metadata(x)$AlignedReadsInBam[i]
-            metadata(subsetProfile)$info <- c(info)
-            metadata(subsetProfile)$sampleData <- sampleData[i,,drop=FALSE]
-            # metadata(subsetProfile)$info$group_boundaries <- c(which(!duplicated(myTempGR$dpGroup))-1,length(myTempGR))
-            tempDou <- new("profileplyr", subsetProfile)
-            
-            return(tempDou)                        
-          })
-
 .DollarNames.profileplyr <- function(object, pattern = "")
-  grep(pattern, rownames(metadata(object)$sampleData), value=TRUE)
+  grep(pattern, rownames(sampleData(object)), value=TRUE)
 
 
 #' Dataframe of top differentially expressed genes from hindbrain versus liver as measured by RNA-seq

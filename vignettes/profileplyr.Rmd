@@ -293,7 +293,7 @@ ggplot(proplyrObject_long, aes(x = Sample, y = log(Signal))) +
 
 ## profileplyr object output with summarized matrix
 
-Lastly, if the 'output' argument is set to 'object', then a profileplyr object containing the summarized matrix will be returned. This will allow for further grouping or manipulation of the summarized ranges with other profileplyr functions, as opposed to using the binned ranges that are often used in the examples below. 
+Lastly, if the 'output' argument is set to 'object', then a profileplyr object containing the summarized matrix will be returned. This will allow for further grouping or manipulation of the summarized ranges with other profileplyr functions, as opposed to using the binned ranges that are often used in the examples below.
 
 ```{r, results='hide'}
 proplyrObject_summ <- summarize(proplyrObject, 
