@@ -418,8 +418,11 @@ setGeneric("annotateRanges", function(object="profileplyr",annotation_subset = "
 
 #' @describeIn annotateRanges Annotate profileplyr ranges to genes using rGREAT or ChIPseeker
 #' @export
-setMethod("annotateRanges", signature(object="profileplyr"),function(object, annotation_subset = NULL, TxDb, tssRegion = c(-3000, 3000), changeGroupToAnnotation = FALSE, heatmap_grouping = "group", ...) {
+setMethod("annotateRanges", signature(object="profileplyr"),function(object, annotation_subset = NULL, TxDb = NULL, tssRegion = c(-3000, 3000), changeGroupToAnnotation = FALSE, heatmap_grouping = "group", ...) {
   
+  if (is.null(TxDb)){
+    stop("Must set 'TxDb' argument")
+  }
   
   # which TxDb?
   if (is(TxDb,"TxDb")) {
