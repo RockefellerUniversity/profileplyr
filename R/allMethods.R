@@ -1718,7 +1718,6 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @param signalFiles paths to either BAM files or bigwig files. More than one path can be in this character vector, but all paths in one function call must point to be either all BAM files or all bigWig files, not a combination of the two.
 #' @param testRanges Either a character vector with paths to BED files.
 #' @param format character vector of "bam", "bigwig", "RleList" or "PWM"
-#' @param testRanges_names A character vector with the desired names of the regions corresponding to each element of the 'testRanges' argument. If this is left NULL, the name of each BED file will be used.  
 #' @param ... pass to regionPlot() within the soGGi package
 #' @return A profileplyr object
 #' @examples
@@ -1744,7 +1743,7 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @importFrom GenomeInfoDb seqlevelsStyle<- seqlevelsInUse seqlevels
 #' @export
 #' 
-BamBigwig_to_chipProfile <- function(signalFiles, testRanges, testRanges_names = NULL, format, ...) {
+BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, ...) {
   
   if (missing(format)){
     stop("'format' argument is missing, it must be entered")

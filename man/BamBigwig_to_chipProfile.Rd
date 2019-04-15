@@ -4,15 +4,12 @@
 \alias{BamBigwig_to_chipProfile}
 \title{BamBigwig_to_chipProfile}
 \usage{
-BamBigwig_to_chipProfile(signalFiles, testRanges,
-  testRanges_names = NULL, format, ...)
+BamBigwig_to_chipProfile(signalFiles, testRanges, format, ...)
 }
 \arguments{
 \item{signalFiles}{paths to either BAM files or bigwig files. More than one path can be in this character vector, but all paths in one function call must point to be either all BAM files or all bigWig files, not a combination of the two.}
 
 \item{testRanges}{Either a character vector with paths to BED files.}
-
-\item{testRanges_names}{A character vector with the desired names of the regions corresponding to each element of the 'testRanges' argument. If this is left NULL, the name of each BED file will be used.}
 
 \item{format}{character vector of "bam", "bigwig", "RleList" or "PWM"}
 
