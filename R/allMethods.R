@@ -338,17 +338,6 @@ setMethod("clusterRanges", signature="profileplyr",
   rowRanges(object)$cluster <- ordered(rowRanges(object)$cluster, 
                                                  levels = rowRanges(object)$cluster[!duplicated(rowRanges(object)$cluster)])
   
-  ### MOVED THIS TO GENERATEENRICHEDHEATMAP FUNCTION
-  #this will sort the ranges by signal and group so when we output to EnrichedHeatmap it will look nice on the heatmap
-  #scoreMat <- do.call(cbind,
-  #                    as.list(assays(object)))
-  
-  #means <- rowMeans(scoreMat)
-  #means_rev <- max(means) - means
-  #rowRanges(object)$bin_means_rev <- means_rev
-  
-  #object <- object[order(rowRanges(object)$group_and_overlap, rowRanges(object)$bin_means_rev)]
-  
   colnames(mcols(object)) <- make.unique(colnames(mcols(object)))
   return(object)
 }
