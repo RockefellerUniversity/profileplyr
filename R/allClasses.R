@@ -53,7 +53,7 @@ setClass("profileplyr",
     ans_assays <- x@assays[ii,]$data
     
     x  <- profileplyr_Dataset(ans_assays,ans_rowRanges,metadata(x)$info,
-                                         x@sampleData,x@sampleParams, metadata(x)$rowGroupsInUse)
+                                         sampleData(x),sampleParams(x), metadata(x)$rowGroupsInUse)
 
     
   }
@@ -77,12 +77,13 @@ setClass("profileplyr",
       k <- .profileplyr.charbound(k, assayNames(x), fmt)
     }
     metaData <- x@metadata
-    metaData$sampleData <- x@metadata$sampleData[k, , drop=FALSE]
+    sampleDataTmp <- sampleData(x)[k, , drop=FALSE]
+    sampleParamsTmp <- sampleParams(x)[k, , drop=FALSE]
     kk <- as.vector(k)
     ans_assays <- x@assays$data[kk]
 
     x  <- profileplyr_Dataset(ans_assays,rowRanges(x),metadata(x)$info,
-                              metaData$sampleData,metaData$sampleData,metadata(x)$rowGroupsInUse)
+                              sampleDataTmp,sampleParamsTmp,metadata(x)$rowGroupsInUse)
 
   }
   return(x)
@@ -121,9 +122,14 @@ setGeneric("sampleData<-", function(object, value)
 setReplaceMethod("sampleData", c("profileplyr", "DataFrame"),
                  function(object, value) {
                    if(nrow(sampleData(object)) != nrow(value)) stop("Replacement sampleData must have same number of rows as current sampleData")
-                   if(is.null(rownames(sampleData(object)))) stop("Replacement sampleData must rownames")
+                   if(is.null(rownames(sampleData(object)))) stop("Replacement sampleData must have rownames")
+                   
+                   ### Remove this section - obsolete
                    metadata(object)$sampleData <- value
+                   ###
+                   
                    object@sampleData <- value
+                   
                    names(assays(object)) <- rownames(value)
                    return(object)
                  })

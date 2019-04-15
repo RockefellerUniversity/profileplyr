@@ -221,6 +221,7 @@ import_deepToolsMat <- function(con){
     ),
     levels = info$group_labels
   )
+  
   proplyDataset <- profileplyr_Dataset(myTempM_L,myTempGR,info,sampleData,sampleParam=sampleData,"dpGroup")
   return(proplyDataset)
 }
