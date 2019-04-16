@@ -982,7 +982,7 @@ setMethod("groupBy", signature(object="profileplyr"),function(object, group, GRa
 #' @name orderBy
 #' @rdname orderBy
 #' @param object  A profileplyr object
-#' @param column Which column of mcols(proplyrObject) should be used for ordering the ranges
+#' @param column Which column of mcols(proplyrObject) should be used for ordering the ranges. If NULL removes any previous setting for row ordering.
 #' @details Takes a profileplyr object and orders the rows based on a user defined metadata column of rowRanges
 #' @return  A profileplyr object
 #' @examples
@@ -995,18 +995,20 @@ setMethod("groupBy", signature(object="profileplyr"),function(object, group, GRa
 #' metadata(cluster_order)$mcolToOrderBy
 #'
 #' @export
-setGeneric("orderBy", function(object="profileplyr",column = "character")standardGeneric("orderBy"))
+setGeneric("orderBy", function(object="profileplyr",column = "ANY")standardGeneric("orderBy"))
 
 #' @describeIn orderBy choose the column by which to order the ranges by within each group
 #' @export
 setMethod("orderBy", signature(object="profileplyr"),function(object, column){
-
-    if(!(column %in% colnames(mcols(object)))) {
-      stop("The 'column' argument does not match the name of any range metadata columns")
+    if(is.null(column)){
+      object@params$mcolToOrderBy <- NULL
+    }else{
+      if(!(column %in% colnames(mcols(object)))) {
+        stop("The 'column' argument does not match the name of any range metadata columns")
+      }
+      # object@params$mcolToOrderBy <- column
+      object@params$mcolToOrderBy <- column
     }
-    # object@params$mcolToOrderBy <- column
-    object@params$mcolToOrderBy <- column
-    
     return(object)
 })
 

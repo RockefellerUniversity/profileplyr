@@ -6,15 +6,14 @@
 \alias{orderBy,profileplyr-method}
 \title{choose the column by which to order the ranges by within each group}
 \usage{
-orderBy(object = "profileplyr", column = "character")
+orderBy(object = "profileplyr", column = "ANY")
 
-\S4method{orderBy}{profileplyr}(object = "profileplyr",
-  column = "character")
+\S4method{orderBy}{profileplyr}(object = "profileplyr", column = "ANY")
 }
 \arguments{
 \item{object}{A profileplyr object}
 
-\item{column}{Which column of mcols(proplyrObject) should be used for ordering the ranges}
+\item{column}{Which column of mcols(proplyrObject) should be used for ordering the ranges. If NULL removes any previous setting for row ordering.}
 }
 \value{
 A profileplyr object
