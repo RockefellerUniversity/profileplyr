@@ -145,12 +145,7 @@ params(proplyrObject)$mcolToOrderBy
 
 ```{r, echo=FALSE}
 # change back to NULL for any other functions relying on this object
-<<<<<<< HEAD
 proplyrObject <- orderBy(proplyrObject,NULL)
-=======
-proplyrObject@params$mcolToOrderBy <- NULL
-
->>>>>>> 69e2fe2e4bf467bfdffde392bfdfcf2f7cf8f960
 ```
 
 
