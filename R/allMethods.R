@@ -216,7 +216,7 @@ import_deepToolsMat <- function(con){
   perSampleDPParams <- info[lengths(info) == length(info$sample_labels)] %>% .[!(names(.) %in% c("group_labels", "group_boundaries"))] %>%
     names %>% make.names
   rowGroupsInUse <- "dpGroup"
-  params <- list(perSampleDPParams=perSampleDPParams,rowGroupsInUse=rowGroupsInUse,mcolToOrderBy=rowGroupsInUse)
+  params <- list(perSampleDPParams=perSampleDPParams,rowGroupsInUse=rowGroupsInUse)
   
   proplyDataset <- profileplyr_Dataset(myTempM_L,myTempGR,sampleData,sampleParam=sampleData,params=params)
   return(proplyDataset)
@@ -1659,8 +1659,7 @@ as_profileplyr <- function(chipProfile,names = NULL){
   
   
   params <- list(perSampleDPParams= standard_DPparams()$perSampleDPParams,
-                 rowGroupsInUse="sgGroup",
-                 mcolToOrderBy="sgGroup")
+                 rowGroupsInUse="sgGroup")
   
   profileplyrDataset <- profileplyr_Dataset(forDP_Assays,forDP_ranges,sampleData,sampleParam=sampleData,params=params)
   return(profileplyrDataset)
@@ -1798,8 +1797,7 @@ profileplyr_Dataset <-function(matrix,granges,sampleData,sampleParam,params=NULL
   # metadata(tempDou)$info <- c(info)
   if(is.null(params)){
     params <- list(perSampleDPParams= standard_DPparams()$perSampleDPParams,
-                   rowGroupsInUse=NULL,
-                   mcolToOrderBy=NULL
+                   rowGroupsInUse=NULL
                   )
   }
   
