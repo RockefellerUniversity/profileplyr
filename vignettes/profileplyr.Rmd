@@ -120,18 +120,19 @@ rowRanges(proplyrObject)[1:3]
 ```
 
 
-The information associated with each sample is stored as a Dataframe within with the metadata of the profileplyr object, and is accessed with sampleData(). 
+The information associated with each sample is stored as a Dataframe within with the parameters of the profileplyr object, and is accessed with sampleData(). 
 
 ```{r}
 sampleData(proplyrObject)
 ```
 
 The 'rowGroupsInUse' element for the params slot indicates which column of the range metadata (mcols() or rowRanges()) that will be used for grouping in the final output if that object were used for visualization. For a profileplyr object created from a deepTools computeMatrix output or from a soGGi ChIPprofile object, the inherited groups correspond to the BED files over which the signal was quantified, and these groups are contained in the 'dpGroup' column. 
+
 ```{r}
 params(proplyrObject)$rowGroupsInUse
 ```
 
-The 'mcolToOrderBy' element of the params slot indicates which column of the range metadata will be used for ordering the ranges as they are exported to either deepTools or to EnrichedHeatmap (with the generateEnrichedHeatmap() function within profileplyr). This can be set using the orderBy() function, which requires a profileplyr object and a character string matching a column name of the range metadata as arguments. If groupBy is never used on an object, the default will be to order by the mean signal of each range (within each group). In addition, until groupBy() has been used on a profileplyr object, the 'mcolToOrderBy' slot of the metadata will be NULL and will not be seen with params(proplyrObject).
+The 'mcolToOrderBy' slot of the profileplyr object parameters indicates which column of the range metadata will be used for ordering the ranges as they are exported to either deepTools or to EnrichedHeatmap (with the generateEnrichedHeatmap() function within profileplyr). This can be set using the orderBy() function, which requires a profileplyr object and a character string matching a column name of the range metadata as arguments. If groupBy is never used on an object, the default will be to order by the mean signal of each range (within each group). In addition, until groupBy() has been used on a profileplyr object, the 'mcolToOrderBy' slot of the parameters will be NULL and will not be seen with params(proplyrObject).
 
 NOTE: If you are exporting to deepTools and want to order by something other than mean range signal (or other [deepTools ordering options](https://deeptools.readthedocs.io/en/develop/content/tools/plotHeatmap.html)), then make sure to set the --sortRegions argument of deepTools 'plotHeatmap' to "no" so your custom ordering will be used. generateEnrichedHeatmap() will always use the column indicated by params(proplyrObject)$mcolToOrderBy, or the mean signal if that value is NULL. 
 
@@ -144,13 +145,18 @@ params(proplyrObject)$mcolToOrderBy
 
 ```{r, echo=FALSE}
 # change back to NULL for any other functions relying on this object
+<<<<<<< HEAD
 proplyrObject <- orderBy(proplyrObject,NULL)
+=======
+proplyrObject@params$mcolToOrderBy <- NULL
+
+>>>>>>> 69e2fe2e4bf467bfdffde392bfdfcf2f7cf8f960
 ```
 
 
 ## Subsetting the profileplyr object 
 
-The profileplyr object can be subset either by sample, or by rows and columns of the matrix for each sample. This is done using the '[ ]' brackets, with the first position being assay matrix rows, the second position being assay matrix columns, and the third position being the entire matrix for each sample (in addition to the rest of the metadata and range data). For example if you wanted to get the first ten rows and columns of each sample matrix:
+The profileplyr object can be subset either by sample, or by rows and columns of the matrix for each sample. This is done using the '[ ]' brackets, with the first position being assay matrix rows, the second position being assay matrix columns, and the third position being the entire matrix for each sample (in addition to the rest of the parameters and range data). For example if you wanted to get the first ten rows and columns of each sample matrix:
 
 ```{r}
 proplyrObject[1:10,1:10]
@@ -200,7 +206,7 @@ For heatmap visualization of the signal over the genomic intervals this object c
 
 ## Export to a deepTools matrix
 
-Any profileplyr object can be exported as a matrix formatted for the deepTools 'plotHeatmap' function using the export_deepToolsMat() function. This simply requires the name of the profileplyr object and the path to the desired destination of the gzipped matrix. This function will build the metadata for the deepTools matrix based on the metadata in the profileplyr object. Importantly, the range metadata column of profileplyr object (accessed with rowRanges(object)) that is specified in the 'rowGroupsInUse' section of params slot for the whole object (found using params(object)$rowGroupsInUse) is automatically used to set the grouping of the exported deepTools matrix. The 'rowGroupsInUse' can be changed using the groupBy() function (see more details [below](#switchMetadataColumn)). 
+Any profileplyr object can be exported as a matrix formatted for the deepTools 'plotHeatmap' function using the export_deepToolsMat() function. This simply requires the name of the profileplyr object and the path to the desired destination of the gzipped matrix. This function will build the metadata for the deepTools matrix based on the parameters of the profileplyr object. Importantly, the range metadata column of profileplyr object (accessed with rowRanges(object)) that is specified in the 'rowGroupsInUse' section of the parameters for the whole object (found using params(object)$rowGroupsInUse) is automatically used to set the grouping of the exported deepTools matrix. The 'rowGroupsInUse' can be changed using the groupBy() function (see more details [below](#changeGroups)). 
 
 
 ```{r, eval=T, results='hide'}
@@ -452,11 +458,11 @@ rowRanges(anno_great)[1:3]
 
 The groupBy() function within profileplyr allows for a range of grouping mechanisms. The groupBy() function always requires a profileplyr object and the 'group' argument, which will determine how the ranges are to be grouped. There are three options for grouping:
 
-1) [Switch output grouping columns within existing range metadata](#switchMetadataColumn)
+1) [Switch output grouping columns within existing range metadata](#changeGroups)
 2) [Group by user-supplied GRanges](#groupByGRanges)
 3) [Group by user-supplied gene list](#groupBygenelist)
 
-<a name="switchMetadataColumn"/>
+<a name="changeGroups"/>
 
 ## Switch output grouping columns within existing range metadata
 

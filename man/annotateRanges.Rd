@@ -19,7 +19,7 @@ annotateRanges(object = "profileplyr", annotation_subset = "character",
   heatmap_grouping = "character", ...)
 
 \S4method{annotateRanges}{profileplyr}(object = "profileplyr",
-  annotation_subset = NULL, TxDb, tssRegion = c(-3000, 3000),
+  annotation_subset = NULL, TxDb = NULL, tssRegion = c(-3000, 3000),
   changeGroupToAnnotation = FALSE, heatmap_grouping = "group", ...)
 }
 \arguments{

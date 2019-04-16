@@ -403,8 +403,11 @@ setGeneric("annotateRanges", function(object="profileplyr",annotation_subset = "
 
 #' @describeIn annotateRanges Annotate profileplyr ranges to genes using rGREAT or ChIPseeker
 #' @export
-setMethod("annotateRanges", signature(object="profileplyr"),function(object, annotation_subset = NULL, TxDb, tssRegion = c(-3000, 3000), changeGroupToAnnotation = FALSE, heatmap_grouping = "group", ...) {
+setMethod("annotateRanges", signature(object="profileplyr"),function(object, annotation_subset = NULL, TxDb = NULL, tssRegion = c(-3000, 3000), changeGroupToAnnotation = FALSE, heatmap_grouping = "group", ...) {
   
+  if (is.null(TxDb)){
+    stop("Must set 'TxDb' argument")
+  }
   
   # which TxDb?
   if (is(TxDb,"TxDb")) {
@@ -683,11 +686,7 @@ subsetbyRangeOverlap <- function(object, group, GRanges_names = NULL, include_no
   }
   
   if (include_nonoverlapping == TRUE) {
-    
-    # get a vector of the breakdown of groups within the non-overlapping ranges to make the same 'group_overlap' column we have the the overlap ranges above
-    
-    
-    
+
     
     # here I just populate the metadata columns in the non-overlapping regions with NAs
     no_overlap_mcols <- list()
@@ -934,7 +933,7 @@ setMethod("summarize", signature(object="profileplyr"), function(object, fun, ou
 #' # switch rowGroupsInUse
 #' 
 #' switchGroup <- groupBy(K27ac_groupByGR, group = "GR_overlap_names")
-#' metadata(switchGroup)$rowGroupsInUse
+#' params(switchGroup)$rowGroupsInUse
 #' @export
 setGeneric("groupBy", function(object="profileplyr",group="ANY", GRanges_names = "character", levels = "ANY", 
                                include_nonoverlapping = "logical", separateDuplicated = "logical", inherit_groups = "logical")standardGeneric("groupBy"))
@@ -992,7 +991,7 @@ setMethod("groupBy", signature(object="profileplyr"),function(object, group, GRa
 #' library(SummarizedExperiment)
 #' cluster <- clusterRanges(object, fun = rowMeans, cutree_rows = 3)
 #' cluster_order <- orderBy(cluster, column = "hierarchical_order")
-#' metadata(cluster_order)$mcolToOrderBy
+#' params(cluster_order)$mcolToOrderBy
 #'
 #' @export
 setGeneric("orderBy", function(object="profileplyr",column = "ANY")standardGeneric("orderBy"))
@@ -1022,7 +1021,7 @@ setMethod("orderBy", signature(object="profileplyr"),function(object, column){
 #'
 #' @rdname convertToEnrichedHeatmapMat
 #' @param object  A profileplyr object
-#' @param sample_names A character vector that will set the names of the heatmap components that are generated from the profileplyr assays() matrices. This argument is optional, by default the names will be the name of the samples in the profileplyr object metadata(proplyrObject)$sampleData$sample_labels.
+#' @param sample_names A character vector that will set the names of the heatmap components that are generated from the profileplyr assays() matrices. This argument is optional, by default the names will be the name of the samples in the profileplyr object rownames(sampleData(object)).
 #' @details Takes a profileplyr object and converts all of the matrices in the assays() section of the object to matrices that can be used as an input for EnrichedHeatmap
 #' @return A list of normalized matrices that can be used for generating visualizations with EnrichedHeatmap
 #' @examples
@@ -1097,7 +1096,7 @@ setMethod("convertToEnrichedHeatmapMat", signature(object="profileplyr"),functio
 #' @param object A profileplyr object
 #' @param include_group_annotation If TRUE (default value) then the Heatmap will be grouped based on the range metadata column specified by 'rowGroupsInUse'
 #' @param extra_annotation_columns A character vector of names that match column names of mcols(object). Extra annotation columns will be added to the heatmap based on the values of these indicated range metadata columns.
-#' @param sample_names A character vector that will set the names of the heatmap components that are generated from the profileplyr assays() matrices. This argument is optional, by default the names will be the name of the samples in the profileplyr object metadata(proplyrObject)$sampleData$sample_labels.
+#' @param sample_names A character vector that will set the names of the heatmap components that are generated from the profileplyr assays() matrices. This argument is optional, by default the names will be the name of the samples in the profileplyr object rownames(sampleData(object)).
 #' @param return_ht_list Whether the returned object is the heatmap list and not the actual figure. This will be a list of the various components (heatmaps and annotation columns) that can be added to with additional columns in a customized manner.
 #' @param ylim A numeric vector of two numbers that species the minimum and maximum of the yaxis of all the heatmaps generated for the matrices. The default is to use the max of the heatmap with the highest signal. If ylim = NULL, different ranges will be inferred for each heatmap. 
 #' @param decreasing If object@params$mcolToOrderBy has been changed and is NULL, then the ranges will be ordered by the column indicated in this slot of the metadata. By default, the order will be increasing for the factor or numeric value. For decreasing order, choose decreasing = TRUE.
@@ -1672,7 +1671,9 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @rdname BamBigwig_to_chipProfile
 #' @param signalFiles paths to either BAM files or bigwig files. More than one path can be in this character vector, but all paths in one function call must point to be either all BAM files or all bigWig files, not a combination of the two.
 #' @param testRanges Either a character vector with paths to BED files.
-#' @param format character vector of "bam", "bigwig", "RleList" or "PWM"
+#' @param format character string of "bam", "bigwig", "RleList" or "PWM"
+#' @param style a character string, "percentOfRegion" (default) for normalised length divided into bins set by the 'nOfWindows' argument, "point" for per base pair plot, and "region" for combined plot
+#' @param nOfWindows the number of windows/bins the normalised ranges will be divided into if 'style' is set to 'percentOfRegion'. Default is 100.
 #' @param ... pass to regionPlot() within the soGGi package
 #' @return A profileplyr object
 #' @examples
@@ -1698,7 +1699,7 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @importFrom GenomeInfoDb seqlevelsStyle<- seqlevelsInUse seqlevels
 #' @export
 #' 
-BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, ...) {
+BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "percentOfRegion" , nOfWindows = 100, ...) {
   
   if (missing(format)){
     stop("'format' argument is missing, it must be entered")
@@ -1761,7 +1762,13 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, ...) {
   testRanges_GR_unlist <- unlist(testRanges_GR)
   names(testRanges_GR_unlist) <- NULL
   
-  ChIPprofile_combined <- bplapply(signalFiles_list, regionPlot, testRanges = testRanges_GR_unlist, format = format, ...)
+  ChIPprofile_combined <- bplapply(signalFiles_list, regionPlot, 
+                                   testRanges = testRanges_GR_unlist, 
+                                   format = format, 
+                                   style = style, 
+                                   nOfWindows = nOfWindows,
+                                   ...)
+  
   ChIPprofile_for_proplyr <- do.call(c,ChIPprofile_combined)
   
   # metadata(ChIPprofile_for_proplyr)$group_boundaries <- group_boundaries
