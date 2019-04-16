@@ -6,7 +6,7 @@
 #' @rdname export_deepToolsMat
 #' @param object A profileplyr object
 #' @param con Connection to write/read deeptools data to/from.
-#' @param decreasing If metadata(object)$mcolToOrderBy has been set and not NULL, then the ranges will be ordered by the column indicated in this slot of the metadata. By default, the order will be increasing for the factor or numeric value. For decreasing order, choose decreasing = TRUE.
+#' @param decreasing If object@params$mcolToOrderBy has been set and not NULL, then the ranges will be ordered by the column indicated in this slot of the metadata. By default, the order will be increasing for the factor or numeric value. For decreasing order, choose decreasing = TRUE.
 #' @param overwrite Logical specifying whether to overwite output if it exists.
 #' @importFrom R.utils gzip
 #' @importFrom rjson toJSON
@@ -54,8 +54,8 @@ setMethod("export_deepToolsMat", signature="profileplyr",
   con_prezip <- gsub("\\.gz","",con)
   con <- paste0(con_prezip,".gz")
 
-  rowGroupsInUse <- object@params$rowGroupsInUse
-  mcolToOrderBy <- object@params$mcolToOrderBy
+  rowGroupsInUse <- params(object)$rowGroupsInUse
+  mcolToOrderBy <- params(object)$mcolToOrderBy
   if(is.null(mcolToOrderBy)){
     order <- order(mcols(object)[, rowGroupsInUse])
   } else {
@@ -68,20 +68,11 @@ setMethod("export_deepToolsMat", signature="profileplyr",
   object <- object[order, ]
   names(object) <- NULL
   
-  if(!is.null(metadata(object)$rowGroupsInUse)){
-    group_boundaries <- c(which(!duplicated(rowData(object)[metadata(object)$rowGroupsInUse]))-1,length(object))
-    group_labels <- rowData(object)[metadata(object)$rowGroupsInUse] %>% 
-                      as.data.frame %>% 
-                      .[,1] %>%  
-                      as.vector %>%
-                      unique 
-    if (length(group_labels)  == 1){ 
-      group_labels <- list(group_labels) # if you had more than one group, turning it into a list did not create correct output for deepTools metadata, this seems to fix it
-    }
-  }else{
-    group_boundaries <- c(0,length(object))
-    group_labels <- "no_groups" %>% list
-  }
+  groupInfo <- getGroupInfoFromObject(object)
+
+  group_boundaries <- groupInfo$group_boundaries
+  group_labels <- groupInfo$group_labels
+  
   groupsL <- list(group_boundaries=group_boundaries,group_labels=group_labels)
   
   
@@ -93,15 +84,15 @@ setMethod("export_deepToolsMat", signature="profileplyr",
                   c(0,.))
   
   
-  perSampleDPmetrics <- object@params$perSampleDPParams
+  perSampleDPmetrics <- params(object)$perSampleDPParams
   
-  perSampleDP <- metadata(object)$sampleData %>% 
+  perSampleDP <- sampleData(object) %>% 
                   as.data.frame %>% 
                   dplyr::select(!!perSampleDPmetrics) %>% 
                   as.list() %>% 
                   lapply(as.vector)
   
-  perRun <- metadata(object)$sampleData %>% 
+  perRun <- sampleData(object) %>% 
     as.data.frame %>% 
     dplyr::select(-!!perSampleDPmetrics) %>% lapply(unlist) %>% 
     lapply(unique) %>% lapply(as.vector)
@@ -109,7 +100,7 @@ setMethod("export_deepToolsMat", signature="profileplyr",
   sc <- c(perSampleDP,perRun)
   names(sc) <- gsub("\\."," ",names(sc))
   
-  if(nrow(metadata(object)$sampleData) == 1){
+  if(nrow(sampleData(object)) == 1){
     toModNull <- sc[unlist(lapply(sc,is.null))]
     toMod <- sc[!unlist(lapply(sc,is.logical)) & lengths(sc) ==1]
     toModSC <- sc[unlist(lapply(sc,is.logical)) & lengths(sc) ==1]
@@ -158,7 +149,7 @@ setMethod("export_deepToolsMat", signature="profileplyr",
 #' 
 #' example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
 #' object <- import_deepToolsMat(example) 
-#' export_deepToolsMat(object,"ATAC_Example.MAT")
+#' export_deepToolsMat(object,file.path(tempdir(),"ATAC_Example.MAT"))
 #' @importFrom rjson fromJSON
 #' @export 
 import_deepToolsMat <- function(con){
@@ -275,10 +266,6 @@ setGeneric("clusterRanges", function(object="profileplyr",fun="function",scaleRo
 setMethod("clusterRanges", signature="profileplyr",
           function(object, fun = rowMeans, scaleRows = TRUE, kmeans_k = NULL, clustering_callback = function(x, ...){return(x)}, clustering_distance_rows = "euclidean", cluster_method = "complete", cutree_rows = NULL, silent = TRUE, show_rownames = FALSE) {
 
-  # could use profileplyr::summarize function here and would give you the ranges with the groups pasted, so all names would be unique. Dont think this helps tho cause we want to cluster all ranges
-  # could remove duplicates for this though? If so, which to keep?
-  #range_summ <- summarize(object, fun, output = "matrix") %>%
-  #                                       as.data.frame()
   
   if (length(assays(object)) < 2){
     stop("The profileplyr object must have at least two samples (length(assays(object)) > 1) for clustering")
@@ -286,8 +273,6 @@ setMethod("clusterRanges", signature="profileplyr",
   # summarize adds the group name to the rownames, which I don't want to do as it messes up the separation required later on to build GRanges, but summarize is only a couple lines of code, so just include releveant ones here
   range_summ <- lapply(assays(object), fun)
   range_summ <- as.matrix(do.call(cbind,range_summ))
-  
-  #rownames(range_summ) <- paste(seqnames(rowRanges(object)), start(rowRanges(object)), end(rowRanges(object)), sep = "_")
 
   colnames(range_summ) <- rownames(sampleData(object))
   
@@ -332,7 +317,7 @@ setMethod("clusterRanges", signature="profileplyr",
     rowRanges(object)$hierarchical_order <- order(res$tree_row$order)
   }
   
-  metadata(object)$rowGroupsInUse <- "cluster"  # set the group to be filtered by as the overlap column, this will be used by export function to make the groups and also wil lbe labels for heatmap
+  object@params$rowGroupsInUse <- "cluster"  # set the group to be filtered by as the overlap column, this will be used by export function to make the groups and also wil lbe labels for heatmap
   message("A column has been added to the range metadata with the column name 'cluster', and the 'rowGroupsInUse' has been set to this column.")         
   
   rowRanges(object)$cluster <- ordered(rowRanges(object)$cluster, 
@@ -469,19 +454,16 @@ setMethod("annotateRanges", signature(object="profileplyr"),function(object, ann
   rowRanges(object)$annotation_short <- gsub("5' UTR", "5p UTR",as.character(rowRanges(object)$annotation_short))
   annotation_order <- c("Promoter", "Exon", "Intron", "Downstream", "Distal Intergenic", "3p UTR", "5p UTR")
   rowRanges(object)$annotation_short <- ordered(rowRanges(object)$annotation_short, levels = annotation_order)
-  #rowRanges(object) <- rowRanges(object)[order(rowRanges(object)$annotation_short),]
-  
+
   # if the user wants a subset of groups, this will subset and also order the groups based on the order of input
   if (!(is.null(annotation_subset))){
     object <- object[rowRanges(object)$annotation_short %in% annotation_subset]
     rowRanges(object)$annotation_short <- ordered(rowRanges(object)$annotation_short, levels = annotation_subset)
-    #object <- object[order(rowRanges(object)$annotation_short)]
-    #annotation_order <- annotation_subset
   }
   
   if (changeGroupToAnnotation == TRUE){
     
-    group <- metadata(object)$rowGroupsInUse
+    group <- params(object)$rowGroupsInUse
     group_label <- mcols(object)[colnames(mcols(object)) %in% group][,1]
     
     if(heatmap_grouping == "group") {
@@ -495,7 +477,7 @@ setMethod("annotateRanges", signature(object="profileplyr"),function(object, ann
       group_label_order <- mcols(object)[colnames(mcols(object)) %in% group][,1]
       rowRanges(object)$annotate_group <- paste(rowRanges(object)$annotation_short, group_label_order, sep = "_")
     }
-    metadata(object)$rowGroupsInUse <- "annotate_group"
+    object@params$rowGroupsInUse <- "annotate_group"
     message("A column has been added to the range metadata with the column name 'annotate_group' that combines the inherited groups with the annotations determined here. The 'rowGroupsInUse' has been set to this column.")      
   }
   
@@ -560,8 +542,8 @@ subset_GR_GL_common_top <- function(object, overlap, input_names, type, separate
   colnames(mcols(object_no_overlap))[colnames(mcols(object_no_overlap)) %in% "overlap_names"] <- paste0(type, "_overlap_names")
   
   if (separateDuplicated == TRUE) {
-    metadata(object_overlap)$rowGroupsInUse <- paste0(type, "_overlap_names")
-    metadata(object_no_overlap)$rowGroupsInUse <- paste0(type, "_overlap_names")
+    object_overlap@params$rowGroupsInUse <- paste0(type, "_overlap_names")
+    object_no_overlap@params$rowGroupsInUse <- paste0(type, "_overlap_names")
     message(paste0("A column has been added to the range metadata with the column name '", type, "_overlap_names' that specifies the GRanges each range overlaps with, but the inherited groups are not included."))      
   }
   
@@ -582,8 +564,8 @@ subset_GR_GL_common_top <- function(object, overlap, input_names, type, separate
     rowRanges(object_overlap)$overlap_nosep_names <- ordered(rowRanges(object_overlap)$overlap_nosep_names, 
                                                              levels = rowRanges(object_overlap)$overlap_nosep_names[!duplicated(rowRanges(object_overlap)$overlap_nosep_names)])
     
-    metadata(object_overlap)$rowGroupsInUse <- paste0(type, "_overlap_nosep_names")
-    metadata(object_no_overlap)$rowGroupsInUse <- paste0(type, "_overlap_nosep_names")
+    object_overlap@params$rowGroupsInUse <- paste0(type, "_overlap_nosep_names")
+    object_no_overlap@params$rowGroupsInUse <- paste0(type, "_overlap_nosep_names")
     message(paste0("A column has been added to the range metadata with the column name '", type, "_overlap_nosep_names' that specifies the GRanges each range overlaps with, but the inherited groups are not included."))      
     
     colnames(mcols(object_overlap))[colnames(mcols(object_overlap)) %in% "overlap_names"] <- paste0(type, "_overlap_names")
@@ -620,7 +602,7 @@ if (separateDuplicated == TRUE){
                                                   as.character(mcols(object)[,colnames(mcols(object)) %in% paste0(type, "_overlap_names")]),
                                                   sep = "_")
   colnames(mcols(object))[colnames(mcols(object)) %in% "group_and_overlap"] <- paste0(type, "_group_and_overlap")
-  metadata(object)$rowGroupsInUse <- paste0(type, "_group_and_overlap")
+  object@params$rowGroupsInUse <- paste0(type, "_group_and_overlap")
   message(paste0("A column has been added to the range metadata with the column name '", type, "_group_and_overlap' that specifies the GRanges each range overlaps with, but the inherited groups are not included."))      
   
 }
@@ -630,7 +612,7 @@ if (separateDuplicated == FALSE){
                                                as.character(mcols(object)[,colnames(mcols(object)) %in% paste0(type, "_overlap_nosep_names")]),
                                                sep = "_")
   colnames(mcols(object))[colnames(mcols(object)) %in% "group_and_overlap_nosep"] <- paste0(type, "_group_and_overlap_nosep") 
-  metadata(object)$rowGroupsInUse <- paste0(type, "_group_and_overlap_nosep")
+  object@params$rowGroupsInUse <- paste0(type, "_group_and_overlap_nosep")
   message(paste0("A column has been added to the range metadata with the column name '", type, "_group_and_overlap_nosep' that specifies the GRanges each range overlaps with, but the inherited groups are not included."))      
 }
 return(object)
@@ -654,7 +636,7 @@ return(object)
 #'  
 subsetbyRangeOverlap <- function(object, group, GRanges_names = NULL, include_nonoverlapping = FALSE, separateDuplicated = TRUE, inherit_groups = FALSE) {
   
-  rowGroupsInUse_input <- metadata(object)$rowGroupsInUse
+  rowGroupsInUse_input <- params(object)$rowGroupsInUse
   region_list_GRanges <- GRangesList(group)
   
   if(!(is.null(names(region_list_GRanges)))){
@@ -752,7 +734,7 @@ subsetbyRangeOverlap <- function(object, group, GRanges_names = NULL, include_no
 
 subsetbyGeneListOverlap <- function(object, group, include_nonoverlapping = FALSE, separateDuplicated = TRUE, inherit_groups = FALSE) {
   
-  rowGroupsInUse_input <- metadata(object)$rowGroupsInUse
+  rowGroupsInUse_input <- params(object)$rowGroupsInUse
   
   if(is.null(names(group))){
     message("Input gene lists do not have names, they will be given generic names. To name gene list, set them before using this function with names(gene list) function")
@@ -858,7 +840,7 @@ subsetbyGeneListOverlap <- function(object, group, include_nonoverlapping = FALS
 #' @param output Must be either "matrix", "long", or "object".
 #' @param keep_all_mcols if output is 'long' and this is set to TRUE, then all metadata columns in the rowRanges will be included in the output. If FALSE (default value), then only the column indicated in the 'rowGroupsInUse' slot of the metadata will be included in the output dataframe. 
 #' @details Takes a SE object and outputs a summarized experiment object with a matrix containing ranges as rows and each sample having one column with summary statistic
-#' @return A profileplyr object
+#' @return If output="matrix" returns a matrix, if output="long" returns a data.frame in long format,  if output="long" returns a SummarizedExperiment object
 #' @examples
 #' example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
 #' object <- import_deepToolsMat(example)
@@ -886,7 +868,7 @@ setGeneric("summarize", function(object="profileplyr",fun = "function", output =
 setMethod("summarize", signature(object="profileplyr"), function(object, fun, output, keep_all_mcols = FALSE){
   summ <- lapply(assays(object), fun)
   summ_mat <- as.matrix(do.call(cbind,summ))
-  rowGroupsInUse <- metadata(object)$rowGroupsInUse
+  rowGroupsInUse <- params(object)$rowGroupsInUse
   GroupNames <- rowData(object)[,colnames(rowData(object)) %in% rowGroupsInUse]
   
   colnames(summ_mat) <- rownames(sampleData(object))
@@ -913,22 +895,9 @@ setMethod("summarize", signature(object="profileplyr"), function(object, fun, ou
   
   if (output == "object") {
     
-    tempSE <- SummarizedExperiment(summ_mat,
-                                   rowRanges=rowRanges(object))
-    
-    info <- metadata(object)$info
-    sampleData <- metadata(object)$sampleData
-    sample_labels <- metadata(object)$info$sample_labels
-    
-    objectToReturn <- new("profileplyr", tempSE,
-                params=list(),
-                sampleData=sampleData,
-                sampleParams=sampleData)
-    
-    objectToReturn@params$perSampleDPParams <- info[lengths(info) == length(sample_labels)] %>%
-      names %>% make.names
-    
-    message("objectToReturn")
+    objectToReturn <- SummarizedExperiment(summ_mat,rowRanges(object),
+                                           colData=sampleData(object))
+    metadata(objectToReturn) <- metadata(object)
     return(objectToReturn)
   }
 })
@@ -985,7 +954,7 @@ setMethod("groupBy", signature(object="profileplyr"),function(object, group, GRa
     if(!(group %in% colnames(mcols(object)))) {
       stop("The 'group' argument is a character string, but does not match the name of any range metadata columns")
     }
-    metadata(object)$rowGroupsInUse <- group
+    object@params$rowGroupsInUse <- group
     mcols(object)[, group] <- as.factor(mcols(object)[, group]) #make sure this is a factor so we can order it
     if (is.null(levels)){
       levels <- levels(rowData(object)[, group]) #if user doesnt set levels, we will just use the default ones (alphabetical)
@@ -1038,7 +1007,7 @@ setMethod("orderBy", signature(object="profileplyr"),function(object, column){
     if(!(column %in% colnames(mcols(object)))) {
       stop("The 'column' argument does not match the name of any range metadata columns")
     }
-    metadata(object)$mcolToOrderBy <- column
+    # object@params$mcolToOrderBy <- column
     object@params$mcolToOrderBy <- column
     
     return(object)
@@ -1077,10 +1046,10 @@ setMethod("convertToEnrichedHeatmapMat", signature(object="profileplyr"),functio
     sample_names <- rownames(sampleData(object))
   }  
   
-  upstream <- metadata(object)$sampleData$upstream
-  downstream <- metadata(object)$sampleData$downstream
-  target_length <- metadata(object)$sampleData$body
-  bin_size <- metadata(object)$sampleData$bin.size
+  upstream <- sampleData(object)$upstream
+  downstream <- sampleData(object)$downstream
+  target_length <- sampleData(object)$body
+  bin_size <- sampleData(object)$bin.size
   
   upstreamBins <- upstream/bin_size
   downstreamBins <- downstream/bin_size
@@ -1132,7 +1101,7 @@ setMethod("convertToEnrichedHeatmapMat", signature(object="profileplyr"),functio
 #' @param sample_names A character vector that will set the names of the heatmap components that are generated from the profileplyr assays() matrices. This argument is optional, by default the names will be the name of the samples in the profileplyr object metadata(proplyrObject)$sampleData$sample_labels.
 #' @param return_ht_list Whether the returned object is the heatmap list and not the actual figure. This will be a list of the various components (heatmaps and annotation columns) that can be added to with additional columns in a customized manner.
 #' @param ylim A numeric vector of two numbers that species the minimum and maximum of the yaxis of all the heatmaps generated for the matrices. The default is to use the max of the heatmap with the highest signal. If ylim = NULL, different ranges will be inferred for each heatmap. 
-#' @param decreasing If metadata(object)$mcolToOrderBy has been changed and is NULL, then the ranges will be ordered by the column indicated in this slot of the metadata. By default, the order will be increasing for the factor or numeric value. For decreasing order, choose decreasing = TRUE.
+#' @param decreasing If object@params$mcolToOrderBy has been changed and is NULL, then the ranges will be ordered by the column indicated in this slot of the metadata. By default, the order will be increasing for the factor or numeric value. For decreasing order, choose decreasing = TRUE.
 #' @param all_color_scales_equal If TRUE (default value) then the same color scale will be used for each separate heatmap. If FALSE, color scales will be inferred for each heatmap as indicated by the legends.
 #' @param matrices_color Either a single character vector, a numeric vector, a function call to colorRamp2 from the circlize package, or a list. For anything but a list, all the heatmaps generated for the matrices of the profileplyr object will be the same and will be colored as specified here. The character and numeric vector inputs must be either two or three elements in length (denoting color progressions - three elements will give a middle color break), and each element must be a character string or number that points to a color. By default, numeric vectors use the colors in palette(), however this can be expanded with other R color lists(e.g. colors()). If this argument is a list then it's length must equal the number of matrices/samples that exist in the input profileplyr object. The components of the list can be either a numeric vector, character vector, or color function (they do not have to all be the same type of specification). Each element in the list will be the color mapping to the corresponding element in the profileplyr object.
 #' @param matrices_pos_line A logical for whether to draw a vertical line(s) at the position of the target (for both a single point or a window). Default is true.
@@ -1174,8 +1143,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
   rowRanges(object)$bin_means_rev <- means_rev
   
   
-  rowGroupsInUse <- metadata(object)$rowGroupsInUse
-  mcolToOrderBy <- metadata(object)$mcolToOrderBy
+  rowGroupsInUse <- params(object)$rowGroupsInUse
+  mcolToOrderBy <- params(object)$mcolToOrderBy
   if(is.null(mcolToOrderBy)){
     order <- order(mcols(object)[, rowGroupsInUse],
                    mcols(object)$bin_means_rev)
@@ -1195,8 +1164,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
   scoreMat <- do.call(cbind,
                       as.list(enrichMAT))
   
-  group_boundaries <- c(which(!duplicated(rowData(object)[metadata(object)$rowGroupsInUse]))-1,length(object))
-  
+  group_boundaries <- getGroupInfoFromObject(object)$group_boundaries
   # divide the maritcies into separate matrcies for each group
   group_sub <- vector(mode = "list", length = length(group_boundaries)-1)
   for(i in seq_along(group_boundaries[-(length(group_boundaries))])){
@@ -1405,15 +1373,15 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
   
   if (include_group_annotation == TRUE){
     if(is.null(group_anno_color)){
-      group_anno_color = seq_along(table((mcols(object)[metadata(object)$rowGroupsInUse])))
+      group_anno_color = seq_along(table((mcols(object)[params(object)$rowGroupsInUse])))
     }
-    if(!(length(group_anno_color) == length(seq_along(table((mcols(object)[metadata(object)$rowGroupsInUse])))))){
+    if(!(length(group_anno_color) == length(seq_along(table((mcols(object)[params(object)$rowGroupsInUse])))))){
       stop("The length of the 'group_anno_color' argument is not the same length as the number of groups in the 'rowGroupsInUse' column of the profileplyr object range metadata.")
     }
-    heatmap_list[[1]] <- Heatmap(mcols(object)[,metadata(object)$rowGroupsInUse], 
+    heatmap_list[[1]] <- Heatmap(mcols(object)[,params(object)$rowGroupsInUse], 
                                  col = structure(group_anno_color,
-                                                 names = names(table((mcols(object)[metadata(object)$rowGroupsInUse])))),  
-                                 name = metadata(object)$rowGroupsInUse,
+                                                 names = names(table((mcols(object)[params(object)$rowGroupsInUse])))),  
+                                 name = params(object)$rowGroupsInUse,
                                  show_row_names = FALSE, 
                                  width = unit(group_anno_width, "mm"),
                                  row_title_gp = group_anno_row_title_gp,
@@ -1577,9 +1545,9 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
   
   ifelse(return_ht_list, return(ht_list), return(draw(ht_list, 
                                                       gap =  unit(gap, "mm"),
-                                                      split = mcols(object)[,metadata(object)$rowGroupsInUse])))
+                                                      split = mcols(object)[,params(object)$rowGroupsInUse])))
   
-  #return(draw(ht_list, split = mcols(object)[,metadata(object)$rowGroupsInUse]))
+  #return(draw(ht_list, split = mcols(object)[,object@params$rowGroupsInUse]))
   }
 
 
@@ -1632,7 +1600,7 @@ selectSome <- function(obj, maxToShow = 5, ellipsis = "...", ellipsisPos = c("mi
 #' library(soGGi)
 #' data("ik_Profiles")
 #' proplyr <- as_profileplyr(ik_Profiles,names="ID")
-#' export_deepToolsMat(proplyr,con="ik_Profiles.MAT")
+#' export_deepToolsMat(proplyr,con=file.path(tempdir(),"ik_Profiles.MAT"))
 #' @importClassesFrom soGGi  ChIPprofile
 #' @export
 as_profileplyr <- function(chipProfile,names = NULL){
@@ -1674,10 +1642,7 @@ as_profileplyr <- function(chipProfile,names = NULL){
                `proc number`=11,
                `bin avg type`="mean",
                `missing data as zero`=FALSE)
-  
-  # if(!is.null(metadata(chipProfile)$group_boundaries)){
-  #   info$group_boundaries <- metadata(chipProfile)$group_boundaries
-  # }
+
   
   info_for_sampleData <- info[!(names(info) %in% c("group_labels", "group_boundaries"))] # Doug added this - I think its better to remove right away because group labels doesn't get included if theres multiple groups so it threw an error when you removed it afterwards (removed that code)
   if(length(sample_labels) > 1){
@@ -1809,7 +1774,7 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = pe
   
   ChIPprofile_for_proplyr <- do.call(c,ChIPprofile_combined)
   
-  metadata(ChIPprofile_for_proplyr)$group_boundaries <- group_boundaries
+  # metadata(ChIPprofile_for_proplyr)$group_boundaries <- group_boundaries
   
   if(is.character(signalFiles)){
     metadata(ChIPprofile_for_proplyr)$names <- signalFiles
@@ -1838,21 +1803,10 @@ profileplyr_Dataset <-function(matrix,granges,sampleData,sampleParam,params=NULL
                   )
   }
   
-  # if(!is.null(groupColumn)){
-  #   metadata(tempDou)$info$group_boundaries <- c(which(!duplicated(granges[,groupColumn]))-1,length(granges))
-  # }
-  metadata(tempDou)$sampleData <- sampleData 
-  metadata(tempDou)$rowGroupsInUse <- params$rowGroupsInUse
-  metadata(tempDou)$mcolToOrderBy <- params$mcolToOrderBy
   proplyDataset <- new("profileplyr", tempDou,
               params=params,
               sampleData=sampleData,
               sampleParams=sampleParam)
-  
-  
-  
-  # proplyDataset@params$perSampleDPParams <- info[lengths(info) == length(info$sample_labels)] %>% .[!(names(.) %in% c("group_labels", "group_boundaries"))] %>% 
-  #   names %>% make.names 
   return(proplyDataset)
 }
 
@@ -1863,4 +1817,24 @@ standard_DPparams <- function(){
   DPparams <- list(perSampleDPParams=perSampleDPParams,
                    perComputeDPParams=perComputeDPParams)
   return(DPparams)
+}
+
+
+
+getGroupInfoFromObject <- function(object){
+if(!is.null(params(object)$rowGroupsInUse)){
+  group_boundaries <- c(which(!duplicated(rowData(object)[params(object)$rowGroupsInUse]))-1,length(object))
+  group_labels <- rowData(object)[params(object)$rowGroupsInUse] %>% 
+    as.data.frame %>% 
+    .[,1] %>%  
+    as.vector %>%
+    unique 
+  if (length(group_labels)  == 1){ 
+    group_labels <- list(group_labels) # if you had more than one group, turning it into a list did not create correct output for deepTools metadata, this seems to fix it
+  }
+}else{
+  group_boundaries <- c(0,length(object))
+  group_labels <- "no_groups" %>% list
+}
+  return(list(group_boundaries=group_boundaries,group_labels=group_labels))
 }

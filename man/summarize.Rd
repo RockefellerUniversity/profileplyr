@@ -22,7 +22,7 @@ summarize(object = "profileplyr", fun = "function",
 \item{keep_all_mcols}{if output is 'long' and this is set to TRUE, then all metadata columns in the rowRanges will be included in the output. If FALSE (default value), then only the column indicated in the 'rowGroupsInUse' slot of the metadata will be included in the output dataframe.}
 }
 \value{
-A profileplyr object
+If output="matrix" returns a matrix, if output="long" returns a data.frame in long format,  if output="long" returns a SummarizedExperiment object
 }
 \description{
 summarize the rows of a deepTools matrix

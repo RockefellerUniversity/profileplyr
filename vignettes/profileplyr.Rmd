@@ -126,7 +126,8 @@ The information associated with each sample is stored as a Dataframe within with
 sampleData(proplyrObject)
 ```
 
-The 'rowGroupsInUse' accessor for the parameters indicates which column of the range metadata (mcols() or rowRanges()) that will be used for grouping in the final output if that object were used for visualization. For a profileplyr object created from a deepTools computeMatrix output or from a soGGi ChIPprofile object, the inherited groups correspond to the BED files over which the signal was quantified, and these groups are contained in the 'dpGroup' column. 
+The 'rowGroupsInUse' element for the params slot indicates which column of the range metadata (mcols() or rowRanges()) that will be used for grouping in the final output if that object were used for visualization. For a profileplyr object created from a deepTools computeMatrix output or from a soGGi ChIPprofile object, the inherited groups correspond to the BED files over which the signal was quantified, and these groups are contained in the 'dpGroup' column. 
+
 ```{r}
 params(proplyrObject)$rowGroupsInUse
 ```
@@ -144,7 +145,8 @@ params(proplyrObject)$mcolToOrderBy
 
 ```{r, echo=FALSE}
 # change back to NULL for any other functions relying on this object
-params(proplyrObject)$mcolToOrderBy <- NULL
+proplyrObject@params$mcolToOrderBy <- NULL
+
 ```
 
 
@@ -293,7 +295,7 @@ ggplot(proplyrObject_long, aes(x = Sample, y = log(Signal))) +
 
 ## profileplyr object output with summarized matrix
 
-Lastly, if the 'output' argument is set to 'object', then a profileplyr object containing the summarized matrix will be returned. This will allow for further grouping or manipulation of the summarized ranges with other profileplyr functions, as opposed to using the binned ranges that are often used in the examples below. 
+Lastly, if the 'output' argument is set to 'object', then a profileplyr object containing the summarized matrix will be returned. This will allow for further grouping or manipulation of the summarized ranges with other profileplyr functions, as opposed to using the binned ranges that are often used in the examples below.
 
 ```{r, results='hide'}
 proplyrObject_summ <- summarize(proplyrObject, 
@@ -415,7 +417,7 @@ The annotateRanges() function passes the ranges of a profileplyr object to the a
 2) a TxDb object
 3) a character string that is a path to a GTF or GFF file, in which case a TxDb object will be made using the makeTxDbFromGFF() function from the [Genomic Features](http://bioconductor.org/packages/release/bioc/html/GenomicFeatures.html) package. 
 
-Note that the default action of this function will not change the 'rowGroupsInUse' slot of the parameters. However, if changeGroupToAnnotation = TRUE, a newly generated metadata column will be added that combines the inherited grouping of the ranges and the genomic annotation that was determined by ChIPseeker. If this object is exported as a deepTools matrix, the heatmap will group the ranges first by the inherited grouping, followed by the annotation groups (e.g. promoter, intron, etc). This can be modified by setting the 'heatmap_grouping' argument to 'annotation', which will force the ranges to be grouped first by annotation, followed by the inherited grouping. 
+Note that the default action of this function will not change the 'rowGroupsInUse' element of the params slot. However, if changeGroupToAnnotation = TRUE, a newly generated metadata column will be added that combines the inherited grouping of the ranges and the genomic annotation that was determined by ChIPseeker. If this object is exported as a deepTools matrix, the heatmap will group the ranges first by the inherited grouping, followed by the annotation groups (e.g. promoter, intron, etc). This can be modified by setting the 'heatmap_grouping' argument to 'annotation', which will force the ranges to be grouped first by annotation, followed by the inherited grouping. 
 
 ```{r}
 anno <- annotateRanges(proplyrObject, 
@@ -639,7 +641,7 @@ The color arguments for both the matrices and the extra annotation columns can e
 
 # Acknowledgements
 
-Thank you to Ji-Dung Luo for testing/vignette review/critical feedback, Elitsa Stoyanova for critical feedback/vignette review and David Allis for his support. 
+Thank you to Ji-Dung Luo for testing/vignette review/critical feedback, Elitsa Stoyanova for critical feedback/vignette review and David Allis and Ziwei Liang for their support. 
 
 
 # Session info
