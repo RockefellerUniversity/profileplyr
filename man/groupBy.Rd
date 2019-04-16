@@ -60,5 +60,5 @@ K27ac_groupByGR <- groupBy(object, group = K27ac_GRlist_hind_liver_top5000)
 # switch rowGroupsInUse
 
 switchGroup <- groupBy(K27ac_groupByGR, group = "GR_overlap_names")
-metadata(switchGroup)$rowGroupsInUse
+params(switchGroup)$rowGroupsInUse
 }

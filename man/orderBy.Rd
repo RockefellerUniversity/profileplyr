@@ -36,6 +36,6 @@ object <- import_deepToolsMat(example)
 library(SummarizedExperiment)
 cluster <- clusterRanges(object, fun = rowMeans, cutree_rows = 3)
 cluster_order <- orderBy(cluster, column = "hierarchical_order")
-metadata(cluster_order)$mcolToOrderBy
+params(cluster_order)$mcolToOrderBy
 
 }

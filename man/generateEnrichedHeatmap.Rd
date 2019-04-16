@@ -26,7 +26,7 @@ generateEnrichedHeatmap(object, include_group_annotation = TRUE,
 
 \item{extra_annotation_columns}{A character vector of names that match column names of mcols(object). Extra annotation columns will be added to the heatmap based on the values of these indicated range metadata columns.}
 
-\item{sample_names}{A character vector that will set the names of the heatmap components that are generated from the profileplyr assays() matrices. This argument is optional, by default the names will be the name of the samples in the profileplyr object metadata(proplyrObject)$sampleData$sample_labels.}
+\item{sample_names}{A character vector that will set the names of the heatmap components that are generated from the profileplyr assays() matrices. This argument is optional, by default the names will be the name of the samples in the profileplyr object rownames(sampleData(object)).}
 
 \item{return_ht_list}{Whether the returned object is the heatmap list and not the actual figure. This will be a list of the various components (heatmaps and annotation columns) that can be added to with additional columns in a customized manner.}
 

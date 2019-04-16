@@ -16,7 +16,7 @@ convertToEnrichedHeatmapMat(object = "profileplyr",
 \arguments{
 \item{object}{A profileplyr object}
 
-\item{sample_names}{A character vector that will set the names of the heatmap components that are generated from the profileplyr assays() matrices. This argument is optional, by default the names will be the name of the samples in the profileplyr object metadata(proplyrObject)$sampleData$sample_labels.}
+\item{sample_names}{A character vector that will set the names of the heatmap components that are generated from the profileplyr assays() matrices. This argument is optional, by default the names will be the name of the samples in the profileplyr object rownames(sampleData(object)).}
 }
 \value{
 A list of normalized matrices that can be used for generating visualizations with EnrichedHeatmap

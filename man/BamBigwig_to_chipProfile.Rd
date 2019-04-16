@@ -5,7 +5,7 @@
 \title{BamBigwig_to_chipProfile}
 \usage{
 BamBigwig_to_chipProfile(signalFiles, testRanges, format,
-  style = percentOfRegion, nOfWindows = 100, ...)
+  style = "percentOfRegion", nOfWindows = 100, ...)
 }
 \arguments{
 \item{signalFiles}{paths to either BAM files or bigwig files. More than one path can be in this character vector, but all paths in one function call must point to be either all BAM files or all bigWig files, not a combination of the two.}
