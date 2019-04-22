@@ -1116,6 +1116,7 @@ setMethod("convertToEnrichedHeatmapMat", signature(object="profileplyr"),functio
 #' @param extra_anno_width This will set the width of the individual extra annotation columns on the right side of the figure. This must be a numeric vector with each element setting the width for the corresponding element in the 'extra_annotation_columns' argument.
 #' @param gap The size of the gap between heatmaps and annotations. Only relevant if return_ht_list = FALSE
 #' @param genes_to_label A character vector of gene symbols that should match character strings in the 'SYMBOL' column that results from either 'annotateRanges' or 'annotateRanges_great'. Genes that are both in this vector and in the 'SYMBOL' column will be labeled on the heatmap. 
+#' @param gene_label_font_size The size of the text for the labels for genes specified in 'genes_to_label' argument.
 #' @details Takes a profileplyr object and generated heatmap that can be annotated by group or by range metadata columns of the profileplyr object
 #' @return By default a customized version of a heatmap from EnrichedHeatmap, if return_ht_list = TRUE then a heatmap list is returned that can be modified and then entered as an input for the \code{\link[EnrichedHeatmap]{EnrichedHeatmap}} function
 #' @examples
@@ -1130,7 +1131,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                     matrices_show_heatmap_legend = TRUE, matrices_column_title_gp =  gpar(fontsize = 10, fontface = "bold"), matrices_axis_name_gp = gpar(fontsize = 8), 
                                     group_anno_color = NULL, group_anno_width = 3, group_anno_row_title_gp = gpar(fontsize = 10), group_anno_column_names_gp = gpar(fontsize = 10),
                                     extra_anno_color = vector(mode = "list", length = length(extra_annotation_columns)), extra_anno_top_annotation = TRUE, 
-                                    extra_anno_width = (rep(6, length(extra_annotation_columns))), gap = 2, genes_to_label = NULL){
+                                    extra_anno_width = (rep(6, length(extra_annotation_columns))), gap = 2, genes_to_label = NULL, gene_label_font_size = 6){
 
   # want to order by group, and then within each group order by mean signal
   scoreMat <- do.call(cbind,
@@ -1349,20 +1350,25 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
   if (is.null(sample_names)){
     sample_names <- names(enrichMAT)
   }  
-
-  if (!(is.null(genes_to_label))){
-  # add text row annotation of genes to label
-  genes_overlap <- mcols(object)$SYMBOL
   
-  index <- vector()
-  for (i in seq_along(genes_overlap)){
-    if(genes_overlap[i] %in% genes_to_label){
-      index <- c(index, i)
+  if (!(is.null(genes_to_label))){
+    # add text row annotation of genes to label
+    genes_overlap <- mcols(object)$SYMBOL
+    
+    index <- vector()
+    for (i in seq_along(genes_overlap)){
+      if(genes_overlap[i] %in% genes_to_label){
+        index <- c(index, i)
+      }
     }
-  }
-  gene_annotation <- rowAnnotation(labels = anno_mark(at = index, 
-                                                      labels = genes_overlap[index],
-                                                      labels_gp = gpar(fontsize = 6)))
+    if(length(index) == 0){
+      message("no genes from 'genes_to_label' argument overlapped with annotated ranges")
+      gene_annotation = NULL
+    } else {
+      gene_annotation <- rowAnnotation(labels = anno_mark(at = index, 
+                                                          labels = genes_overlap[index],
+                                                          labels_gp = gpar(fontsize = gene_label_font_size)))
+    }
   } else{
     gene_annotation = NULL
   }

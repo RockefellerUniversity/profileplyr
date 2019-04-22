@@ -17,7 +17,7 @@ generateEnrichedHeatmap(object, include_group_annotation = TRUE,
   extra_anno_color = vector(mode = "list", length =
   length(extra_annotation_columns)), extra_anno_top_annotation = TRUE,
   extra_anno_width = (rep(6, length(extra_annotation_columns))),
-  gap = 2, genes_to_label = NULL)
+  gap = 2, genes_to_label = NULL, gene_label_font_size = 6)
 }
 \arguments{
 \item{object}{A profileplyr object}
@@ -65,6 +65,8 @@ generateEnrichedHeatmap(object, include_group_annotation = TRUE,
 \item{gap}{The size of the gap between heatmaps and annotations. Only relevant if return_ht_list = FALSE}
 
 \item{genes_to_label}{A character vector of gene symbols that should match character strings in the 'SYMBOL' column that results from either 'annotateRanges' or 'annotateRanges_great'. Genes that are both in this vector and in the 'SYMBOL' column will be labeled on the heatmap.}
+
+\item{gene_label_font_size}{The size of the text for the labels for genes specified in 'genes_to_label' argument.}
 }
 \value{
 By default a customized version of a heatmap from EnrichedHeatmap, if return_ht_list = TRUE then a heatmap list is returned that can be modified and then entered as an input for the \code{\link[EnrichedHeatmap]{EnrichedHeatmap}} function

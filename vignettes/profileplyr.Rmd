@@ -601,7 +601,7 @@ BamBigwig_to_chipProfile(signalFiles,
 
 As a demonstration, we can combine many of the profileplyr functions and visualize more than one metadata column. From this figure we can see a number of interesting things from the data. Many of the regions with the highest ATAC-seq signal are in promoters for all clusters (the 'annotation_short' column). Cluster 2 appears to have many ranges with specific signal in the liver sample which is supported by the main heatmap, the high density of top liver K27ac peaks (red signal in the 'GRoverlap_names' column), and the high density of genes that have reduced gene expression in the liver vs the hindbrain (red signal in the 'stat' column). On the other hand Cluster 1 has specific hindbrain peaks, high overlap with hindbrain K27ac peaks, and higher expression of genes that have higher expression in the hindbrain. By extracting all of this information from the profileplyr object and displaying in a heatmap with one command, a lot can be gleaned from these data.    
  
-The generateEnrichedHeatmap() function also allows for a great deal of customization of the heatmap that is built around the profileplyr object. Notice that in the heatmap below we modify colors. The color of the heatmaps from the assay matrices is changed to a two color spectrum, and the colors of the annotation heatmaps were customized as well.
+The generateEnrichedHeatmap() function also allows for a great deal of customization of the heatmap that is built around the profileplyr object. Notice that in the heatmap below we modify colors. The color of the heatmaps from the assay matrices is changed to a two color spectrum, and the colors of the annotation heatmaps were customized as well. The user can also easily label ranges that have been annotated with specific genes with the 'genes_to_label' argument. This argument requires a character vector of genes that are matched against the column of the range metadata that contains the gene annotations from either annotateRanges() or annotateRanges_great(). 
 ```{r, fig13, fig.height=8, out.width='100%', results='hide', dpi=35}
 # NOTE: could also use BamBigwig_to_chipProfile() and as_profileplyr()
 # within R to start from bigwig/BAM and BED file.
@@ -632,7 +632,9 @@ annotated_object <- import_deepToolsMat(example) %>%
                                                   "white"),
                                                 c("#e7e1ef", 
                                                   "#c994c7", 
-                                                  "#dd1c77")))
+                                                  "#dd1c77")),
+                          genes_to_label = c("Kcnn4", "Mgst3", "Gypc"),
+                          gene_label_font_size = 10)
 
 ```
 The color arguments for both the matrices and the extra annotation columns can either be a character vector if all heatmaps should have the same color scheme, or a list if each individual heatmap requires different colors. If a list is used, the list must be the same length as the number of heatmaps, and each element of the list maps to the corresponding matrix in the profileplyr object (for 'matrices_color') or to the corresponding element in the 'extra_annotation_columns' argument (for 'extra_anno_color'). If the color of a particular heatmap is to be left unchanged, then that element of the list should be NULL. 
