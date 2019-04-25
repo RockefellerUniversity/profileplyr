@@ -1114,6 +1114,7 @@ setMethod("convertToEnrichedHeatmapMat", signature(object="profileplyr"),functio
 #' @param extra_anno_color This will specify colors for the annotation columns added by the 'extra_annotation_columns' argument. This must be a list that is of equal length to the 'extra_annotation_columns' argument. Each element of this list will be used to specify the color scheme for the corresponding element of the 'extra_annotation_columns' vector. If an element is NULL, the default colors will be used for the column annotation. For a column with discrete variables this will typically be a vector of numbers or a vector of color names. By default, numeric vectors use the colors in palette(), however this can be expanded with other R color lists(e.g. colors()). For columns with continuous variables, this can also be a a vector of numbers or a vector of color names to signify the color progression, or it can be color mapping function using colorRamp2() from the circlize package.
 #' @param extra_anno_top_annotation This is a logical vector that determines whether annotation plots are shown on top of the heatmaps for the extra annotations. This must either be a length of 1, in which case all of the heatamps will abide by this value. Otherwise this must be a vector of equal length to the 'extra_annotation_columns' argument and the elements of this vector will correspond to the equvalent elements in 'extra annotation_columns'
 #' @param extra_anno_width This will set the width of the individual extra annotation columns on the right side of the figure. This must be a numeric vector with each element setting the width for the corresponding element in the 'extra_annotation_columns' argument.
+#' @param only_extra_annotation_columns If set to TRUE, only the heatmaps representing the extra annotation columns whill be shown, and the range based heatmaps from the assay matricies will be excluded. 
 #' @param gap The size of the gap between heatmaps and annotations. Only relevant if return_ht_list = FALSE
 #' @param genes_to_label A character vector of gene symbols that should match character strings in the 'SYMBOL' column that results from either 'annotateRanges' or 'annotateRanges_great'. Genes that are both in this vector and in the 'SYMBOL' column will be labeled on the heatmap. 
 #' @param gene_label_font_size The size of the text for the labels for genes specified in 'genes_to_label' argument.
@@ -1131,7 +1132,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                     matrices_show_heatmap_legend = TRUE, matrices_column_title_gp =  gpar(fontsize = 10, fontface = "bold"), matrices_axis_name_gp = gpar(fontsize = 8), 
                                     group_anno_color = NULL, group_anno_width = 3, group_anno_row_title_gp = gpar(fontsize = 10), group_anno_column_names_gp = gpar(fontsize = 10),
                                     extra_anno_color = vector(mode = "list", length = length(extra_annotation_columns)), extra_anno_top_annotation = TRUE, 
-                                    extra_anno_width = (rep(6, length(extra_annotation_columns))), gap = 2, genes_to_label = NULL, gene_label_font_size = 6){
+                                    extra_anno_width = (rep(6, length(extra_annotation_columns))), only_extra_annotation_columns = FALSE, gap = 2, genes_to_label = NULL, gene_label_font_size = 6){
 
   # want to order by group, and then within each group order by mean signal
   scoreMat <- do.call(cbind,
@@ -1437,6 +1438,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     }
   }
   
+  matricies_ht_length <- length(heatmap_list) # this will be used below to know how many heatmaps to remove if use only wants extra annotation columns
+  
   # this will add gene annotation labels to the last heatmap only is there are no additional annotation columns
   if(is.null(extra_annotation_columns) & !(is.null(genes_to_label))){
     if (include_group_annotation == TRUE){
@@ -1528,7 +1531,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                                         show_row_names = FALSE, 
                                                         width = unit(extra_anno_width[i], "mm"),
                                                         column_names_gp = gpar(fontsize = 10),
-                                                        top_annotation = top_annotation)
+                                                        top_annotation = top_annotation,
+                                                        cluster_rows = FALSE)
     }
     if(!is.null(genes_to_label)){
       i = length(extra_annotation_columns)
@@ -1543,7 +1547,15 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     }
   }
   
-  
+  #remove the matricies heatmaps if user wants
+  if(only_extra_annotation_columns == TRUE){
+    if (include_group_annotation == TRUE){
+      heatmap_list <- heatmap_list[-c(2:matricies_ht_length)]
+    }
+    if (include_group_annotation == FALSE){
+      heatmap_list <- heatmap_list[-c(1:matricies_ht_length)]
+    }
+  }
   
   ht_list <- Reduce("+", heatmap_list) 
   

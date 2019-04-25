@@ -17,7 +17,8 @@ generateEnrichedHeatmap(object, include_group_annotation = TRUE,
   extra_anno_color = vector(mode = "list", length =
   length(extra_annotation_columns)), extra_anno_top_annotation = TRUE,
   extra_anno_width = (rep(6, length(extra_annotation_columns))),
-  gap = 2, genes_to_label = NULL, gene_label_font_size = 6)
+  only_extra_annotation_columns = FALSE, gap = 2,
+  genes_to_label = NULL, gene_label_font_size = 6)
 }
 \arguments{
 \item{object}{A profileplyr object}
@@ -61,6 +62,8 @@ generateEnrichedHeatmap(object, include_group_annotation = TRUE,
 \item{extra_anno_top_annotation}{This is a logical vector that determines whether annotation plots are shown on top of the heatmaps for the extra annotations. This must either be a length of 1, in which case all of the heatamps will abide by this value. Otherwise this must be a vector of equal length to the 'extra_annotation_columns' argument and the elements of this vector will correspond to the equvalent elements in 'extra annotation_columns'}
 
 \item{extra_anno_width}{This will set the width of the individual extra annotation columns on the right side of the figure. This must be a numeric vector with each element setting the width for the corresponding element in the 'extra_annotation_columns' argument.}
+
+\item{only_extra_annotation_columns}{If set to TRUE, only the heatmaps representing the extra annotation columns whill be shown, and the range based heatmaps from the assay matricies will be excluded.}
 
 \item{gap}{The size of the gap between heatmaps and annotations. Only relevant if return_ht_list = FALSE}
 
