@@ -15,12 +15,14 @@ annotateRanges_great(object = "profileplyr", species = "character",
   species = "character", ...)
 
 annotateRanges(object = "profileplyr", annotation_subset = "character",
-  TxDb, tssRegion = "numeric", changeGroupToAnnotation = "logical",
-  heatmap_grouping = "character", ...)
+  TxDb, annoDb = "character", tssRegion = "numeric",
+  changeGroupToAnnotation = "logical", heatmap_grouping = "character",
+  ...)
 
 \S4method{annotateRanges}{profileplyr}(object = "profileplyr",
-  annotation_subset = NULL, TxDb = NULL, tssRegion = c(-3000, 3000),
-  changeGroupToAnnotation = FALSE, heatmap_grouping = "group", ...)
+  annotation_subset = NULL, TxDb = NULL, annoDb = NULL,
+  tssRegion = c(-3000, 3000), changeGroupToAnnotation = FALSE,
+  heatmap_grouping = "group", ...)
 }
 \arguments{
 \item{object}{A profileplyr object}
@@ -32,6 +34,8 @@ annotateRanges(object = "profileplyr", annotation_subset = "character",
 \item{annotation_subset}{If specific annotations (from ChIPseeker package) are desired, specify them here in a character vector. Can be one or any combination of "Promoter", "Exon", "Intron", "Downstream", "Distal Intergenic", "3p UTR", or "5p UTR". This argument is optional and all annotation types will be included if argument is left out.}
 
 \item{TxDb}{TxDb object, a character sting that is a path to a GTF file, or character string indicating genome if one of the following - "hg19", "hg38", "mm9", "mm10".}
+
+\item{annoDb}{The annotation package to be used. If the 'TxDb' agrument is set to "hg19", "hg38", "mm9", or "mm10" this will automatically be set and this can be left as NULL.}
 
 \item{tssRegion}{This needs to be a vector of two numbers that will define promoter regions. The first number must be negative, while the second number must be positive. Default values are  c(-3000, 3000) - SHOULD WE CHANGE THIS, SEEMS BIG!)}
 

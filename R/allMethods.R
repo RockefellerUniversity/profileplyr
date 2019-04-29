@@ -395,15 +395,16 @@ setMethod("annotateRanges_great", signature(object="profileplyr"),function(objec
 #' @param tssRegion This needs to be a vector of two numbers that will define promoter regions. The first number must be negative, while the second number must be positive. Default values are  c(-3000, 3000) - SHOULD WE CHANGE THIS, SEEMS BIG!)
 #' @param changeGroupToAnnotation If the grouping should be changed to the annotations (typically when the ranges will be exported for visualization based on this annotation), this should be TRUE. The default if FALSE, which will keep the grouping that existed before annotating the object. This is typical if the output will be used for finding overlaps with gene lists in the 'groupBy' function.
 #' @param heatmap_grouping Only relevant if 'keepAnnotationAsGroup' is set to TRUE. This argument needs to be either "group", or "annotation". This will determine how the ranges are grouped in the resulting object. Default is heatmap_grouping = "Group". If there are no groups in the deepTools matrix that was used in the function, this argument is unnecessary
+#' @param annoDb The annotation package to be used. If the 'TxDb' agrument is set to "hg19", "hg38", "mm9", or "mm10" this will automatically be set and this can be left as NULL.
 #' @details tbd
 #' @return A profileplyr object
 #' @rdname annotateRanges 
 #' @export
-setGeneric("annotateRanges", function(object="profileplyr",annotation_subset = "character", TxDb, tssRegion = "numeric", changeGroupToAnnotation = "logical", heatmap_grouping = "character", ...)standardGeneric("annotateRanges"))
+setGeneric("annotateRanges", function(object="profileplyr",annotation_subset = "character", TxDb, annoDb = "character", tssRegion = "numeric", changeGroupToAnnotation = "logical", heatmap_grouping = "character", ...)standardGeneric("annotateRanges"))
 
 #' @describeIn annotateRanges Annotate profileplyr ranges to genes using rGREAT or ChIPseeker
 #' @export
-setMethod("annotateRanges", signature(object="profileplyr"),function(object, annotation_subset = NULL, TxDb = NULL, tssRegion = c(-3000, 3000), changeGroupToAnnotation = FALSE, heatmap_grouping = "group", ...) {
+setMethod("annotateRanges", signature(object="profileplyr"),function(object, annotation_subset = NULL, TxDb = NULL, annoDb = NULL, tssRegion = c(-3000, 3000), changeGroupToAnnotation = FALSE, heatmap_grouping = "group", ...) {
   
   if (is.null(TxDb)){
     stop("Must set 'TxDb' argument")
@@ -428,12 +429,16 @@ setMethod("annotateRanges", signature(object="profileplyr"),function(object, ann
   
   
   # which species for annotation?
-  if (TxDb == "hg19" | TxDb == "hg38") {
-    orgAnn <- "org.Hs.eg.db"
-  } else if (TxDb == "mm9" | TxDb == "mm10") {
-    orgAnn <- "org.Mm.eg.db"
+  if(is.null(annoDb)){
+    if (TxDb == "hg19" | TxDb == "hg38") {
+      orgAnn <- "org.Hs.eg.db"
+    } else if (TxDb == "mm9" | TxDb == "mm10") {
+      orgAnn <- "org.Mm.eg.db"
+    } else {
+      orgAnn <- NULL
+    }
   } else {
-    orgAnn <- NULL
+    orgAnn <- annoDb
   }
   
   peakanno <- annotatePeak(rowRanges(object), TxDb = TxDb_object, annoDb = orgAnn, tssRegion = tssRegion, ...)
