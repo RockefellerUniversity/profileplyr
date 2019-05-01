@@ -633,7 +633,7 @@ annotated_object <- import_deepToolsMat(example) %>%
                                                 c("#e7e1ef", 
                                                   "#c994c7", 
                                                   "#dd1c77")),
-                          genes_to_label = c("Kcnn4", "Mgst3", "Gypc"),
+                          genes_to_label = c("Myh9", "Sp4", "Rcan2"),
                           gene_label_font_size = 10)
 
 ```

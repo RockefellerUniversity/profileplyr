@@ -23,7 +23,7 @@ clusterRanges(object = "profileplyr", fun = "function",
 
 \item{fun}{The function used to summarize the ranges (e.g. rowMeans or rowMax)}
 
-\item{scaleRows}{If TRUE, the rows matrix containing the signal in each bin that is used as the input for clustering will be scaled (as specified by pheatmap)}
+\item{scaleRows}{If TRUE, the rows of the matrix containing the signal in each bin that is used as the input for clustering will be scaled (as specified by pheatmap)}
 
 \item{kmeans_k}{The number of kmeans groups used for clustering}
 

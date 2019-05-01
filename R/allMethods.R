@@ -231,7 +231,7 @@ import_deepToolsMat <- function(con){
 #' @rdname clusterRanges
 #' @param object A profileplyr object
 #' @param fun The function used to summarize the ranges (e.g. rowMeans or rowMax)
-#' @param scaleRows If TRUE, the rows matrix containing the signal in each bin that is used as the input for clustering will be scaled (as specified by pheatmap)
+#' @param scaleRows If TRUE, the rows of the matrix containing the signal in each bin that is used as the input for clustering will be scaled (as specified by pheatmap)
 #' @param kmeans_k The number of kmeans groups used for clustering
 #' @param clustering_callback Clustering callback function to be passed to pheatmap
 #' @param clustering_distance_rows distance measure used in clustering rows. Possible values are "correlation" for Pearson correlation and all the distances supported by dist, such as "euclidean", etc. If the value is none of the above it is assumed that a distance matrix is provided.
@@ -329,39 +329,29 @@ setMethod("clusterRanges", signature="profileplyr",
 )
 
 
-#' Annotate profileplyr ranges to genes using rGREAT or ChIPseeker
+#' Annotate profileplyr ranges to genes using rGREAT 
 #'
 #' The ranges from the deepTools matrix will be subset based on whether they overlap with specified annotated regions related to a user defined gene list.
 #' @docType methods
 #' @name annotateRanges_great
-#' @rdname annotateRanges
+#' @rdname annotateRanges_great
+#' @param object A profileplyr object
 #' @param species GREAT accepts "hg19", "mm10", "mm9", "danRer7" (zebrafish)
-#' @param ... pass to \code{\link[rGREAT]{submitGreatJob}} or \code{\link[ChIPseeker]{annotatePeak}}
+#' @param ... pass to \code{\link[rGREAT]{submitGreatJob}} 
 #' @details tbd
 #' @return A profileplyr object
 #' @examples
-#' 
 #' library(SummarizedExperiment)
 #' example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
 #' object <- import_deepToolsMat(example)
-#' object <- object[1:2, , ] 
+#' object <- object[1:5, , ] 
 #' 
-#' # annotate ranges with genes using ChIPseeker 
-#' # (NOTE: can choose subset of annotations with 'annotation_subset' argument)
-#' 
-#' annotateRanges(object, TxDb = "mm10")
-#' 
-#' # annotate ranges with genes using GREAT with follwoing command (not run):
-#' # annotateRanges_great(object, species = "mm10")
-#' 
-#' 
+#' # annotate ranges with genes using GREAT with following command:
+#' annotateRanges_great(object, species = "mm10")
 #' 
 #' @import TxDb.Hsapiens.UCSC.hg19.knownGene TxDb.Hsapiens.UCSC.hg38.knownGene TxDb.Mmusculus.UCSC.mm9.knownGene TxDb.Mmusculus.UCSC.mm10.knownGene org.Hs.eg.db org.Mm.eg.db ChIPseeker rGREAT GenomicFeatures 
-#' @rdname annotateRanges
 setGeneric("annotateRanges_great", function(object="profileplyr",species="character",...)standardGeneric("annotateRanges_great"))
-
-
-#' @describeIn annotateRanges Annotate profileplyr ranges to genes using rGREAT or ChIPseeker
+#' @describeIn annotateRanges_great Annotate profileplyr ranges to genes using rGREAT 
 #' @export
 setMethod("annotateRanges_great", signature(object="profileplyr"),function(object, species, ...) {
 
@@ -383,7 +373,7 @@ setMethod("annotateRanges_great", signature(object="profileplyr"),function(objec
 
 
 
-#' Annotate profileplyr ranges to genes using rGREAT or ChIPseeker
+#' Annotate profileplyr ranges to genes using ChIPseeker
 #'
 #' The ranges from the deepTools matrix will be subset based on whether they overlap with specified annotated regions (using ChIPseeker) throughout the genome
 #' @docType methods
@@ -391,18 +381,29 @@ setMethod("annotateRanges_great", signature(object="profileplyr"),function(objec
 #' @rdname annotateRanges
 #' @param object A profileplyr object
 #' @param annotation_subset If specific annotations (from ChIPseeker package) are desired, specify them here in a character vector. Can be one or any combination of "Promoter", "Exon", "Intron", "Downstream", "Distal Intergenic", "3p UTR", or "5p UTR". This argument is optional and all annotation types will be included if argument is left out.
-#' @param TxDb TxDb object, a character sting that is a path to a GTF file, or character string indicating genome if one of the following - "hg19", "hg38", "mm9", "mm10".
+#' @param TxDb This must be either a TxDb object, a character string that is a path to a GTF file, or character string indicating genome if one of the following - "hg19", "hg38", "mm9", "mm10".
 #' @param tssRegion This needs to be a vector of two numbers that will define promoter regions. The first number must be negative, while the second number must be positive. Default values are  c(-3000, 3000) - SHOULD WE CHANGE THIS, SEEMS BIG!)
 #' @param changeGroupToAnnotation If the grouping should be changed to the annotations (typically when the ranges will be exported for visualization based on this annotation), this should be TRUE. The default if FALSE, which will keep the grouping that existed before annotating the object. This is typical if the output will be used for finding overlaps with gene lists in the 'groupBy' function.
 #' @param heatmap_grouping Only relevant if 'keepAnnotationAsGroup' is set to TRUE. This argument needs to be either "group", or "annotation". This will determine how the ranges are grouped in the resulting object. Default is heatmap_grouping = "Group". If there are no groups in the deepTools matrix that was used in the function, this argument is unnecessary
 #' @param annoDb The annotation package to be used. If the 'TxDb' agrument is set to "hg19", "hg38", "mm9", or "mm10" this will automatically be set and this can be left as NULL.
+#' @param ... pass to \code{\link[ChIPseeker]{annotatePeak}}
 #' @details tbd
 #' @return A profileplyr object
-#' @rdname annotateRanges 
+#' @examples 
+#' library(SummarizedExperiment)
+#' example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
+#' object <- import_deepToolsMat(example)
+#' object <- object[1:2, , ] 
+#' 
+#' # annotate ranges with genes using ChIPseeker 
+#' # (NOTE: can choose subset of annotations with 'annotation_subset' argument)
+#' 
+#' annotateRanges(object, TxDb = "mm10")
+#' 
 #' @export
 setGeneric("annotateRanges", function(object="profileplyr",annotation_subset = "character", TxDb, annoDb = "character", tssRegion = "numeric", changeGroupToAnnotation = "logical", heatmap_grouping = "character", ...)standardGeneric("annotateRanges"))
 
-#' @describeIn annotateRanges Annotate profileplyr ranges to genes using rGREAT or ChIPseeker
+#' @describeIn annotateRanges Annotate profileplyr ranges to genes using ChIPseeker
 #' @export
 setMethod("annotateRanges", signature(object="profileplyr"),function(object, annotation_subset = NULL, TxDb = NULL, annoDb = NULL, tssRegion = c(-3000, 3000), changeGroupToAnnotation = FALSE, heatmap_grouping = "group", ...) {
   
@@ -425,15 +426,19 @@ setMethod("annotateRanges", signature(object="profileplyr"),function(object, ann
     } else if (TxDb == "mm10") {
       TxDb_object <- TxDb.Mmusculus.UCSC.mm10.knownGene
     }
+  } else {
+    message("'TxDb' argument must be either a path to a GTF/GFF, a character vector that is one of 'hg19', 'hg38', 'mm9', or 'mm10', or a TxDB object")
   }
   
   
   # which species for annotation?
   if(is.null(annoDb)){
-    if (TxDb == "hg19" | TxDb == "hg38") {
-      orgAnn <- "org.Hs.eg.db"
-    } else if (TxDb == "mm9" | TxDb == "mm10") {
-      orgAnn <- "org.Mm.eg.db"
+    if (is(TxDb,"character")) {
+      if(TxDb == "hg19" | TxDb == "hg38") {
+        orgAnn <- "org.Hs.eg.db"
+      } else if (TxDb == "mm9" | TxDb == "mm10") {
+        orgAnn <- "org.Mm.eg.db"
+      } 
     } else {
       orgAnn <- NULL
     }
@@ -784,6 +789,9 @@ subsetbyGeneListOverlap <- function(object, group, include_nonoverlapping = FALS
     }
   
     overlap <- lapply(gene_list_vectorList, function(x) rowRanges(object)$SYMBOL %in% x)
+    if(!("SYMBOL" %in% colnames(mcols(object)))){
+      stop("There is no column in the range metadata with a colname of 'SYMBOL', which is required. Aside from the user manually adding this column it is typically added automatically by annotateRanges() or annotateRanges_great(). Make sure one of these functions has been run first.")
+    }
     
     input_names = gene_list_names
     type = "GL"
@@ -864,7 +872,7 @@ subsetbyGeneListOverlap <- function(object, group, include_nonoverlapping = FALS
 #' @export 
 setGeneric("summarize", function(object="profileplyr",fun = "function", output = "character", keep_all_mcols = "logical")standardGeneric("summarize"))
 
-#' @describeIn  summarize summarize the rows of a deepTools matrix
+#' @describeIn summarize summarize the rows of a deepTools matrix
 #' @export
 setMethod("summarize", signature(object="profileplyr"), function(object, fun, output, keep_all_mcols = FALSE){
   summ <- lapply(assays(object), fun)
