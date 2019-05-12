@@ -5,7 +5,7 @@
 \title{BamBigwig_to_chipProfile}
 \usage{
 BamBigwig_to_chipProfile(signalFiles, testRanges, format,
-  style = "percentOfRegion", nOfWindows = 100, ...)
+  style = "percentOfRegion", nOfWindows = 100, bin_size = 20, ...)
 }
 \arguments{
 \item{signalFiles}{paths to either BAM files or bigwig files. More than one path can be in this character vector, but all paths in one function call must point to be either all BAM files or all bigWig files, not a combination of the two.}
@@ -14,9 +14,11 @@ BamBigwig_to_chipProfile(signalFiles, testRanges, format,
 
 \item{format}{character string of "bam", "bigwig", "RleList" or "PWM"}
 
-\item{style}{a character string, "percentOfRegion" (default) for normalised length divided into bins set by the 'nOfWindows' argument, "point" for per base pair plot, and "region" for combined plot}
+\item{style}{a character string, "percentOfRegion" (default) for normalised length divided into bins set by the 'nOfWindows' argument, "point" for per base pair plot where the number of base pairs per bin is set by the 'bin_size' argument, and "region" for combined plot}
 
-\item{nOfWindows}{the number of windows/bins the normalised ranges will be divided into if 'style' is set to 'percentOfRegion'. Default is 100.}
+\item{nOfWindows}{The number of windows/bins the normalised ranges will be divided into if 'style' is set to 'percentOfRegion'. Default is 100.}
+
+\item{bin_size}{If 'style' is set to 'point' then this will determine the size of each bin over which signal is quantified. The default is 20 base pairs.}
 
 \item{...}{pass to regionPlot() within the soGGi package}
 }

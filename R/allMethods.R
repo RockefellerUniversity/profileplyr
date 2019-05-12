@@ -1703,8 +1703,9 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @param signalFiles paths to either BAM files or bigwig files. More than one path can be in this character vector, but all paths in one function call must point to be either all BAM files or all bigWig files, not a combination of the two.
 #' @param testRanges Either a character vector with paths to BED files.
 #' @param format character string of "bam", "bigwig", "RleList" or "PWM"
-#' @param style a character string, "percentOfRegion" (default) for normalised length divided into bins set by the 'nOfWindows' argument, "point" for per base pair plot, and "region" for combined plot
-#' @param nOfWindows the number of windows/bins the normalised ranges will be divided into if 'style' is set to 'percentOfRegion'. Default is 100.
+#' @param style a character string, "percentOfRegion" (default) for normalised length divided into bins set by the 'nOfWindows' argument, "point" for per base pair plot where the number of base pairs per bin is set by the 'bin_size' argument, and "region" for combined plot
+#' @param nOfWindows The number of windows/bins the normalised ranges will be divided into if 'style' is set to 'percentOfRegion'. Default is 100.
+#' @param bin_size If 'style' is set to 'point' then this will determine the size of each bin over which signal is quantified. The default is 20 base pairs.  
 #' @param ... pass to regionPlot() within the soGGi package
 #' @return A profileplyr object
 #' @examples
@@ -1730,7 +1731,7 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @importFrom GenomeInfoDb seqlevelsStyle<- seqlevelsInUse seqlevels
 #' @export
 #' 
-BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "percentOfRegion" , nOfWindows = 100, ...) {
+BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "percentOfRegion" , nOfWindows = 100, bin_size = 20, ...) {
   
   if (missing(format)){
     stop("'format' argument is missing, it must be entered")
@@ -1768,6 +1769,7 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "p
       temp <- temp 
       seqlevels(temp) <- seqlevelsInUse(temp)
       testRanges_GR[[i]] <- temp
+      testRanges_GR[[i]]$sgGroup <- rep(basename(testRanges[i]), length(testRanges_GR[[i]]))
       group_labels[i] <- basename(testRanges[i])
     }
     format <- "rlelist"
@@ -1780,14 +1782,9 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "p
     for(i in seq_along(testRanges)){
       testRanges_GR[[i]] <- import.bed(testRanges[i])
       seqlevelsStyle(testRanges_GR[[i]]) <- "UCSC"
+      testRanges_GR[[i]]$sgGroup <- rep(basename(testRanges[i]), length(testRanges_GR[[i]]))
       group_labels[i] <- basename(testRanges[i])
     }
-  }
-  
-  # Construct the group boundaries
-  group_boundaries <- c(0)
-  for(i in seq_along(testRanges_GR)){
-    group_boundaries <- c(group_boundaries, group_boundaries[i] + length(testRanges_GR[[i]]))
   }
   
   testRanges_GR_unlist <- unlist(testRanges_GR)
@@ -1808,12 +1805,36 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "p
     metadata(ChIPprofile_for_proplyr)$names <- signalFiles
   }
   
-  rowRanges(ChIPprofile_for_proplyr)$sgGroup <- factor(
-    rep(group_labels,
-        times=diff(group_boundaries) # Doug changed this too, before was 'each=diff(info$group_boundaries)' and this threw a warning that only first elsemnt was used. I think if you have different group sizes this wouldn't work, and 'times' fixes that
-    ),
-    levels = group_labels
+  rowRanges(ChIPprofile_for_proplyr)$sgGroup <- factor(rowRanges(ChIPprofile_for_proplyr)$sgGroup,
+                                                       levels = group_labels
   )
+  
+  if (style == "point"){
+    
+    if(bin_size > 1){
+      
+      bin_matrix <- function(matrix, bin_size){
+        
+        bin_number <- as.integer(ncol(matrix)/bin_size)
+        bin_mean_result <- list()
+        
+        for(i in seq(bin_number)){
+          if(i == 1){
+            bin_mean_result[[i]] <- rowMeans(matrix[, 1:bin_size])
+          }else{
+            bin_mean_result[[i]] <- rowMeans(matrix[, (bin_size*(i-1)+1):(bin_size*i)])
+          }
+        }
+        
+        binned_matrix <- do.call(cbind, bin_mean_result)
+        return(binned_matrix)
+      }
+      temp <- SummarizedExperiment(assays = lapply(assays(ChIPprofile_for_proplyr), bin_matrix, bin_size = bin_size),
+                                                      rowRanges = rowRanges(ChIPprofile_for_proplyr),
+                                                      metadata = metadata(ChIPprofile_for_proplyr))
+      ChIPprofile_for_proplyr = new("ChIPprofile",temp ,params=params(ChIPprofile_for_proplyr))
+    }
+  }
   return(ChIPprofile_for_proplyr)
 }
 
