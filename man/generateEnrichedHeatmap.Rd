@@ -6,19 +6,23 @@
 \usage{
 generateEnrichedHeatmap(object, include_group_annotation = TRUE,
   extra_annotation_columns = NULL, sample_names = NULL,
-  return_ht_list = FALSE, ylim = "common_max", decreasing = FALSE,
+  return_ht_list = FALSE, ylim = "common_max",
+  top_anno_height = unit(2, "cm"), decreasing = FALSE,
   all_color_scales_equal = TRUE, matrices_color,
   matrices_pos_line = TRUE, matrices_pos_line_gp = gpar(lty = 2),
+  top_anno_axis_font = gpar(fontsize = 8),
   matrices_show_heatmap_legend = TRUE,
   matrices_column_title_gp = gpar(fontsize = 10, fontface = "bold"),
-  matrices_axis_name_gp = gpar(fontsize = 8), group_anno_color = NULL,
-  group_anno_width = 3, group_anno_row_title_gp = gpar(fontsize = 10),
+  matrices_axis_name = NULL, matrices_axis_name_gp = gpar(fontsize =
+  8), group_anno_color = NULL, group_anno_width = 3,
+  group_anno_row_title_gp = gpar(fontsize = 10),
   group_anno_column_names_gp = gpar(fontsize = 10),
   extra_anno_color = vector(mode = "list", length =
   length(extra_annotation_columns)), extra_anno_top_annotation = TRUE,
   extra_anno_width = (rep(6, length(extra_annotation_columns))),
   only_extra_annotation_columns = FALSE, gap = 2,
-  genes_to_label = NULL, gene_label_font_size = 6)
+  genes_to_label = NULL, gene_label_font_size = 6,
+  show_heatmap_legend = NULL, legend_params = NULL)
 }
 \arguments{
 \item{object}{A profileplyr object}
@@ -31,7 +35,9 @@ generateEnrichedHeatmap(object, include_group_annotation = TRUE,
 
 \item{return_ht_list}{Whether the returned object is the heatmap list and not the actual figure. This will be a list of the various components (heatmaps and annotation columns) that can be added to with additional columns in a customized manner.}
 
-\item{ylim}{A numeric vector of two numbers that species the minimum and maximum of the yaxis of all the heatmaps generated for the matrices. The default is to use the max of the heatmap with the highest signal. If ylim = NULL, different ranges will be inferred for each heatmap.}
+\item{ylim}{A numeric vector of two numbers that specifies the minimum and maximum of the yaxis of all the heatmaps generated for the matrices. The default is to use the max of the heatmap with the highest signal. If ylim = NULL, different ranges will be inferred for each heatmap. If ylim is a single numeric vector, then that range will be used for all heatmaps. Different ranges can be set for each heatmap by making ylim a list that is the same length as the number of heatmaps/matrices, with each element of the list corresponding to each heatmap.}
+
+\item{top_anno_height}{The height (as a unit object) of the top annotation of all heatmaps representing the matrices}
 
 \item{decreasing}{If object@params$mcolToOrderBy has been changed and is NULL, then the ranges will be ordered by the column indicated in this slot of the metadata. By default, the order will be increasing for the factor or numeric value. For decreasing order, choose decreasing = TRUE.}
 
@@ -42,6 +48,8 @@ generateEnrichedHeatmap(object, include_group_annotation = TRUE,
 \item{matrices_pos_line}{A logical for whether to draw a vertical line(s) at the position of the target (for both a single point or a window). Default is true.}
 
 \item{matrices_pos_line_gp}{Graphics parameters for the vertical position lines. Should be set with the gpar() function from the grid() package.}
+
+\item{top_anno_axis_font}{The fontsize of the y-axis labels for the top annotation of all heatmaps representing the matrices}
 
 \item{matrices_show_heatmap_legend}{Logical denoting whether legends for all the heatmaps showing signal over the ranges/matrices should be shown. Default is FALSE.}
 
@@ -70,6 +78,10 @@ generateEnrichedHeatmap(object, include_group_annotation = TRUE,
 \item{genes_to_label}{A character vector of gene symbols that should match character strings in the 'SYMBOL' column that results from either 'annotateRanges' or 'annotateRanges_great'. Genes that are both in this vector and in the 'SYMBOL' column will be labeled on the heatmap.}
 
 \item{gene_label_font_size}{The size of the text for the labels for genes specified in 'genes_to_label' argument.}
+
+\item{show_heatmap_legend}{A logical vector with each position correpsonding to each matrix heatmap (not including the 'extra_annotation_columns') that determines whether a legend is produced for that heatmap. By default a single legend is made if all heamtaps use the same color scale, or separate legends are made for each matrix heatmap if the scales are different.}
+
+\item{legend_params}{A list that contains parameters for the legend. See \code{\link[ComplexHeatmap]{color_mapping_legend-ColorMapping-method}} for all available parameters.}
 }
 \value{
 By default a customized version of a heatmap from EnrichedHeatmap, if return_ht_list = TRUE then a heatmap list is returned that can be modified and then entered as an input for the \code{\link[EnrichedHeatmap]{EnrichedHeatmap}} function

@@ -1111,7 +1111,9 @@ setMethod("convertToEnrichedHeatmapMat", signature(object="profileplyr"),functio
 #' @param extra_annotation_columns A character vector of names that match column names of mcols(object). Extra annotation columns will be added to the heatmap based on the values of these indicated range metadata columns.
 #' @param sample_names A character vector that will set the names of the heatmap components that are generated from the profileplyr assays() matrices. This argument is optional, by default the names will be the name of the samples in the profileplyr object rownames(sampleData(object)).
 #' @param return_ht_list Whether the returned object is the heatmap list and not the actual figure. This will be a list of the various components (heatmaps and annotation columns) that can be added to with additional columns in a customized manner.
-#' @param ylim A numeric vector of two numbers that species the minimum and maximum of the yaxis of all the heatmaps generated for the matrices. The default is to use the max of the heatmap with the highest signal. If ylim = NULL, different ranges will be inferred for each heatmap. 
+#' @param ylim A numeric vector of two numbers that specifies the minimum and maximum of the yaxis of all the heatmaps generated for the matrices. The default is to use the max of the heatmap with the highest signal. If ylim = NULL, different ranges will be inferred for each heatmap. If ylim is a single numeric vector, then that range will be used for all heatmaps. Different ranges can be set for each heatmap by making ylim a list that is the same length as the number of heatmaps/matrices, with each element of the list corresponding to each heatmap.
+#' @param top_anno_height The height (as a unit object) of the top annotation of all heatmaps representing the matrices
+#' @param top_anno_axis_font The fontsize of the y-axis labels for the top annotation of all heatmaps representing the matrices
 #' @param decreasing If object@params$mcolToOrderBy has been changed and is NULL, then the ranges will be ordered by the column indicated in this slot of the metadata. By default, the order will be increasing for the factor or numeric value. For decreasing order, choose decreasing = TRUE.
 #' @param all_color_scales_equal If TRUE (default value) then the same color scale will be used for each separate heatmap. If FALSE, color scales will be inferred for each heatmap as indicated by the legends.
 #' @param matrices_color Either a single character vector, a numeric vector, a function call to colorRamp2 from the circlize package, or a list. For anything but a list, all the heatmaps generated for the matrices of the profileplyr object will be the same and will be colored as specified here. The character and numeric vector inputs must be either two or three elements in length (denoting color progressions - three elements will give a middle color break), and each element must be a character string or number that points to a color. By default, numeric vectors use the colors in palette(), however this can be expanded with other R color lists(e.g. colors()). If this argument is a list then it's length must equal the number of matrices/samples that exist in the input profileplyr object. The components of the list can be either a numeric vector, character vector, or color function (they do not have to all be the same type of specification). Each element in the list will be the color mapping to the corresponding element in the profileplyr object.
@@ -1131,6 +1133,8 @@ setMethod("convertToEnrichedHeatmapMat", signature(object="profileplyr"),functio
 #' @param gap The size of the gap between heatmaps and annotations. Only relevant if return_ht_list = FALSE
 #' @param genes_to_label A character vector of gene symbols that should match character strings in the 'SYMBOL' column that results from either 'annotateRanges' or 'annotateRanges_great'. Genes that are both in this vector and in the 'SYMBOL' column will be labeled on the heatmap. 
 #' @param gene_label_font_size The size of the text for the labels for genes specified in 'genes_to_label' argument.
+#' @param show_heatmap_legend A logical vector with each position correpsonding to each matrix heatmap (not including the 'extra_annotation_columns') that determines whether a legend is produced for that heatmap. By default a single legend is made if all heamtaps use the same color scale, or separate legends are made for each matrix heatmap if the scales are different. 
+#' @param legend_params A list that contains parameters for the legend. See \code{\link[ComplexHeatmap]{color_mapping_legend-ColorMapping-method}} for all available parameters. 
 #' @details Takes a profileplyr object and generated heatmap that can be annotated by group or by range metadata columns of the profileplyr object
 #' @return By default a customized version of a heatmap from EnrichedHeatmap, if return_ht_list = TRUE then a heatmap list is returned that can be modified and then entered as an input for the \code{\link[EnrichedHeatmap]{EnrichedHeatmap}} function
 #' @examples
@@ -1140,12 +1144,13 @@ setMethod("convertToEnrichedHeatmapMat", signature(object="profileplyr"),functio
 #' generateEnrichedHeatmap(object, include_group_annotation = FALSE)
 #' @export
 
-generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, extra_annotation_columns = NULL, sample_names = NULL, return_ht_list = FALSE, ylim = "common_max", 
+generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, extra_annotation_columns = NULL, sample_names = NULL, return_ht_list = FALSE, ylim = "common_max", top_anno_height = unit(2, "cm"),
                                     decreasing = FALSE, all_color_scales_equal = TRUE, matrices_color, matrices_pos_line = TRUE, matrices_pos_line_gp = gpar(lty = 2), 
-                                    matrices_show_heatmap_legend = TRUE, matrices_column_title_gp =  gpar(fontsize = 10, fontface = "bold"), matrices_axis_name_gp = gpar(fontsize = 8), 
+                                    top_anno_axis_font = gpar(fontsize = 8), matrices_show_heatmap_legend = TRUE, matrices_column_title_gp =  gpar(fontsize = 10, fontface = "bold"), matrices_axis_name = NULL, matrices_axis_name_gp = gpar(fontsize = 8), 
                                     group_anno_color = NULL, group_anno_width = 3, group_anno_row_title_gp = gpar(fontsize = 10), group_anno_column_names_gp = gpar(fontsize = 10),
                                     extra_anno_color = vector(mode = "list", length = length(extra_annotation_columns)), extra_anno_top_annotation = TRUE, 
-                                    extra_anno_width = (rep(6, length(extra_annotation_columns))), only_extra_annotation_columns = FALSE, gap = 2, genes_to_label = NULL, gene_label_font_size = 6){
+                                    extra_anno_width = (rep(6, length(extra_annotation_columns))), only_extra_annotation_columns = FALSE, gap = 2, genes_to_label = NULL, gene_label_font_size = 6, 
+                                    show_heatmap_legend = NULL, legend_params = NULL){
 
   # want to order by group, and then within each group order by mean signal
   scoreMat <- do.call(cbind,
@@ -1172,7 +1177,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
   enrichMAT <- convertToEnrichedHeatmapMat(object)
   
   # this will find the max for the mean of the columns (bins) and set this as the max for 'ylim' if specified above
-  # if ther eis grouping we actualyl want the max ylim necessary when the matrices are divided by group
+  # if there is grouping we actualyl want the max ylim necessary when the matrices are divided by group
   
   scoreMat <- do.call(cbind,
                       as.list(enrichMAT))
@@ -1210,59 +1215,96 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
   
   yaxis_side <- vector(length = length(enrichMAT))
   yaxis <- vector(length = length(enrichMAT))
-  if(!is.null(ylim)){
-    if(ylim == "common_max"){
-      ylim <- c(min_for_figure, max_for_figure)
+  facing <- vector(length = length(enrichMAT))
+
+  if((length(ylim) == 1) && (ylim == "common_max")){
+    limits <- c(min_for_figure, max_for_figure)
+    ylim_list <- list(limits)[rep(1, length(enrichMAT))]
+    axis = "only_first"
+  }
+  if (is(ylim,"numeric")) {
+    limits <- ylim
+    ylim_list <- list(limits)[rep(1, length(enrichMAT))]
+    axis = "only_first"
+  }
+  
+  if (is(ylim,"list")) {
+    if(length(ylim) != length(enrichMAT)){
+      stop("Since it is a list, the length of the 'ylim' argument must equal the number of heatmaps")
     }
+    ylim_list <- ylim
+    axis = "all"
+  }
+  
+  if (is.null(ylim)){
+    limits <- NULL
+    ylim_list <- list(limits)[rep(1, length(enrichMAT))]
+    axis = "all"
+  }
+  
+  if(axis == "only_first") {
     for (i in seq_along(enrichMAT)){
       if(i == 1){
         yaxis_side[i] <- "left"
+        facing[i] = "outside"
         yaxis[i] = TRUE
       } else{
-        yaxis_side[i] <- "right"
         yaxis[i] = FALSE
       }
     }
-  }else if (is.null(ylim)){
+  }
+  
+  if (axis == "all"){
     for (i in seq_along(enrichMAT)){
-      yaxis_side[i] <- "right"
-      yaxis[i] = TRUE
+      if(i == 1){
+        yaxis_side[i] <- "left"
+        facing[i] = "outside"
+        yaxis[i] = TRUE
+      } else{
+        yaxis_side[i] <- "left"
+        facing[i] = "inside"
+        yaxis[i] = TRUE
+      }
     }
   }
   
   # following three if statements will show one legend if all color scales are the same and ther user wants a legend (Default)
   # will show all legend if the color scales are unequal and user wants legends
+  # will skip this section is user specifies legend presence
 
-  if(all_color_scales_equal == TRUE & matrices_show_heatmap_legend == TRUE){
-    matrices_show_heatmap_legend <- vector(length = length(enrichMAT))
-    heatmap_legend_param <- vector(length = length(enrichMAT))
-    for (i in seq_along(enrichMAT)){
-      if(i == 1){
+  if (is.null(show_heatmap_legend)){
+    if(all_color_scales_equal == TRUE & matrices_show_heatmap_legend == TRUE){
+      matrices_show_heatmap_legend <- vector(length = length(enrichMAT))
+      heatmap_legend_title <- vector(length = length(enrichMAT))
+      for (i in seq_along(enrichMAT)){
+        if(i == 1){
+          matrices_show_heatmap_legend[i] <- TRUE
+          heatmap_legend_title[i] <- "signal"
+        }
+        else{
+          matrices_show_heatmap_legend[i] <- FALSE
+          heatmap_legend_title[i] <- names(enrichMAT[i])
+        }
+      }
+    } else if(all_color_scales_equal == FALSE & matrices_show_heatmap_legend == TRUE){
+      matrices_show_heatmap_legend <- vector(length = length(enrichMAT))
+      heatmap_legend_title <- vector(length = length(enrichMAT))
+      for (i in seq_along(enrichMAT)){
         matrices_show_heatmap_legend[i] <- TRUE
-        heatmap_legend_param[i] <- "signal"
+        heatmap_legend_title[i] <- names(enrichMAT[i])
       }
-      else{
+    } else if(matrices_show_heatmap_legend == FALSE){
+      matrices_show_heatmap_legend <- vector(length = length(enrichMAT))
+      heatmap_legend_title <- vector(length = length(enrichMAT))
+      for (i in seq_along(enrichMAT)){
         matrices_show_heatmap_legend[i] <- FALSE
-        heatmap_legend_param[i] <- names(enrichMAT[i])
+        heatmap_legend_title[i] <- names(enrichMAT[i])
       }
     }
-  } else if(all_color_scales_equal == FALSE & matrices_show_heatmap_legend == TRUE){
-    matrices_show_heatmap_legend <- vector(length = length(enrichMAT))
-    heatmap_legend_param <- vector(length = length(enrichMAT))
-    for (i in seq_along(enrichMAT)){
-      matrices_show_heatmap_legend[i] <- TRUE
-      heatmap_legend_param[i] <- names(enrichMAT[i])
-    }
-  } else if(matrices_show_heatmap_legend == FALSE){
-    matrices_show_heatmap_legend <- vector(length = length(enrichMAT))
-    heatmap_legend_param <- vector(length = length(enrichMAT))
-    yaxis_facing <- vector(length = length(enrichMAT))
-    for (i in seq_along(enrichMAT)){
-      matrices_show_heatmap_legend[i] <- FALSE
-      heatmap_legend_param[i] <- names(enrichMAT[i])
-    }
+  } else {
+    matrices_show_heatmap_legend = show_heatmap_legend
+    heatmap_legend_title <- names(enrichMAT)[show_heatmap_legend]
   }
-  
 
   if(missing(matrices_color)){
     matrices_color <- vector(mode = "list", length = length(enrichMAT))
@@ -1387,6 +1429,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     gene_annotation = NULL
   }
   
+
   heatmap_list <- list()
   
   if (include_group_annotation == TRUE){
@@ -1399,11 +1442,13 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     heatmap_list[[1]] <- Heatmap(mcols(object)[,params(object)$rowGroupsInUse], 
                                  col = structure(group_anno_color,
                                                  names = names(table((mcols(object)[params(object)$rowGroupsInUse])))),  
-                                 name = params(object)$rowGroupsInUse,
+                                 name = "",
                                  show_row_names = FALSE, 
                                  width = unit(group_anno_width, "mm"),
                                  row_title_gp = group_anno_row_title_gp,
-                                 column_names_gp = group_anno_column_names_gp) 
+                                 column_names_gp = group_anno_column_names_gp,
+                                 heatmap_legend_param = as.list(c(title = params(object)$rowGroupsInUse,
+                                                                  legend_params))) 
 
     for (i in (1 + seq_along(enrichMAT))){
 
@@ -1413,18 +1458,24 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
         colorRamp2(c(0, qUpper/2, qUpper), c("blue", "white", "red"))
       }
       
-      heatmap_list[[i]] <- EnrichedHeatmap(enrichMAT[[i-1]], 
+      heatmap_list[[i]] <- EnrichedHeatmap(enrichMAT[[i-1]],
+                                           row_order = NULL,
                                            col = matrices_color[[i-1]],
                                            name = sample_names[i-1],
                                            column_title = sample_names[i-1],
                                            top_annotation = HeatmapAnnotation(lines = anno_enriched(gp = gpar(col = group_anno_color),
-                                                                                                    ylim = ylim, 
+                                                                                                    ylim = ylim_list[[i-1]], 
                                                                                                     axis_param = list(side = yaxis_side[i-1],
-                                                                                                                      facing = "outside"),
-                                                                                                    yaxis = yaxis[i-1])),
+                                                                                                                      facing = facing[i-1],
+                                                                                                                      at = grid.pretty(ylim_list[[i-1]])[grid.pretty(ylim_list[[i-1]]) > ylim_list[[i-1]][1]],
+                                                                                                                      gp = top_anno_axis_font),
+                                                                                                    yaxis = yaxis[i-1],
+                                                                                                    height = top_anno_height)),
                                            show_heatmap_legend = matrices_show_heatmap_legend[i-1],
-                                           heatmap_legend_param = list(title = heatmap_legend_param[i-1]),
+                                           heatmap_legend_param = as.list(c(title = heatmap_legend_title[i-1],
+                                                                            legend_params)),
                                            column_title_gp = matrices_column_title_gp,
+                                           axis_name = matrices_axis_name,
                                            axis_name_gp = matrices_axis_name_gp,
                                            pos_line = matrices_pos_line,
                                            pos_line_gp = matrices_pos_line_gp)
@@ -1433,18 +1484,24 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
   
   if (include_group_annotation == FALSE){
     for (i in seq_along(enrichMAT)){
-      heatmap_list[[i]] <- EnrichedHeatmap(enrichMAT[[i]], 
+      heatmap_list[[i]] <- EnrichedHeatmap(enrichMAT[[i]],
+                                           row_order = NULL,
                                            col = matrices_color[[i]],
                                            name = sample_names[i],
                                            column_title = sample_names[i],
                                            top_annotation = HeatmapAnnotation(lines = anno_enriched(gp = gpar(col = group_anno_color),
-                                                                                                    ylim = ylim,
+                                                                                                    ylim = ylim_list[[i]],
                                                                                                     axis_param = list(side = yaxis_side[i],
-                                                                                                                      facing = "outside"),
-                                                                                                    yaxis = yaxis[i])),
+                                                                                                                      facing = facing[i],
+                                                                                                                      at = grid.pretty(ylim_list[[i]])[grid.pretty(ylim_list[[i]]) > ylim_list[[i]][1]],
+                                                                                                                      gp = top_anno_axis_font),
+                                                                                                    yaxis = yaxis[i],
+                                                                                                    height = top_anno_height)),
                                            show_heatmap_legend = matrices_show_heatmap_legend[i],
-                                           heatmap_legend_param = list(title = heatmap_legend_param[i]),
+                                           heatmap_legend_param = as.list(c(title = heatmap_legend_title[i],
+                                                                       legend_params)),
                                            column_title_gp = matrices_column_title_gp,
+                                           axis_name = matrices_axis_name,
                                            axis_name_gp = matrices_axis_name_gp,
                                            pos_line = matrices_pos_line,
                                            pos_line_gp = matrices_pos_line_gp)
@@ -1463,17 +1520,23 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     }
     
     heatmap_list[[i]] <- EnrichedHeatmap(enrichMAT[[i-1]], 
+                                         row_order = NULL,
                                          col = matrices_color[[i-1]],
                                          name = sample_names[i-1],
                                          column_title = sample_names[i-1],
                                          top_annotation = HeatmapAnnotation(lines = anno_enriched(gp = gpar(col = group_anno_color),
-                                                                                                  ylim = ylim, 
+                                                                                                  ylim = ylim_list[[i-1]], 
                                                                                                   axis_param = list(side = yaxis_side[i-1],
-                                                                                                                    facing = "outside"),
-                                                                                                  yaxis = yaxis[i-1])),
+                                                                                                                    facing = facing[i-1],
+                                                                                                                    at = grid.pretty(ylim_list[[i-1]])[grid.pretty(ylim_list[[i-1]]) > ylim_list[[i-1]][1]],
+                                                                                                                    gp = top_anno_axis_font),
+                                                                                                  yaxis = yaxis[i-1],
+                                                                                                  height = top_anno_height)),
                                          show_heatmap_legend = matrices_show_heatmap_legend[i-1],
-                                         heatmap_legend_param = list(title = heatmap_legend_param[i-1]),
+                                         heatmap_legend_param = as.list(c(title = heatmap_legend_title[i],
+                                                                          legend_params)),
                                          column_title_gp = matrices_column_title_gp,
+                                         axis_name = matrices_axis_name,
                                          axis_name_gp = matrices_axis_name_gp,
                                          pos_line = matrices_pos_line,
                                          pos_line_gp = matrices_pos_line_gp,
@@ -1516,7 +1579,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
           stop("The length of the 'extra_anno_color' argument for the '", extra_annotation_columns[i], "' column is not the same length as the number of discrete names in that column of the range metadata.")
         }
         if (extra_anno_top_annotation[i]){
-          top_annotation <- HeatmapAnnotation(summary = anno_summary(axis = FALSE))
+          top_annotation <- HeatmapAnnotation(summary = anno_summary(axis = FALSE,
+                                                                     height = unit(top_anno_height, "cm")))
         }else {
           top_annotation <- NULL
         }
@@ -1529,7 +1593,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
         if (extra_anno_top_annotation[i]){
           top_annotation <- HeatmapAnnotation(summary = anno_summary(gp = gpar(fill = group_anno_color),
                                                                      outline = FALSE, 
-                                                                     axis = FALSE))
+                                                                     axis = FALSE,
+                                                                     height = unit(top_anno_height, "cm")))
         } else {
           top_annotation <- NULL
         }
@@ -1545,7 +1610,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                                         width = unit(extra_anno_width[i], "mm"),
                                                         column_names_gp = gpar(fontsize = 10),
                                                         top_annotation = top_annotation,
-                                                        cluster_rows = FALSE)
+                                                        cluster_rows = FALSE,
+                                                        heatmap_legend_param = legend_params)
     }
     if(!is.null(genes_to_label)){
       i = length(extra_annotation_columns)
@@ -1556,7 +1622,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                                         width = unit(extra_anno_width[i], "mm"),
                                                         column_names_gp = gpar(fontsize = 10),
                                                         top_annotation = top_annotation,
-                                                        right_annotation = gene_annotation)
+                                                        right_annotation = gene_annotation,
+                                                        heatmap_legend_param = legend_params)
     }
   }
   
@@ -1701,7 +1768,7 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #'
 #' @rdname BamBigwig_to_chipProfile
 #' @param signalFiles paths to either BAM files or bigwig files. More than one path can be in this character vector, but all paths in one function call must point to be either all BAM files or all bigWig files, not a combination of the two.
-#' @param testRanges Either a character vector with paths to BED files.
+#' @param testRanges A character vector with paths to BED files.
 #' @param format character string of "bam", "bigwig", "RleList" or "PWM"
 #' @param style a character string, "percentOfRegion" (default) for normalised length divided into bins set by the 'nOfWindows' argument, "point" for per base pair plot where the number of base pairs per bin is set by the 'bin_size' argument, and "region" for combined plot
 #' @param nOfWindows The number of windows/bins the normalised ranges will be divided into if 'style' is set to 'percentOfRegion'. Default is 100.

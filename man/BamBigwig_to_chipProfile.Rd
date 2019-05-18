@@ -10,7 +10,7 @@ BamBigwig_to_chipProfile(signalFiles, testRanges, format,
 \arguments{
 \item{signalFiles}{paths to either BAM files or bigwig files. More than one path can be in this character vector, but all paths in one function call must point to be either all BAM files or all bigWig files, not a combination of the two.}
 
-\item{testRanges}{Either a character vector with paths to BED files.}
+\item{testRanges}{A character vector with paths to BED files.}
 
 \item{format}{character string of "bam", "bigwig", "RleList" or "PWM"}
 
