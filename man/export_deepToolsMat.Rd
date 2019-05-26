@@ -22,7 +22,7 @@ import_deepToolsMat(con)
 
 \item{decreasing}{If object@params$mcolToOrderBy has been set and not NULL, then the ranges will be ordered by the column indicated in this slot of the metadata. By default, the order will be increasing for the factor or numeric value. For decreasing order, choose decreasing = TRUE.}
 
-\item{overwrite}{Logical specifying whether to overwite output if it exists.}
+\item{overwrite}{Logical specifying whether to overwrite output if it exists.}
 }
 \value{
 The path to deepTools matrix file

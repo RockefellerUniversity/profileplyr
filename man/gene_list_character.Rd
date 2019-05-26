@@ -8,7 +8,7 @@
 data(gene_list_character)
 }
 \value{
-A character vector of the top differenetially expressed genes in the hindbrain versus liver as measured by RNA-seq/
+A character vector of the top differentially expressed genes in the hindbrain versus liver as measured by RNA-seq/
 }
 \description{
 This dataset contains a character vector of the top differenetially expressed genes in the hindbrain versus liver as measured by RNA-seq (both genes that go up and those that go down). Data was downloaded from ENCODE.

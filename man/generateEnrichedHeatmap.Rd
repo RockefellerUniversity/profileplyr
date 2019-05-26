@@ -7,8 +7,9 @@
 generateEnrichedHeatmap(object, include_group_annotation = TRUE,
   extra_annotation_columns = NULL, sample_names = NULL,
   return_ht_list = FALSE, ylim = "common_max",
-  top_anno_height = unit(2, "cm"), decreasing = FALSE,
-  all_color_scales_equal = TRUE, matrices_color,
+  top_anno_height = unit(2, "cm"), samples_to_sortby = NULL,
+  decreasing = FALSE, all_color_scales_equal = TRUE,
+  matrices_color = NULL, color_by_sample_group = NULL,
   matrices_pos_line = TRUE, matrices_pos_line_gp = gpar(lty = 2),
   top_anno_axis_font = gpar(fontsize = 8),
   matrices_show_heatmap_legend = TRUE,
@@ -35,15 +36,19 @@ generateEnrichedHeatmap(object, include_group_annotation = TRUE,
 
 \item{return_ht_list}{Whether the returned object is the heatmap list and not the actual figure. This will be a list of the various components (heatmaps and annotation columns) that can be added to with additional columns in a customized manner.}
 
-\item{ylim}{A numeric vector of two numbers that specifies the minimum and maximum of the yaxis of all the heatmaps generated for the matrices. The default is to use the max of the heatmap with the highest signal. If ylim = NULL, different ranges will be inferred for each heatmap. If ylim is a single numeric vector, then that range will be used for all heatmaps. Different ranges can be set for each heatmap by making ylim a list that is the same length as the number of heatmaps/matrices, with each element of the list corresponding to each heatmap.}
+\item{ylim}{A numeric vector of two numbers that specifies the minimum and maximum of the yaxis of all the heatmaps generated for the matrices. The default is to use the max of the heatmap with the highest signal (ylim = 'common_max'). If ylim = NULL, different ranges will be inferred for each heatmap. If ylim is a single numeric vector, then that range will be used for all heatmaps. Different ranges can be set for each heatmap by making ylim a list that is the same length as the number of heatmaps/matrices, with each element of the list corresponding to each heatmap. Lastly, ylim can be a character string matching a column name in sampleData(object), and this will make the heatmaps with the same grouping have the same ylims as determined by the common max within groups.}
 
 \item{top_anno_height}{The height (as a unit object) of the top annotation of all heatmaps representing the matrices}
+
+\item{samples_to_sortby}{Either a character or numeric vector. If numeric, then the samples/matrices that have that index in the profileplyr object will be used to order the rows of the heatmap. If a character vector, then the elements must match the name of a sample in the object (rownames(sampleData(object))), and these samples will be used to order the heatmap.}
 
 \item{decreasing}{If object@params$mcolToOrderBy has been changed and is NULL, then the ranges will be ordered by the column indicated in this slot of the metadata. By default, the order will be increasing for the factor or numeric value. For decreasing order, choose decreasing = TRUE.}
 
 \item{all_color_scales_equal}{If TRUE (default value) then the same color scale will be used for each separate heatmap. If FALSE, color scales will be inferred for each heatmap as indicated by the legends.}
 
 \item{matrices_color}{Either a single character vector, a numeric vector, a function call to colorRamp2 from the circlize package, or a list. For anything but a list, all the heatmaps generated for the matrices of the profileplyr object will be the same and will be colored as specified here. The character and numeric vector inputs must be either two or three elements in length (denoting color progressions - three elements will give a middle color break), and each element must be a character string or number that points to a color. By default, numeric vectors use the colors in palette(), however this can be expanded with other R color lists(e.g. colors()). If this argument is a list then it's length must equal the number of matrices/samples that exist in the input profileplyr object. The components of the list can be either a numeric vector, character vector, or color function (they do not have to all be the same type of specification). Each element in the list will be the color mapping to the corresponding element in the profileplyr object.}
+
+\item{color_by_sample_group}{A character vector that is identical to a column name in sampleData(object), and if set, the heatmaps will be colored based on that column (should be a factor, if not it will be converted to one)}
 
 \item{matrices_pos_line}{A logical for whether to draw a vertical line(s) at the position of the target (for both a single point or a window). Default is true.}
 
@@ -53,7 +58,9 @@ generateEnrichedHeatmap(object, include_group_annotation = TRUE,
 
 \item{matrices_show_heatmap_legend}{Logical denoting whether legends for all the heatmaps showing signal over the ranges/matrices should be shown. Default is FALSE.}
 
-\item{matrices_column_title_gp}{Graphics parameters for the titles on top of each range/matrix (set by 'sample_names' argument or the names of each matrix by default). Should be set with the gpar() function from the grid() package.}
+\item{matrices_column_title_gp}{Graphics parameters for the titles on top of each range/matrix. Should be set with the gpar() function from the grid() package.}
+
+\item{matrices_axis_name}{Names for axis which is below the heatmap. For profileplyr object made from BamBigwig_to_chipProfile/as_profileplyr functions, the names will be of length three, with the middle point being the midpoint of each range.  If the profileplyr object was made from a deeptools matrix with import_deepToolsMat(), the names will be length three if matrix was generated with 'computeMatrix reference-point', or length of four if matrix was generated with 'computeMatrix scale-regions' corresponding to upstream, start of targets, end of targets and downstream (or length of two if no upstream/downstream included).}
 
 \item{matrices_axis_name_gp}{Graphics parameters for the text on the x-axis of each matrix heatmap. Should be set with the gpar() function from the grid() package.}
 
@@ -67,11 +74,11 @@ generateEnrichedHeatmap(object, include_group_annotation = TRUE,
 
 \item{extra_anno_color}{This will specify colors for the annotation columns added by the 'extra_annotation_columns' argument. This must be a list that is of equal length to the 'extra_annotation_columns' argument. Each element of this list will be used to specify the color scheme for the corresponding element of the 'extra_annotation_columns' vector. If an element is NULL, the default colors will be used for the column annotation. For a column with discrete variables this will typically be a vector of numbers or a vector of color names. By default, numeric vectors use the colors in palette(), however this can be expanded with other R color lists(e.g. colors()). For columns with continuous variables, this can also be a a vector of numbers or a vector of color names to signify the color progression, or it can be color mapping function using colorRamp2() from the circlize package.}
 
-\item{extra_anno_top_annotation}{This is a logical vector that determines whether annotation plots are shown on top of the heatmaps for the extra annotations. This must either be a length of 1, in which case all of the heatamps will abide by this value. Otherwise this must be a vector of equal length to the 'extra_annotation_columns' argument and the elements of this vector will correspond to the equvalent elements in 'extra annotation_columns'}
+\item{extra_anno_top_annotation}{This is a logical vector that determines whether annotation plots are shown on top of the heatmaps for the extra annotations. This must either be a length of 1, in which case all of the heatmaps will abide by this value. Otherwise this must be a vector of equal length to the 'extra_annotation_columns' argument and the elements of this vector will correspond to the equivalent elements in 'extra annotation_columns'}
 
 \item{extra_anno_width}{This will set the width of the individual extra annotation columns on the right side of the figure. This must be a numeric vector with each element setting the width for the corresponding element in the 'extra_annotation_columns' argument.}
 
-\item{only_extra_annotation_columns}{If set to TRUE, only the heatmaps representing the extra annotation columns whill be shown, and the range based heatmaps from the assay matricies will be excluded.}
+\item{only_extra_annotation_columns}{If set to TRUE, only the heatmaps representing the extra annotation columns will be shown, and the range based heatmaps from the assay matrices will be excluded.}
 
 \item{gap}{The size of the gap between heatmaps and annotations. Only relevant if return_ht_list = FALSE}
 
@@ -79,7 +86,7 @@ generateEnrichedHeatmap(object, include_group_annotation = TRUE,
 
 \item{gene_label_font_size}{The size of the text for the labels for genes specified in 'genes_to_label' argument.}
 
-\item{show_heatmap_legend}{A logical vector with each position correpsonding to each matrix heatmap (not including the 'extra_annotation_columns') that determines whether a legend is produced for that heatmap. By default a single legend is made if all heamtaps use the same color scale, or separate legends are made for each matrix heatmap if the scales are different.}
+\item{show_heatmap_legend}{A logical vector with each position corresponding to each matrix heatmap (not including the 'extra_annotation_columns') that determines whether a legend is produced for that heatmap. By default a single legend is made if all heatmaps use the same color scale, or separate legends are made for each matrix heatmap if the scales are different.}
 
 \item{legend_params}{A list that contains parameters for the legend. See \code{\link[ComplexHeatmap]{color_mapping_legend-ColorMapping-method}} for all available parameters.}
 }

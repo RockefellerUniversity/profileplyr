@@ -7,7 +7,7 @@
 #' @param object A profileplyr object
 #' @param con Connection to write/read deeptools data to/from.
 #' @param decreasing If object@params$mcolToOrderBy has been set and not NULL, then the ranges will be ordered by the column indicated in this slot of the metadata. By default, the order will be increasing for the factor or numeric value. For decreasing order, choose decreasing = TRUE.
-#' @param overwrite Logical specifying whether to overwite output if it exists.
+#' @param overwrite Logical specifying whether to overwrite output if it exists.
 #' @importFrom R.utils gzip
 #' @importFrom rjson toJSON
 #' @importFrom dplyr mutate select vars
@@ -385,7 +385,7 @@ setMethod("annotateRanges_great", signature(object="profileplyr"),function(objec
 #' @param tssRegion This needs to be a vector of two numbers that will define promoter regions. The first number must be negative, while the second number must be positive. Default values are  c(-3000, 3000) - SHOULD WE CHANGE THIS, SEEMS BIG!)
 #' @param changeGroupToAnnotation If the grouping should be changed to the annotations (typically when the ranges will be exported for visualization based on this annotation), this should be TRUE. The default if FALSE, which will keep the grouping that existed before annotating the object. This is typical if the output will be used for finding overlaps with gene lists in the 'groupBy' function.
 #' @param heatmap_grouping Only relevant if 'keepAnnotationAsGroup' is set to TRUE. This argument needs to be either "group", or "annotation". This will determine how the ranges are grouped in the resulting object. Default is heatmap_grouping = "Group". If there are no groups in the deepTools matrix that was used in the function, this argument is unnecessary
-#' @param annoDb The annotation package to be used. If the 'TxDb' agrument is set to "hg19", "hg38", "mm9", or "mm10" this will automatically be set and this can be left as NULL.
+#' @param annoDb The annotation package to be used. If the 'TxDb' argument is set to "hg19", "hg38", "mm9", or "mm10" this will automatically be set and this can be left as NULL.
 #' @param ... pass to \code{\link[ChIPseeker]{annotatePeak}}
 #' @details tbd
 #' @return A profileplyr object
@@ -1111,29 +1111,32 @@ setMethod("convertToEnrichedHeatmapMat", signature(object="profileplyr"),functio
 #' @param extra_annotation_columns A character vector of names that match column names of mcols(object). Extra annotation columns will be added to the heatmap based on the values of these indicated range metadata columns.
 #' @param sample_names A character vector that will set the names of the heatmap components that are generated from the profileplyr assays() matrices. This argument is optional, by default the names will be the name of the samples in the profileplyr object rownames(sampleData(object)).
 #' @param return_ht_list Whether the returned object is the heatmap list and not the actual figure. This will be a list of the various components (heatmaps and annotation columns) that can be added to with additional columns in a customized manner.
-#' @param ylim A numeric vector of two numbers that specifies the minimum and maximum of the yaxis of all the heatmaps generated for the matrices. The default is to use the max of the heatmap with the highest signal. If ylim = NULL, different ranges will be inferred for each heatmap. If ylim is a single numeric vector, then that range will be used for all heatmaps. Different ranges can be set for each heatmap by making ylim a list that is the same length as the number of heatmaps/matrices, with each element of the list corresponding to each heatmap.
+#' @param ylim A numeric vector of two numbers that specifies the minimum and maximum of the yaxis of all the heatmaps generated for the matrices. The default is to use the max of the heatmap with the highest signal (ylim = 'common_max'). If ylim = NULL, different ranges will be inferred for each heatmap. If ylim is a single numeric vector, then that range will be used for all heatmaps. Different ranges can be set for each heatmap by making ylim a list that is the same length as the number of heatmaps/matrices, with each element of the list corresponding to each heatmap. Lastly, ylim can be a character string matching a column name in sampleData(object), and this will make the heatmaps with the same grouping have the same ylims as determined by the common max within groups.
 #' @param top_anno_height The height (as a unit object) of the top annotation of all heatmaps representing the matrices
 #' @param top_anno_axis_font The fontsize of the y-axis labels for the top annotation of all heatmaps representing the matrices
 #' @param decreasing If object@params$mcolToOrderBy has been changed and is NULL, then the ranges will be ordered by the column indicated in this slot of the metadata. By default, the order will be increasing for the factor or numeric value. For decreasing order, choose decreasing = TRUE.
 #' @param all_color_scales_equal If TRUE (default value) then the same color scale will be used for each separate heatmap. If FALSE, color scales will be inferred for each heatmap as indicated by the legends.
+#' @param samples_to_sortby Either a character or numeric vector. If numeric, then the samples/matrices that have that index in the profileplyr object will be used to order the rows of the heatmap. If a character vector, then the elements must match the name of a sample in the object (rownames(sampleData(object))), and these samples will be used to order the heatmap. 
 #' @param matrices_color Either a single character vector, a numeric vector, a function call to colorRamp2 from the circlize package, or a list. For anything but a list, all the heatmaps generated for the matrices of the profileplyr object will be the same and will be colored as specified here. The character and numeric vector inputs must be either two or three elements in length (denoting color progressions - three elements will give a middle color break), and each element must be a character string or number that points to a color. By default, numeric vectors use the colors in palette(), however this can be expanded with other R color lists(e.g. colors()). If this argument is a list then it's length must equal the number of matrices/samples that exist in the input profileplyr object. The components of the list can be either a numeric vector, character vector, or color function (they do not have to all be the same type of specification). Each element in the list will be the color mapping to the corresponding element in the profileplyr object.
+#' @param color_by_sample_group A character vector that is identical to a column name in sampleData(object), and if set, the heatmaps will be colored based on that column (should be a factor, if not it will be converted to one)
 #' @param matrices_pos_line A logical for whether to draw a vertical line(s) at the position of the target (for both a single point or a window). Default is true.
 #' @param matrices_pos_line_gp Graphics parameters for the vertical position lines. Should be set with the gpar() function from the grid() package.
 #' @param matrices_show_heatmap_legend Logical denoting whether legends for all the heatmaps showing signal over the ranges/matrices should be shown. Default is FALSE.
-#' @param matrices_column_title_gp Graphics parameters for the titles on top of each range/matrix (set by 'sample_names' argument or the names of each matrix by default). Should be set with the gpar() function from the grid() package.
+#' @param matrices_column_title_gp Graphics parameters for the titles on top of each range/matrix. Should be set with the gpar() function from the grid() package.
+#' @param matrices_axis_name Names for axis which is below the heatmap. For profileplyr object made from BamBigwig_to_chipProfile/as_profileplyr functions, the names will be of length three, with the middle point being the midpoint of each range.  If the profileplyr object was made from a deeptools matrix with import_deepToolsMat(), the names will be length three if matrix was generated with 'computeMatrix reference-point', or length of four if matrix was generated with 'computeMatrix scale-regions' corresponding to upstream, start of targets, end of targets and downstream (or length of two if no upstream/downstream included).
 #' @param matrices_axis_name_gp Graphics parameters for the text on the x-axis of each matrix heatmap. Should be set with the gpar() function from the grid() package.
 #' @param group_anno_color This will specify colors for the grouping column if the 'include_group_annotation' argument is set to TRUE. Since the group column of the range metadata should always be a discrete value, this should be either a numeric vector or character vector with color names. By default, numeric vectors use the colors in palette(), however this can be expanded with other R color lists(e.g. colors()). The length of this vector must equal the number of groups.
 #' @param group_anno_width A numeric value that is used to will set the width of the column bar (in mm using the unit() function from the grid package) for the grouping annotation column. 
 #' @param group_anno_row_title_gp Graphics parameters for the labels of the groups on the side of the heatmap. Should be set with the gpar() function from the grid() package. 
 #' @param group_anno_column_names_gp Graphics parameters for the label of the grouping annotation column. Should be set with the gpar() function from the grid() package.
 #' @param extra_anno_color This will specify colors for the annotation columns added by the 'extra_annotation_columns' argument. This must be a list that is of equal length to the 'extra_annotation_columns' argument. Each element of this list will be used to specify the color scheme for the corresponding element of the 'extra_annotation_columns' vector. If an element is NULL, the default colors will be used for the column annotation. For a column with discrete variables this will typically be a vector of numbers or a vector of color names. By default, numeric vectors use the colors in palette(), however this can be expanded with other R color lists(e.g. colors()). For columns with continuous variables, this can also be a a vector of numbers or a vector of color names to signify the color progression, or it can be color mapping function using colorRamp2() from the circlize package.
-#' @param extra_anno_top_annotation This is a logical vector that determines whether annotation plots are shown on top of the heatmaps for the extra annotations. This must either be a length of 1, in which case all of the heatamps will abide by this value. Otherwise this must be a vector of equal length to the 'extra_annotation_columns' argument and the elements of this vector will correspond to the equvalent elements in 'extra annotation_columns'
+#' @param extra_anno_top_annotation This is a logical vector that determines whether annotation plots are shown on top of the heatmaps for the extra annotations. This must either be a length of 1, in which case all of the heatmaps will abide by this value. Otherwise this must be a vector of equal length to the 'extra_annotation_columns' argument and the elements of this vector will correspond to the equivalent elements in 'extra annotation_columns'
 #' @param extra_anno_width This will set the width of the individual extra annotation columns on the right side of the figure. This must be a numeric vector with each element setting the width for the corresponding element in the 'extra_annotation_columns' argument.
-#' @param only_extra_annotation_columns If set to TRUE, only the heatmaps representing the extra annotation columns whill be shown, and the range based heatmaps from the assay matricies will be excluded. 
+#' @param only_extra_annotation_columns If set to TRUE, only the heatmaps representing the extra annotation columns will be shown, and the range based heatmaps from the assay matrices will be excluded. 
 #' @param gap The size of the gap between heatmaps and annotations. Only relevant if return_ht_list = FALSE
 #' @param genes_to_label A character vector of gene symbols that should match character strings in the 'SYMBOL' column that results from either 'annotateRanges' or 'annotateRanges_great'. Genes that are both in this vector and in the 'SYMBOL' column will be labeled on the heatmap. 
 #' @param gene_label_font_size The size of the text for the labels for genes specified in 'genes_to_label' argument.
-#' @param show_heatmap_legend A logical vector with each position correpsonding to each matrix heatmap (not including the 'extra_annotation_columns') that determines whether a legend is produced for that heatmap. By default a single legend is made if all heamtaps use the same color scale, or separate legends are made for each matrix heatmap if the scales are different. 
+#' @param show_heatmap_legend A logical vector with each position corresponding to each matrix heatmap (not including the 'extra_annotation_columns') that determines whether a legend is produced for that heatmap. By default a single legend is made if all heatmaps use the same color scale, or separate legends are made for each matrix heatmap if the scales are different. 
 #' @param legend_params A list that contains parameters for the legend. See \code{\link[ComplexHeatmap]{color_mapping_legend-ColorMapping-method}} for all available parameters. 
 #' @details Takes a profileplyr object and generated heatmap that can be annotated by group or by range metadata columns of the profileplyr object
 #' @return By default a customized version of a heatmap from EnrichedHeatmap, if return_ht_list = TRUE then a heatmap list is returned that can be modified and then entered as an input for the \code{\link[EnrichedHeatmap]{EnrichedHeatmap}} function
@@ -1145,17 +1148,35 @@ setMethod("convertToEnrichedHeatmapMat", signature(object="profileplyr"),functio
 #' @export
 
 generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, extra_annotation_columns = NULL, sample_names = NULL, return_ht_list = FALSE, ylim = "common_max", top_anno_height = unit(2, "cm"),
-                                    decreasing = FALSE, all_color_scales_equal = TRUE, matrices_color, matrices_pos_line = TRUE, matrices_pos_line_gp = gpar(lty = 2), 
+                                    samples_to_sortby = NULL, decreasing = FALSE, all_color_scales_equal = TRUE, matrices_color = NULL, color_by_sample_group = NULL, matrices_pos_line = TRUE, matrices_pos_line_gp = gpar(lty = 2), 
                                     top_anno_axis_font = gpar(fontsize = 8), matrices_show_heatmap_legend = TRUE, matrices_column_title_gp =  gpar(fontsize = 10, fontface = "bold"), matrices_axis_name = NULL, matrices_axis_name_gp = gpar(fontsize = 8), 
                                     group_anno_color = NULL, group_anno_width = 3, group_anno_row_title_gp = gpar(fontsize = 10), group_anno_column_names_gp = gpar(fontsize = 10),
                                     extra_anno_color = vector(mode = "list", length = length(extra_annotation_columns)), extra_anno_top_annotation = TRUE, 
                                     extra_anno_width = (rep(6, length(extra_annotation_columns))), only_extra_annotation_columns = FALSE, gap = 2, genes_to_label = NULL, gene_label_font_size = 6, 
                                     show_heatmap_legend = NULL, legend_params = NULL){
 
-  # want to order by group, and then within each group order by mean signal
-  scoreMat <- do.call(cbind,
-                      as.list(assays(object)))
+  if(!is.null(samples_to_sortby)) {
+    if(is(samples_to_sortby, "numeric")){
+      select_samples <- object[,,samples_to_sortby]
+      scoreMat <- do.call(cbind,
+                          as.list(assays(object)[samples_to_sortby]))
+    }
+    if(is(samples_to_sortby, "character")){
+      for (i in seq_along(samples_to_sortby)){
+        if (!(samples_to_sortby[i] %in% rownames(sampleData(object)))){
+          stop(paste0(samples_to_sortby[i], " is not a sample name (i.e. rownames(sampleData(object))) in the profileplyr object to be visualized"))
+        }
+      }
+      select_samples <- object[,,rownames(sampleData(object)) %in% samples_to_sortby]
+      scoreMat <- do.call(cbind,
+                          as.list(assays(object)[samples_to_sortby]))
+    }
+  } else{
+    scoreMat <- do.call(cbind,
+                        as.list(assays(object)))
+  }
   
+
   means <- rowMeans(scoreMat)
   means_rev <- max(means) - means
   rowRanges(object)$bin_means_rev <- means_rev
@@ -1176,49 +1197,314 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
   
   enrichMAT <- convertToEnrichedHeatmapMat(object)
   
-  # this will find the max for the mean of the columns (bins) and set this as the max for 'ylim' if specified above
-  # if there is grouping we actualyl want the max ylim necessary when the matrices are divided by group
   
-  scoreMat <- do.call(cbind,
-                      as.list(enrichMAT))
+  
+  
+  # if the user wants to color by a column in the sample data, a few checks to make sure we are read to do that
+  # also pull out the column they want ot use for grouping
+  if (!is.null(color_by_sample_group)){
+    if(!(color_by_sample_group %in% colnames(sampleData(object)))){
+      stop("The 'color_by_sample_group' argument must match a column name in sampleData(object)")
+    }
+    
+    column_for_color <- sampleData(object)[, colnames(sampleData(object)) %in% color_by_sample_group]
+    
+    if(!is(column_for_color, "factor")){
+      column_for_color <- as.factor(column_for_color)
+    }
+    
+    if(!is.null(matrices_color) && !is(matrices_color, "list")) {
+      stop("The argument 'matrices_color' must be a list when 'color_by_sample_group' is set (i.e. not NULL)")
+    }
+  
+    # the list of color options for various defaults (either 'matrices_color' is missing or there are NULL values in user entered list)
+    matrices_color_levels_default <- list(c("white", "black"), c("white","red"), c("white","#6C7EDA"), c("white", "#1B5B14"), c("white", "purple"), c("white", "#CC0066"), c("white", "#009999"), c("white", "#CC6600"))
+    
+    # set default colors if the user doesn't specify 'matrices_color'"
+    if(is.null(matrices_color)){
+      while(length(matrices_color_levels_default) < length(levels(column_for_color)) ){
+        matrices_color_levels_default <- c(matrices_color_levels_default, matrices_color_levels_default)
+      }
+      matrices_color_levels <- matrices_color_levels_default[seq(length(levels(column_for_color)))]
+    } else {
+      matrices_color_levels <- matrices_color
+    }
+    
+    if(length(levels(column_for_color)) != length(matrices_color_levels)){
+      stop("When 'color_by_sample_group' is set (i.e. not NULL) then the number of color settings by 'matrices_color' (length(matrices_color)) must be equal to the number of levels in the column designated by 'color_by_sample_group'")
+    }
+    
+    #make defaults for the user entered 'NULL' values in the list
+    number_of_nulls <- lapply(matrices_color, is.null) %>%
+      unlist %>%
+      sum
+    
+    if(number_of_nulls > 0) {
+      while(length(matrices_color_levels_default) < number_of_nulls ){
+        matrices_color_levels_default <- c(matrices_color_levels_default, matrices_color_levels_default)
+      }
+      null_colors <- matrices_color_levels_default[seq(number_of_nulls)]
+    }
+
+    
+    #define color scales for each group (either set by user or default set above)
+    enrichMAT_split <- enrichMAT
+    names(enrichMAT_split) <- column_for_color
+    unlist_by_level <- split(enrichMAT_split, names(enrichMAT_split)) %>%
+      lapply(unlist)
+    
+ 
+    q_levels <- lapply(unlist_by_level, quantile, 0.99)
+    
+    # make the names of the color schemes same as the names of 'q_levels' which is just the levels of the column selected for grouping
+    names(matrices_color_levels) <- names(q_levels)
+    
+    #expand the 'matrices color_levels' to correspond to the whole vector of the column chosen, not just the levels
+    q <- vector()
+    for  (i in seq_along(column_for_color)) {
+      matrices_color[[i]] <- matrices_color_levels[[column_for_color[i]]]
+      q[i] <- q_levels[[column_for_color[i]]]
+    }
+    
+    null_count <- 0
+    
+    for(i in seq_along(matrices_color)){
+      if(is.null(matrices_color[[i]])){
+        null_count <- null_count + 1
+        matrices_color[[i]] <- colorRamp2(c(0, q[i]), 
+                                          null_colors[[null_count]])
+      }else if(is.function(matrices_color[[i]])){
+        matrices_color[[i]] <- matrices_color[[i]]
+      }else if(is.character(matrices_color[[i]]) | is.numeric(matrices_color[[i]])){
+        if(length(matrices_color[[i]]) == 3){
+          matrices_color[[i]] <- colorRamp2(c(0, q[i]/2, q[i]), 
+                                            matrices_color[[i]])
+        }else if(length(matrices_color[[i]]) == 2){
+          matrices_color[[i]] <- colorRamp2(c(0, q[i]), 
+                                            matrices_color[[i]])
+        }
+      }else{
+        stop("matrix color specifications must either be a colorRamp2() function call or a character/numeric vector")
+      }
+    }
+    
+    if (is.null(show_heatmap_legend)){
+      show_heatmap_legend <- !duplicated(column_for_color)
+    }
+    heatmap_legend_title <-  as.character(column_for_color)
+  } 
+  
+  
+  # the rest of the code for solor setting is if the user did not set the 'color_by_sample_group' argument
+  if(is.null(color_by_sample_group)){
+    
+    # following if statements will show one legend if all color scales are the same and ther user wants a legend (Default)
+    # will show all legend if the color scales are unequal and user wants legends
+    # will skip this section is user specifies legend presence
+    
+    if (is.null(show_heatmap_legend)){
+      if(all_color_scales_equal == TRUE){
+        heatmap_legend_title <- vector(length = length(enrichMAT))
+        show_heatmap_legend <- vector(length = length(enrichMAT))
+        for (i in seq_along(enrichMAT)){
+          if(i == 1){
+            show_heatmap_legend[i] <- TRUE
+            heatmap_legend_title[i] <- "signal"
+          }
+          else{
+            show_heatmap_legend[i] <- FALSE
+            heatmap_legend_title[i] <- names(enrichMAT[i])
+          }
+        }
+      } else if(all_color_scales_equal == FALSE){
+        show_heatmap_legend <- vector(length = length(enrichMAT))
+        heatmap_legend_title <- vector(length = length(enrichMAT))
+        for (i in seq_along(enrichMAT)){
+          show_heatmap_legend[i] <- TRUE
+          heatmap_legend_title[i] <- names(enrichMAT[i])
+        }
+      } 
+    }
+    
+    
+  
+    
+    # this will be run if 'matrices_color' argument is a list of equal length to the number of matrices
+    # this will fill in any NULL values in the color list with the default, use a function if its the input, and then put an input vector into the color slot in the default function 
+    # if 'all_color_scales_equal' is TRUE, then all heatmaps will be scaled the same based on the quantiles of all values put together (calculated above)
+    if(is.null(matrices_color)){
+      matrices_color <- vector(mode = "list", length = length(enrichMAT))
+    }
+    
+    # make one big matrix as a means to make common scales across multiple heatmaps.
+    # The q_all value will be used below
+    all_mats <- unlist(enrichMAT)
+    q_all <- quantile(all_mats, 0.99)
+    #matrices_color_all <- (colorRamp2(c(0, q_all[1]/2, q_all[1]), 
+    #                                  c("blue", "white", "red")))
+    
+    if (is.list(matrices_color)){
+      if(!(length(matrices_color) == length(enrichMAT))){
+        stop("The length of the list for the 'matrices_color' argument must equal the number of matrices/samples in the profileplyr object")
+      }
+      if(all_color_scales_equal == FALSE){
+        for(i in seq_along(matrices_color)){
+          if(is.null(matrices_color[[i]])){
+            q <- quantile(enrichMAT[[i]], 0.99)
+            matrices_color[[i]] <- (colorRamp2(c(0, q[1]/2, q[1]), 
+                                               c("blue", "white", "red")))
+          }else if(is.function(matrices_color[[i]])){
+            matrices_color[[i]] <- matrices_color[[i]]
+          }else if(is.character(matrices_color[[i]]) | is.numeric(matrices_color[[i]])){
+            q <- quantile(enrichMAT[[i]], 0.99)
+            if(length(matrices_color[[i]]) == 3){
+              matrices_color[[i]] <- colorRamp2(c(0, q[1]/2, q[1]), 
+                                                matrices_color[[i]])
+            }else if(length(matrices_color[[i]]) == 2){
+              matrices_color[[i]] <- colorRamp2(c(0, q[1]), 
+                                                matrices_color[[i]])
+            }
+          }else{
+            stop("matrix color specifications must either be a colorRamp2() function call or a character/numeric vector")
+          }
+        }
+      }
+      
+      if(all_color_scales_equal == TRUE){
+        for(i in seq_along(matrices_color)){
+          if(is.null(matrices_color[[i]])){
+            matrices_color[[i]] <- (colorRamp2(c(0, q_all[1]/2, q_all[1]), 
+                                               c("blue", "white", "red")))
+          }else if(is.function(matrices_color[[i]])){
+            matrices_color[[i]] <- matrices_color[[i]]
+            warning("User provided color function will override the 'all_color_scales = TRUE' option")
+          }else if(is.character(matrices_color[[i]]) | is.numeric(matrices_color[[i]])){
+            if(length(matrices_color[[i]]) == 3){
+              matrices_color[[i]] <- colorRamp2(c(0, q_all[1]/2, q_all[1]), 
+                                                matrices_color[[i]])
+            }else if(length(matrices_color[[i]]) == 2){
+              matrices_color[[i]] <- colorRamp2(c(0, q_all[1]), 
+                                                matrices_color[[i]])
+            }
+          }else{
+            stop("matrix color specifications must either be a colorRamp2() function call or a character/numeric vector")
+          }
+        }
+      }
+    }
+    
+    # if the 'matrices_colors' argument is not a list and is a single character or numeric vector, or a function, then all heatmaps will get this scheme, so a list will be populated with the same entries for all
+    if (is.character(matrices_color) | is.numeric(matrices_color) | is.function(matrices_color)){
+      temp <- vector(mode = "list", length = length(enrichMAT))
+      if(all_color_scales_equal == FALSE){
+        for(i in seq_along(temp)){
+          if(is.function(matrices_color)){
+            temp[[i]] <- matrices_color
+          }else if(is.character(matrices_color) | is.numeric(matrices_color)){
+            q <- quantile(enrichMAT[[i]], 0.99)
+            if(length(matrices_color) == 3){
+              temp[[i]] <- colorRamp2(c(0, q[1]/2, q[1]),matrices_color)
+            }else if(length(matrices_color) == 2){
+              temp[[i]] <- colorRamp2(c(0, q[1]), matrices_color)
+            }
+          }
+        }
+      }
+      if(all_color_scales_equal == TRUE){
+        for(i in seq_along(temp)){
+          if(is.function(matrices_color)){
+            temp[[i]] <- matrices_color
+            warning("User provided color function will override the 'all_color_scales = TRUE' option")
+          }else if(is.character(matrices_color) | is.numeric(matrices_color)){
+            if(length(matrices_color) == 3){
+              temp[[i]] <- colorRamp2(c(0, q_all[1]/2, q_all[1]),matrices_color)
+            }else if(length(matrices_color) == 2){
+              temp[[i]] <- colorRamp2(c(0, q_all[1]), matrices_color)
+            }
+          }
+        }
+      }
+      matrices_color <- temp
+    }
+    
+  }
+  
+  # this will find the max for the mean of the columns (bins) and set this as the max for 'ylim' if specified above
+  # if there is grouping of rows we actualyl want the max ylim necessary when the matrices are divided by group
+  
+  
+  # divide the maritcies into separate matrcies for each group
+  
+  get_matrix_max_incl_group <- function(scoreMat, group_boundaries) {
+    group_sub <- vector(mode = "list", length = length(group_boundaries)-1)
+    for(i in seq_along(group_boundaries[-(length(group_boundaries))])){
+      if(i==1){
+        group_sub[[i]] <- scoreMat[group_boundaries[i]:group_boundaries[i+1], ]
+      }else{
+        group_sub[[i]] <- scoreMat[(group_boundaries[i]+1):group_boundaries[i+1], ]
+      }
+    }
+    
+    # get the max and min col mean accounting for groups
+    col_means <- vector(mode = "list", length = length(group_sub))
+    for (i in seq_along(group_sub)){
+      col_means[[i]] <- colMeans(group_sub[[i]])
+    }
+    col_means_unlist <- unlist(col_means)
+    
+    col_means_max <- max(col_means_unlist)
+    # get the value for which this would be 90% to giv esome room in the figure
+    max_for_figure = col_means_max/0.9
+    
+    col_means_min <- min(col_means_unlist)
+    min_for_figure <- col_means_min/0.9
+    
+    if (min_for_figure < 0){
+      min_for_figure <- col_means_min/0.9
+    }else {
+      min_for_figure <- 0
+    }
+    return(c(min_for_figure, max_for_figure))
+  }
+  
+  
+  scoreMat <- list()
+  
+  if(ylim %in% colnames(sampleData(object))) {
+    column_for_color <- sampleData(object)[, colnames(sampleData(object)) %in% color_by_sample_group]
+    if(!is(column_for_color, "factor")){
+      column_for_color <- as.factor(column_for_color)
+    }
+    for (i in seq_along(levels(column_for_color))){
+      enrichMAT_levels_temp <- enrichMAT[levels(column_for_color)[i] == column_for_color]
+      scoreMat[[i]] <- do.call(cbind,
+                               as.list(enrichMAT_levels_temp))
+    }
+  } else {
+    scoreMat[[1]] <- do.call(cbind,
+                             as.list(enrichMAT))
+  }
   
   group_boundaries <- getGroupInfoFromObject(object)$group_boundaries
-  # divide the maritcies into separate matrcies for each group
-  group_sub <- vector(mode = "list", length = length(group_boundaries)-1)
-  for(i in seq_along(group_boundaries[-(length(group_boundaries))])){
-    if(i==1){
-      group_sub[[i]] <- scoreMat[group_boundaries[i]:group_boundaries[i+1], ]
-    }else{
-      group_sub[[i]] <- scoreMat[(group_boundaries[i]+1):group_boundaries[i+1], ]
-    }
-  }
   
-  # get the max and min col mean accounting for groups
-  col_means <- vector(mode = "list", length = length(group_sub))
-  for (i in seq_along(group_sub)){
-    col_means[[i]] <- colMeans(group_sub[[i]])
-  }
-  col_means_unlist <- unlist(col_means)
-  
-  col_means_max <- max(col_means_unlist)
-  # get the value for which this would be 90% to giv esome room in the figure
-  max_for_figure = col_means_max/0.9
-  
-  col_means_min <- min(col_means_unlist)
-  min_for_figure <- col_means_min/0.9
-  
-  if (min_for_figure < 0){
-    min_for_figure <- col_means_min/0.9
-  }else {
-    min_for_figure <- 0
-  }
+  min_max_for_figure <- lapply(scoreMat, get_matrix_max_incl_group, group_boundaries)
+
   
   yaxis_side <- vector(length = length(enrichMAT))
   yaxis <- vector(length = length(enrichMAT))
   facing <- vector(length = length(enrichMAT))
-
+  
+  if(ylim %in% colnames(sampleData(object))) {
+    names(min_max_for_figure) <- levels(column_for_color)
+    ylim_list <- list()
+    for  (i in seq_along(column_for_color)) {
+      ylim_list[[i]] <- min_max_for_figure[[column_for_color[i]]]
+    }
+    axis = "all"
+  }
+  
   if((length(ylim) == 1) && (ylim == "common_max")){
-    limits <- c(min_for_figure, max_for_figure)
+    limits <- min_max_for_figure[[1]]
     ylim_list <- list(limits)[rep(1, length(enrichMAT))]
     axis = "only_first"
   }
@@ -1267,141 +1553,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
       }
     }
   }
-  
-  # following three if statements will show one legend if all color scales are the same and ther user wants a legend (Default)
-  # will show all legend if the color scales are unequal and user wants legends
-  # will skip this section is user specifies legend presence
 
-  if (is.null(show_heatmap_legend)){
-    if(all_color_scales_equal == TRUE & matrices_show_heatmap_legend == TRUE){
-      matrices_show_heatmap_legend <- vector(length = length(enrichMAT))
-      heatmap_legend_title <- vector(length = length(enrichMAT))
-      for (i in seq_along(enrichMAT)){
-        if(i == 1){
-          matrices_show_heatmap_legend[i] <- TRUE
-          heatmap_legend_title[i] <- "signal"
-        }
-        else{
-          matrices_show_heatmap_legend[i] <- FALSE
-          heatmap_legend_title[i] <- names(enrichMAT[i])
-        }
-      }
-    } else if(all_color_scales_equal == FALSE & matrices_show_heatmap_legend == TRUE){
-      matrices_show_heatmap_legend <- vector(length = length(enrichMAT))
-      heatmap_legend_title <- vector(length = length(enrichMAT))
-      for (i in seq_along(enrichMAT)){
-        matrices_show_heatmap_legend[i] <- TRUE
-        heatmap_legend_title[i] <- names(enrichMAT[i])
-      }
-    } else if(matrices_show_heatmap_legend == FALSE){
-      matrices_show_heatmap_legend <- vector(length = length(enrichMAT))
-      heatmap_legend_title <- vector(length = length(enrichMAT))
-      for (i in seq_along(enrichMAT)){
-        matrices_show_heatmap_legend[i] <- FALSE
-        heatmap_legend_title[i] <- names(enrichMAT[i])
-      }
-    }
-  } else {
-    matrices_show_heatmap_legend = show_heatmap_legend
-    heatmap_legend_title <- names(enrichMAT)[show_heatmap_legend]
-  }
-
-  if(missing(matrices_color)){
-    matrices_color <- vector(mode = "list", length = length(enrichMAT))
-  }
-  
-  # make one big matrix as a means to make common scales across multiple heatmaps.
-  # The q_all value will be used below
-  all_mats <- unlist(enrichMAT)
-  q_all <- quantile(all_mats, 0.99)
-  matrices_color_all <- (colorRamp2(c(0, q_all[1]/2, q_all[1]), 
-                                     c("blue", "white", "red")))
-  
-  # this will be run if 'matrices_color' argument is a list of equal length to the number of matrices
-  # this will fill in any NULL values in the color list with the default, use a function if its the input, and then put an input vector into the color slot in the default function 
-  # if 'all_color_scales_equal' is TRUE, then all heatmaps will be scaled the same based on the quantiles of all values put together (calculated above)
-  if (is.list(matrices_color)){
-    if(!(length(matrices_color) == length(enrichMAT))){
-      stop("The length of the list for the 'matrices_color' argument must equal the number of matrices/samples in the profileplyr object")
-    }
-    if(all_color_scales_equal == FALSE){
-      for(i in seq_along(matrices_color)){
-        if(is.null(matrices_color[[i]])){
-          q <- quantile(enrichMAT[[i]], 0.99)
-          matrices_color[[i]] <- (colorRamp2(c(0, q[1]/2, q[1]), 
-                                              c("blue", "white", "red")))
-        }else if(is.function(matrices_color[[i]])){
-          matrices_color[[i]] <- matrices_color[[i]]
-        }else if(is.character(matrices_color[[i]]) | is.numeric(matrices_color[[i]])){
-          q <- quantile(enrichMAT[[i]], 0.99)
-          if(length(matrices_color[[i]]) == 3){
-            matrices_color[[i]] <- colorRamp2(c(0, q[1]/2, q[1]), 
-                                               matrices_color[[i]])
-          }else if(length(matrices_color[[i]]) == 2){
-            matrices_color[[i]] <- colorRamp2(c(0, q[1]), 
-                                               matrices_color[[i]])
-          }
-        }else{
-          stop("matrix color specifications must either be a colorRamp2() function call or a character/numeric vector")
-        }
-      }
-    }
-    if(all_color_scales_equal == TRUE){
-      for(i in seq_along(matrices_color)){
-        if(is.null(matrices_color[[i]])){
-          matrices_color[[i]] <- (colorRamp2(c(0, q_all[1]/2, q_all[1]), 
-                                              c("blue", "white", "red")))
-        }else if(is.function(matrices_color[[i]])){
-          matrices_color[[i]] <- matrices_color[[i]]
-          warning("User provided color function will override the 'all_color_scales = TRUE' option")
-        }else if(is.character(matrices_color[[i]]) | is.numeric(matrices_color[[i]])){
-          if(length(matrices_color[[i]]) == 3){
-            matrices_color[[i]] <- colorRamp2(c(0, q_all[1]/2, q_all[1]), 
-                                               matrices_color[[i]])
-          }else if(length(matrices_color[[i]]) == 2){
-            matrices_color[[i]] <- colorRamp2(c(0, q_all[1]), 
-                                               matrices_color[[i]])
-          }
-        }else{
-          stop("matrix color specifications must either be a colorRamp2() function call or a character/numeric vector")
-        }
-      }
-    }
-  }
- 
-  # if the 'matrices_colors' argument is not a list and is a single character or numeric vector, or a function, then all heatmaps will get this scheme, so a list will be populated with the same entries for all
-  if (is.character(matrices_color) | is.numeric(matrices_color) | is.function(matrices_color)){
-    temp <- vector(mode = "list", length = length(enrichMAT))
-    if(all_color_scales_equal == FALSE){
-    for(i in seq_along(temp)){
-      if(is.function(matrices_color)){
-        temp[[i]] <- matrices_color
-      }else if(is.character(matrices_color) | is.numeric(matrices_color)){
-        q <- quantile(enrichMAT[[i]], 0.99)
-        if(length(matrices_color) == 3){
-          temp[[i]] <- colorRamp2(c(0, q[1]/2, q[1]),matrices_color)
-        }else if(length(matrices_color) == 2){
-          temp[[i]] <- colorRamp2(c(0, q[1]), matrices_color)
-        }
-      }
-    }
-    }
-    if(all_color_scales_equal == TRUE){
-      for(i in seq_along(temp)){
-        if(is.function(matrices_color)){
-          temp[[i]] <- matrices_color
-          warning("User provided color function will override the 'all_color_scales = TRUE' option")
-        }else if(is.character(matrices_color) | is.numeric(matrices_color)){
-          if(length(matrices_color) == 3){
-            temp[[i]] <- colorRamp2(c(0, q_all[1]/2, q_all[1]),matrices_color)
-          }else if(length(matrices_color) == 2){
-            temp[[i]] <- colorRamp2(c(0, q_all[1]), matrices_color)
-          }
-        }
-      }
-    }
-    matrices_color <- temp
-  }
   
   if (is.null(sample_names)){
     sample_names <- names(enrichMAT)
@@ -1471,7 +1623,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                                                                                                       gp = top_anno_axis_font),
                                                                                                     yaxis = yaxis[i-1],
                                                                                                     height = top_anno_height)),
-                                           show_heatmap_legend = matrices_show_heatmap_legend[i-1],
+                                           show_heatmap_legend = show_heatmap_legend[i-1],
                                            heatmap_legend_param = as.list(c(title = heatmap_legend_title[i-1],
                                                                             legend_params)),
                                            column_title_gp = matrices_column_title_gp,
@@ -1497,7 +1649,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                                                                                                       gp = top_anno_axis_font),
                                                                                                     yaxis = yaxis[i],
                                                                                                     height = top_anno_height)),
-                                           show_heatmap_legend = matrices_show_heatmap_legend[i],
+                                           show_heatmap_legend = show_heatmap_legend[i],
                                            heatmap_legend_param = as.list(c(title = heatmap_legend_title[i],
                                                                        legend_params)),
                                            column_title_gp = matrices_column_title_gp,
@@ -1508,7 +1660,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     }
   }
   
-  matricies_ht_length <- length(heatmap_list) # this will be used below to know how many heatmaps to remove if use only wants extra annotation columns
+  matrices_ht_length <- length(heatmap_list) # this will be used below to know how many heatmaps to remove if use only wants extra annotation columns
   
   # this will add gene annotation labels to the last heatmap only is there are no additional annotation columns
   if(is.null(extra_annotation_columns) & !(is.null(genes_to_label))){
@@ -1532,8 +1684,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                                                                                                     gp = top_anno_axis_font),
                                                                                                   yaxis = yaxis[i-1],
                                                                                                   height = top_anno_height)),
-                                         show_heatmap_legend = matrices_show_heatmap_legend[i-1],
-                                         heatmap_legend_param = as.list(c(title = heatmap_legend_title[i],
+                                         show_heatmap_legend = show_heatmap_legend[i-1],
+                                         heatmap_legend_param = as.list(c(title = heatmap_legend_title[i-1],
                                                                           legend_params)),
                                          column_title_gp = matrices_column_title_gp,
                                          axis_name = matrices_axis_name,
@@ -1627,13 +1779,13 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     }
   }
   
-  #remove the matricies heatmaps if user wants
+  #remove the matrices heatmaps if user wants
   if(only_extra_annotation_columns == TRUE){
     if (include_group_annotation == TRUE){
-      heatmap_list <- heatmap_list[-c(2:matricies_ht_length)]
+      heatmap_list <- heatmap_list[-c(2:matrices_ht_length)]
     }
     if (include_group_annotation == FALSE){
-      heatmap_list <- heatmap_list[-c(1:matricies_ht_length)]
+      heatmap_list <- heatmap_list[-c(1:matrices_ht_length)]
     }
   }
   
@@ -1770,8 +1922,9 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @param signalFiles paths to either BAM files or bigwig files. More than one path can be in this character vector, but all paths in one function call must point to be either all BAM files or all bigWig files, not a combination of the two.
 #' @param testRanges A character vector with paths to BED files.
 #' @param format character string of "bam", "bigwig", "RleList" or "PWM"
-#' @param style a character string, "percentOfRegion" (default) for normalised length divided into bins set by the 'nOfWindows' argument, "point" for per base pair plot where the number of base pairs per bin is set by the 'bin_size' argument, and "region" for combined plot
+#' @param style a character string, "percentOfRegion" (default) for normalized length divided into bins set by the 'nOfWindows' argument, "point" for per base pair plot where the number of base pairs per bin is set by the 'bin_size' argument, and "region" for combined plot
 #' @param nOfWindows The number of windows/bins the normalised ranges will be divided into if 'style' is set to 'percentOfRegion'. Default is 100.
+#' @param distanceAround If 'style' is 'percentOfRegion', then this controls the distance around the region that is included. Default is 100, meaning that a distance equal to 100 percent of that particular region on either side of the region will be included in the heatmap. 
 #' @param bin_size If 'style' is set to 'point' then this will determine the size of each bin over which signal is quantified. The default is 20 base pairs.  
 #' @param ... pass to regionPlot() within the soGGi package
 #' @return A profileplyr object
@@ -1798,7 +1951,7 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @importFrom GenomeInfoDb seqlevelsStyle<- seqlevelsInUse seqlevels
 #' @export
 #' 
-BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "percentOfRegion" , nOfWindows = 100, bin_size = 20, ...) {
+BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "percentOfRegion" , nOfWindows = 100, bin_size = 20, distanceAround = 100, ...) {
   
   if (missing(format)){
     stop("'format' argument is missing, it must be entered")

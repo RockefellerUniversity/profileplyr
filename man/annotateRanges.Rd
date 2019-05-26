@@ -23,7 +23,7 @@ annotateRanges(object = "profileplyr", annotation_subset = "character",
 
 \item{TxDb}{This must be either a TxDb object, a character string that is a path to a GTF file, or character string indicating genome if one of the following - "hg19", "hg38", "mm9", "mm10".}
 
-\item{annoDb}{The annotation package to be used. If the 'TxDb' agrument is set to "hg19", "hg38", "mm9", or "mm10" this will automatically be set and this can be left as NULL.}
+\item{annoDb}{The annotation package to be used. If the 'TxDb' argument is set to "hg19", "hg38", "mm9", or "mm10" this will automatically be set and this can be left as NULL.}
 
 \item{tssRegion}{This needs to be a vector of two numbers that will define promoter regions. The first number must be negative, while the second number must be positive. Default values are  c(-3000, 3000) - SHOULD WE CHANGE THIS, SEEMS BIG!)}
 
