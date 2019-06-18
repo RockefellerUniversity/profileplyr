@@ -7,10 +7,12 @@
 \title{summarize the rows of a deepTools matrix}
 \usage{
 summarize(object = "profileplyr", fun = "function",
-  output = "character", keep_all_mcols = "logical")
+  output = "character", keep_all_mcols = "logical",
+  sampleData_columns_for_longPlot = "character")
 
 \S4method{summarize}{profileplyr}(object = "profileplyr",
-  fun = "function", output = "character", keep_all_mcols = FALSE)
+  fun = "function", output = "character", keep_all_mcols = FALSE,
+  sampleData_columns_for_longPlot = NULL)
 }
 \arguments{
 \item{object}{A profileplyr object}

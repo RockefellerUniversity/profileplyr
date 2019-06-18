@@ -51,6 +51,9 @@ setGeneric("export_deepToolsMat", function(object="profileplyr",con="character",
 #' @describeIn export_deepToolsMat Export and import profileplyr from/to deeptools
 setMethod("export_deepToolsMat", signature="profileplyr",
                                            function(object,con, decreasing = FALSE,overwrite=FALSE){
+  
+  sampleData(object)$sample_labels <- rownames(sampleData(object))
+                                                                                        
   con_prezip <- gsub("\\.gz","",con)
   con <- paste0(con_prezip,".gz")
 
@@ -546,7 +549,12 @@ subset_GR_GL_common_top <- function(object, overlap, input_names, type, separate
                                              levels = rowRanges(object)$overlap_names[!duplicated(rowRanges(object)$overlap_names)])
   
   object_overlap <-  object[which(!no_overlap)]
+  rowRanges(object_overlap)$overlap_names <- ordered(rowRanges(object_overlap)$overlap_names, 
+                                             levels = rowRanges(object_overlap)$overlap_names[!duplicated(rowRanges(object_overlap)$overlap_names)])
+  
   object_no_overlap <- object[no_overlap]
+  rowRanges(object_no_overlap)$overlap_names <- ordered(rowRanges(object_no_overlap)$overlap_names, 
+                                                     levels = rowRanges(object_no_overlap)$overlap_names[!duplicated(rowRanges(object_no_overlap)$overlap_names)])
   
   colnames(mcols(object_overlap))[colnames(mcols(object_overlap)) %in% "overlap_names"] <- paste0(type, "_overlap_names")
   colnames(mcols(object_no_overlap))[colnames(mcols(object_no_overlap)) %in% "overlap_names"] <- paste0(type, "_overlap_names")
@@ -719,6 +727,7 @@ subsetbyRangeOverlap <- function(object, group, GRanges_names = NULL, include_no
   }
   
   colnames(mcols(object)) <- make.unique(colnames(mcols(object)))
+  
   return(object)
 }
 
@@ -870,11 +879,11 @@ subsetbyGeneListOverlap <- function(object, group, include_nonoverlapping = FALS
 #' 
 #' summarize(object, fun = rowMeans, output = "object")
 #' @export 
-setGeneric("summarize", function(object="profileplyr",fun = "function", output = "character", keep_all_mcols = "logical")standardGeneric("summarize"))
+setGeneric("summarize", function(object="profileplyr",fun = "function", output = "character", keep_all_mcols = "logical", sampleData_columns_for_longPlot = "character")standardGeneric("summarize"))
 
 #' @describeIn summarize summarize the rows of a deepTools matrix
 #' @export
-setMethod("summarize", signature(object="profileplyr"), function(object, fun, output, keep_all_mcols = FALSE){
+setMethod("summarize", signature(object="profileplyr"), function(object, fun, output, keep_all_mcols = FALSE, sampleData_columns_for_longPlot = NULL){
   summ <- lapply(assays(object), fun)
   summ_mat <- as.matrix(do.call(cbind,summ))
   rowGroupsInUse <- params(object)$rowGroupsInUse
@@ -899,6 +908,30 @@ setMethod("summarize", signature(object="profileplyr"), function(object, fun, ou
     summ_long$combined_ranges <- paste(seqnames(rowRanges(object)), start(rowRanges(object)), end(rowRanges(object)), sep = "_") # NOTE: don't include group names here as we have that in a separate column
     summ_long <- tidyr::gather(summ_long, key = "Sample", value = "Signal", seq_len(ncol(summ_mat)))
     summ_long$Sample <- ordered(summ_long$Sample, levels = rownames(sampleData(object)))
+    
+    if (!is.null(sampleData_columns_for_longPlot)){
+      table(summ_long$Sample)
+      column_subset <- colnames(sampleData(object)) %in% sampleData_columns_for_longPlot
+      temp <- sampleData(object)[column_subset]
+      
+      number_each_sample <- table(summ_long$Sample)
+      
+      temp_vec <- vector()
+      temp_list <- vector(mode = "list")
+      
+      for(j in seq_along(temp)){
+        for (i in seq_len(nrow(sampleData(object)))){
+          temp_vec <- c(temp_vec, rep(temp[i,j], number_each_sample[j]))
+        }
+        temp_list[[j]] <- temp_vec
+        temp_vec <- vector()
+      }
+      
+      extra_columns <- as.data.frame(do.call(cbind, temp_list))
+      colnames(extra_columns) <- colnames(temp)
+      
+      summ_long <- cbind(summ_long, extra_columns)
+    }
     return(summ_long)
   }
   
@@ -1121,7 +1154,6 @@ setMethod("convertToEnrichedHeatmapMat", signature(object="profileplyr"),functio
 #' @param color_by_sample_group A character vector that is identical to a column name in sampleData(object), and if set, the heatmaps will be colored based on that column (should be a factor, if not it will be converted to one)
 #' @param matrices_pos_line A logical for whether to draw a vertical line(s) at the position of the target (for both a single point or a window). Default is true.
 #' @param matrices_pos_line_gp Graphics parameters for the vertical position lines. Should be set with the gpar() function from the grid() package.
-#' @param matrices_show_heatmap_legend Logical denoting whether legends for all the heatmaps showing signal over the ranges/matrices should be shown. Default is FALSE.
 #' @param matrices_column_title_gp Graphics parameters for the titles on top of each range/matrix. Should be set with the gpar() function from the grid() package.
 #' @param matrices_axis_name Names for axis which is below the heatmap. For profileplyr object made from BamBigwig_to_chipProfile/as_profileplyr functions, the names will be of length three, with the middle point being the midpoint of each range.  If the profileplyr object was made from a deeptools matrix with import_deepToolsMat(), the names will be length three if matrix was generated with 'computeMatrix reference-point', or length of four if matrix was generated with 'computeMatrix scale-regions' corresponding to upstream, start of targets, end of targets and downstream (or length of two if no upstream/downstream included).
 #' @param matrices_axis_name_gp Graphics parameters for the text on the x-axis of each matrix heatmap. Should be set with the gpar() function from the grid() package.
@@ -1138,7 +1170,7 @@ setMethod("convertToEnrichedHeatmapMat", signature(object="profileplyr"),functio
 #' @param gene_label_font_size The size of the text for the labels for genes specified in 'genes_to_label' argument.
 #' @param show_heatmap_legend A logical vector with each position corresponding to each matrix heatmap (not including the 'extra_annotation_columns') that determines whether a legend is produced for that heatmap. By default a single legend is made if all heatmaps use the same color scale, or separate legends are made for each matrix heatmap if the scales are different. 
 #' @param legend_params A list that contains parameters for the legend. See \code{\link[ComplexHeatmap]{color_mapping_legend-ColorMapping-method}} for all available parameters. 
-#' @details Takes a profileplyr object and generated heatmap that can be annotated by group or by range metadata columns of the profileplyr object
+#' @details Takes a profileplyr object and generates a heatmap that can be annotated by group or by range metadata columns of the profileplyr object
 #' @return By default a customized version of a heatmap from EnrichedHeatmap, if return_ht_list = TRUE then a heatmap list is returned that can be modified and then entered as an input for the \code{\link[EnrichedHeatmap]{EnrichedHeatmap}} function
 #' @examples
 #' example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
@@ -1149,7 +1181,7 @@ setMethod("convertToEnrichedHeatmapMat", signature(object="profileplyr"),functio
 
 generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, extra_annotation_columns = NULL, sample_names = NULL, return_ht_list = FALSE, ylim = "common_max", top_anno_height = unit(2, "cm"),
                                     samples_to_sortby = NULL, decreasing = FALSE, all_color_scales_equal = TRUE, matrices_color = NULL, color_by_sample_group = NULL, matrices_pos_line = TRUE, matrices_pos_line_gp = gpar(lty = 2), 
-                                    top_anno_axis_font = gpar(fontsize = 8), matrices_show_heatmap_legend = TRUE, matrices_column_title_gp =  gpar(fontsize = 10, fontface = "bold"), matrices_axis_name = NULL, matrices_axis_name_gp = gpar(fontsize = 8), 
+                                    top_anno_axis_font = gpar(fontsize = 8), matrices_column_title_gp =  gpar(fontsize = 10, fontface = "bold"), matrices_axis_name = NULL, matrices_axis_name_gp = gpar(fontsize = 8), 
                                     group_anno_color = NULL, group_anno_width = 3, group_anno_row_title_gp = gpar(fontsize = 10), group_anno_column_names_gp = gpar(fontsize = 10),
                                     extra_anno_color = vector(mode = "list", length = length(extra_annotation_columns)), extra_anno_top_annotation = TRUE, 
                                     extra_anno_width = (rep(6, length(extra_annotation_columns))), only_extra_annotation_columns = FALSE, gap = 2, genes_to_label = NULL, gene_label_font_size = 6, 
@@ -1302,6 +1334,13 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     # will show all legend if the color scales are unequal and user wants legends
     # will skip this section is user specifies legend presence
     
+    if(!is.null(show_heatmap_legend)){
+      if(length(show_heatmap_legend) != length(enrichMAT)){
+        stop("The length of the 'show_heatmap_legend' vector must equal the number of matrices in the profileplyr object")
+      }
+      heatmap_legend_title <- names(enrichMAT)
+    }
+    
     if (is.null(show_heatmap_legend)){
       if(all_color_scales_equal == TRUE){
         heatmap_legend_title <- vector(length = length(enrichMAT))
@@ -1326,7 +1365,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
       } 
     }
     
-    
+
   
     
     # this will be run if 'matrices_color' argument is a list of equal length to the number of matrices
@@ -1339,7 +1378,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     # make one big matrix as a means to make common scales across multiple heatmaps.
     # The q_all value will be used below
     all_mats <- unlist(enrichMAT)
-    q_all <- quantile(all_mats, 0.99)
+    q_all <- quantile(all_mats, c(0.01, 0.98))
     #matrices_color_all <- (colorRamp2(c(0, q_all[1]/2, q_all[1]), 
     #                                  c("blue", "white", "red")))
     
@@ -1350,18 +1389,18 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
       if(all_color_scales_equal == FALSE){
         for(i in seq_along(matrices_color)){
           if(is.null(matrices_color[[i]])){
-            q <- quantile(enrichMAT[[i]], 0.99)
-            matrices_color[[i]] <- (colorRamp2(c(0, q[1]/2, q[1]), 
+            q <- quantile(enrichMAT[[i]], c(0.01, 0.98))
+            matrices_color[[i]] <- (colorRamp2(c(q[1], (q[2] - q[1])/2, q[2]), 
                                                c("blue", "white", "red")))
           }else if(is.function(matrices_color[[i]])){
             matrices_color[[i]] <- matrices_color[[i]]
           }else if(is.character(matrices_color[[i]]) | is.numeric(matrices_color[[i]])){
-            q <- quantile(enrichMAT[[i]], 0.99)
+            q <- quantile(enrichMAT[[i]], c(0.01, 0.98))
             if(length(matrices_color[[i]]) == 3){
-              matrices_color[[i]] <- colorRamp2(c(0, q[1]/2, q[1]), 
+              matrices_color[[i]] <- colorRamp2(c(q[1], (q[2] - q[1])/2, q[2]), 
                                                 matrices_color[[i]])
             }else if(length(matrices_color[[i]]) == 2){
-              matrices_color[[i]] <- colorRamp2(c(0, q[1]), 
+              matrices_color[[i]] <- colorRamp2(c(q[1], q[2]), 
                                                 matrices_color[[i]])
             }
           }else{
@@ -1373,17 +1412,17 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
       if(all_color_scales_equal == TRUE){
         for(i in seq_along(matrices_color)){
           if(is.null(matrices_color[[i]])){
-            matrices_color[[i]] <- (colorRamp2(c(0, q_all[1]/2, q_all[1]), 
+            matrices_color[[i]] <- (colorRamp2(c(q_all[1], (q_all[2] - q_all[1])/2, q_all[2]), 
                                                c("blue", "white", "red")))
           }else if(is.function(matrices_color[[i]])){
             matrices_color[[i]] <- matrices_color[[i]]
             warning("User provided color function will override the 'all_color_scales = TRUE' option")
           }else if(is.character(matrices_color[[i]]) | is.numeric(matrices_color[[i]])){
             if(length(matrices_color[[i]]) == 3){
-              matrices_color[[i]] <- colorRamp2(c(0, q_all[1]/2, q_all[1]), 
+              matrices_color[[i]] <- colorRamp2(c(q_all[1], (q_all[2] - q_all[1])/2, q_all[2]), 
                                                 matrices_color[[i]])
             }else if(length(matrices_color[[i]]) == 2){
-              matrices_color[[i]] <- colorRamp2(c(0, q_all[1]), 
+              matrices_color[[i]] <- colorRamp2(c(q_all[1], q_all[2]), 
                                                 matrices_color[[i]])
             }
           }else{
@@ -1401,11 +1440,11 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
           if(is.function(matrices_color)){
             temp[[i]] <- matrices_color
           }else if(is.character(matrices_color) | is.numeric(matrices_color)){
-            q <- quantile(enrichMAT[[i]], 0.99)
+            q <- quantile(enrichMAT[[i]], c(0.01, 0.98))
             if(length(matrices_color) == 3){
-              temp[[i]] <- colorRamp2(c(0, q[1]/2, q[1]),matrices_color)
+              temp[[i]] <- colorRamp2(c(q[1], (q[2] - q[1])/2, q[2]),matrices_color)
             }else if(length(matrices_color) == 2){
-              temp[[i]] <- colorRamp2(c(0, q[1]), matrices_color)
+              temp[[i]] <- colorRamp2(c(q[1], q[2]), matrices_color)
             }
           }
         }
@@ -1417,9 +1456,9 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
             warning("User provided color function will override the 'all_color_scales = TRUE' option")
           }else if(is.character(matrices_color) | is.numeric(matrices_color)){
             if(length(matrices_color) == 3){
-              temp[[i]] <- colorRamp2(c(0, q_all[1]/2, q_all[1]),matrices_color)
+              temp[[i]] <- colorRamp2(c(q_all[1], (q_all[2] - q_all[1])/2, q_all[2]),matrices_color)
             }else if(length(matrices_color) == 2){
-              temp[[i]] <- colorRamp2(c(0, q_all[1]), matrices_color)
+              temp[[i]] <- colorRamp2(c(q_all[1], q_all[2]), matrices_color)
             }
           }
         }
@@ -1467,59 +1506,59 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     return(c(min_for_figure, max_for_figure))
   }
   
-  
-  scoreMat <- list()
-  
-  if(ylim %in% colnames(sampleData(object))) {
-    column_for_color <- sampleData(object)[, colnames(sampleData(object)) %in% color_by_sample_group]
-    if(!is(column_for_color, "factor")){
-      column_for_color <- as.factor(column_for_color)
-    }
-    for (i in seq_along(levels(column_for_color))){
-      enrichMAT_levels_temp <- enrichMAT[levels(column_for_color)[i] == column_for_color]
-      scoreMat[[i]] <- do.call(cbind,
-                               as.list(enrichMAT_levels_temp))
-    }
-  } else {
-    scoreMat[[1]] <- do.call(cbind,
-                             as.list(enrichMAT))
-  }
-  
-  group_boundaries <- getGroupInfoFromObject(object)$group_boundaries
-  
-  min_max_for_figure <- lapply(scoreMat, get_matrix_max_incl_group, group_boundaries)
-
-  
   yaxis_side <- vector(length = length(enrichMAT))
   yaxis <- vector(length = length(enrichMAT))
   facing <- vector(length = length(enrichMAT))
   
-  if(ylim %in% colnames(sampleData(object))) {
-    names(min_max_for_figure) <- levels(column_for_color)
-    ylim_list <- list()
-    for  (i in seq_along(column_for_color)) {
-      ylim_list[[i]] <- min_max_for_figure[[column_for_color[i]]]
-    }
-    axis = "all"
-  }
+  scoreMat <- list()
   
-  if((length(ylim) == 1) && (ylim == "common_max")){
-    limits <- min_max_for_figure[[1]]
-    ylim_list <- list(limits)[rep(1, length(enrichMAT))]
-    axis = "only_first"
-  }
-  if (is(ylim,"numeric")) {
-    limits <- ylim
-    ylim_list <- list(limits)[rep(1, length(enrichMAT))]
-    axis = "only_first"
-  }
-  
-  if (is(ylim,"list")) {
-    if(length(ylim) != length(enrichMAT)){
-      stop("Since it is a list, the length of the 'ylim' argument must equal the number of heatmaps")
+  if(!is.null(ylim)){
+    if(ylim %in% colnames(sampleData(object))) {
+      column_for_color <- sampleData(object)[, colnames(sampleData(object)) %in% ylim]
+      if(!is(column_for_color, "factor")){
+        column_for_color <- as.factor(column_for_color)
+      }
+      for (i in seq_along(levels(column_for_color))){
+        enrichMAT_levels_temp <- enrichMAT[levels(column_for_color)[i] == column_for_color]
+        scoreMat[[i]] <- do.call(cbind,
+                                 as.list(enrichMAT_levels_temp))
+      }
+    } else {
+      scoreMat[[1]] <- do.call(cbind,
+                               as.list(enrichMAT))
     }
-    ylim_list <- ylim
-    axis = "all"
+    
+    group_boundaries <- getGroupInfoFromObject(object)$group_boundaries
+    
+    min_max_for_figure <- lapply(scoreMat, get_matrix_max_incl_group, group_boundaries)
+    
+    if(ylim %in% colnames(sampleData(object))) {
+      names(min_max_for_figure) <- levels(column_for_color)
+      ylim_list <- list()
+      for  (i in seq_along(column_for_color)) {
+        ylim_list[[i]] <- min_max_for_figure[[column_for_color[i]]]
+      }
+      axis = "all"
+    }
+    
+    if((length(ylim) == 1) && (ylim == "common_max")){
+      limits <- min_max_for_figure[[1]]
+      ylim_list <- list(limits)[rep(1, length(enrichMAT))]
+      axis = "only_first"
+    }
+    if (is(ylim,"numeric")) {
+      limits <- ylim
+      ylim_list <- list(limits)[rep(1, length(enrichMAT))]
+      axis = "only_first"
+    }
+    
+    if (is(ylim,"list")) {
+      if(length(ylim) != length(enrichMAT)){
+        stop("Since it is a list, the length of the 'ylim' argument must equal the number of heatmaps")
+      }
+      ylim_list <- ylim
+      axis = "all"
+    }
   }
   
   if (is.null(ylim)){
@@ -1619,7 +1658,9 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                                                                                     ylim = ylim_list[[i-1]], 
                                                                                                     axis_param = list(side = yaxis_side[i-1],
                                                                                                                       facing = facing[i-1],
-                                                                                                                      at = grid.pretty(ylim_list[[i-1]])[grid.pretty(ylim_list[[i-1]]) > ylim_list[[i-1]][1]],
+                                                                                                                      # at = ifelse(is.null(ylim_list[[i-1]]), 
+                                                                                                                      #             NULL,
+                                                                                                                      #             grid.pretty(ylim_list[[i-1]])[grid.pretty(ylim_list[[i-1]]) > ylim_list[[i-1]][1]]),
                                                                                                                       gp = top_anno_axis_font),
                                                                                                     yaxis = yaxis[i-1],
                                                                                                     height = top_anno_height)),
@@ -1645,7 +1686,9 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                                                                                     ylim = ylim_list[[i]],
                                                                                                     axis_param = list(side = yaxis_side[i],
                                                                                                                       facing = facing[i],
-                                                                                                                      at = grid.pretty(ylim_list[[i]])[grid.pretty(ylim_list[[i]]) > ylim_list[[i]][1]],
+                                                                                                                      # at = ifelse(is.null(ylim_list[[i]]), 
+                                                                                                                      #             NULL,
+                                                                                                                      #             grid.pretty(ylim_list[[i]])[grid.pretty(ylim_list[[i]]) > ylim_list[[i]][1]]),
                                                                                                                       gp = top_anno_axis_font),
                                                                                                     yaxis = yaxis[i],
                                                                                                     height = top_anno_height)),
@@ -1680,7 +1723,9 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                                                                                   ylim = ylim_list[[i-1]], 
                                                                                                   axis_param = list(side = yaxis_side[i-1],
                                                                                                                     facing = facing[i-1],
-                                                                                                                    at = grid.pretty(ylim_list[[i-1]])[grid.pretty(ylim_list[[i-1]]) > ylim_list[[i-1]][1]],
+                                                                                                                    # at = ifelse(is.null(ylim_list[[i-1]]), 
+                                                                                                                    #             NULL,
+                                                                                                                    #             grid.pretty(ylim_list[[i-1]])[grid.pretty(ylim_list[[i-1]]) > ylim_list[[i-1]][1]]),
                                                                                                                     gp = top_anno_axis_font),
                                                                                                   yaxis = yaxis[i-1],
                                                                                                   height = top_anno_height)),
@@ -1972,6 +2017,8 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "p
       return(genomeCov)
     }
     
+    message("Loading bigwig files.")
+    
     genomeCov_list <- lapply(signalFiles, import.bw, as = "RleList")
     genomeCov_list <- lapply(genomeCov_list, add_chr)
     genomeCov_names <- lapply(genomeCov_list, names)
@@ -2010,12 +2057,13 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "p
   testRanges_GR_unlist <- unlist(testRanges_GR)
   names(testRanges_GR_unlist) <- NULL
   
-  ChIPprofile_combined <- bplapply(signalFiles_list, regionPlot, 
+  message("Making ChIPprofile object from signal files.")
+  ChIPprofile_combined <- suppressWarnings(bplapply(signalFiles_list, regionPlot, 
                                    testRanges = testRanges_GR_unlist, 
                                    format = format, 
                                    style = style, 
                                    nOfWindows = nOfWindows,
-                                   ...)
+                                   ...))
   
   ChIPprofile_for_proplyr <- do.call(c,ChIPprofile_combined)
   
@@ -2030,14 +2078,14 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "p
   )
   
   if (style == "point"){
-    
+
     if(bin_size > 1){
-      
+
       bin_matrix <- function(matrix, bin_size){
-        
+
         bin_number <- as.integer(ncol(matrix)/bin_size)
         bin_mean_result <- list()
-        
+
         for(i in seq(bin_number)){
           if(i == 1){
             bin_mean_result[[i]] <- rowMeans(matrix[, 1:bin_size])
@@ -2045,7 +2093,7 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "p
             bin_mean_result[[i]] <- rowMeans(matrix[, (bin_size*(i-1)+1):(bin_size*i)])
           }
         }
-        
+
         binned_matrix <- do.call(cbind, bin_mean_result)
         return(binned_matrix)
       }

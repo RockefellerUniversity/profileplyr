@@ -539,7 +539,7 @@ The gene symbols will be used to determine overlap with the genes that are assoc
 
 ### Gene set list contains a character data
 
-First we read in a list of gene sets that are character vectors. This list contains the top 1000 differentially expressed genes that are higher in the liver compared to hindbrain, and the top 1000 that are higher in the hindbrain compared to the liver.
+The frist opption is to read in a list of gene sets that are character vectors. This list contains the top 1000 differentially expressed genes that are higher in the liver compared to hindbrain, and the top 1000 that are higher in the hindbrain compared to the liver.
 ```{r}
 data("gene_list_character")
 
@@ -548,11 +548,9 @@ head(gene_list_character[[1]])
 ```
 
 
-Then we subset the profileplyr object to only include the signal data for hindbrain and liver. This is followed by gene annotation of these ranges using the 'annotateRanges' function which utilizes the ChIPseeker package. This can also be done with the 'annotateRanges_great' function, which uses the rGREAT package for annotation. The resulting profileplyr object has range metadata columns that have gene annotation ('SYMBOL' column) and a column with the gene set that each range overlapped combined with the inherited grouping ('group_and_overlap' column). 
-
 ### Gene set list with data frames for heatmap annotation (using pipe - %>%)
 
-This time we will use the same list of genes as before, but this time they are in data frames with a column containing gene expression changes for hindbrain vs liver (they are values from the 'stat' column of a [DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html) results table). This allows us to add a heatmap to our visualization showing these expression changes. Also note that the generateEnrichedHeatmap() function gives the ability to manually change the sample names (previously we had shortened them by changing the rownames of sampleData(proplyrObject)) 
+Using the same list of genes as above, we can also use them as part of a list of data frames (the gene symbols must be the rownames) with a column containing gene expression changes for hindbrain vs liver (they are values from the 'stat' column of a [DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html) results table). This allows us to add a heatmap to our visualization showing these expression changes. 
 
 
 ```{r,message=FALSE}
@@ -576,6 +574,11 @@ testRanges <- system.file("extdata",
                           package = "profileplyr")
 ```
 
+
+Using the list of data frames as our gene list, we produce a heatmap with an additional column showing gene expression changes in hindbrain vs liver for each range. This is achieved by annotating these ranges with genes using the 'annotateRanges' function which utilizes the ChIPseeker package. This can also be done with the 'annotateRanges_great' function, which uses the rGREAT package for annotation. The resulting profileplyr object has range metadata columns that have gene annotation ('SYMBOL' column) and a column with the gene set that each range overlapped combined with the inherited grouping ('group_and_overlap' column).
+
+Also note that the generateEnrichedHeatmap() function gives the ability to manually change the sample names (previously we had shortened them by changing the rownames of sampleData(proplyrObject)) 
+
 ```{r, fig12, fig.height=7, fig.width=5, results='hide', fig.keep="last"}
 
 BamBigwig_to_chipProfile(signalFiles, 
@@ -587,7 +590,7 @@ BamBigwig_to_chipProfile(signalFiles,
                          distanceAround=40) %>% 
   as_profileplyr %>% 
   annotateRanges(TxDb = "mm10")  %>%
-  groupBy(group = gene_list_dataframe) %>% 
+  groupBy(group = gene_list_dataframe) %>% #subseting by our gene list
   generateEnrichedHeatmap(extra_annotation_columns = c("hindbrain_liv_stat"),
                           sample_names = c("Hindbrain",
                                            "Liver"))
