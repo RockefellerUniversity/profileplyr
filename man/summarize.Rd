@@ -22,6 +22,8 @@ summarize(object = "profileplyr", fun = "function",
 \item{output}{Must be either "matrix", "long", or "object".}
 
 \item{keep_all_mcols}{if output is 'long' and this is set to TRUE, then all metadata columns in the rowRanges will be included in the output. If FALSE (default value), then only the column indicated in the 'rowGroupsInUse' slot of the metadata will be included in the output dataframe.}
+
+\item{sampleData_columns_for_longPlot}{If output is set to 'long', then this argument can be used to add information stored in sampleData(object) to the summarized data frame. This needs to be a character vector with elements matching coumn names in sampleData(object).}
 }
 \value{
 If output="matrix" returns a matrix, if output="long" returns a data.frame in long format,  if output="long" returns a SummarizedExperiment object

@@ -19,7 +19,7 @@ groupBy(object = "profileplyr", group = "ANY",
 \arguments{
 \item{object}{A profileplyr object}
 
-\item{group}{How the ranges will be grouped. If this is a character string, then it must match a column name of the range metadata, and this column will be used for grouping of any exported deepTools matrix. If this is a GRanges, or GRangesList, then the ranges will be subset based on overlap with these GRanges. If this is a list, each element should contain a character vector of genes, and ranges will be subset based on overlap with these genes, as determined by the annotations made by annotateRanges() or annotateRanges_great() functions.}
+\item{group}{How the ranges will be grouped. If this is a character string, then it must match a column name of the range metadata, and this column will be used for grouping of any exported deepTools matrix. If this is a GRanges, or GRangesList, then the ranges will be subset based on overlap with these GRanges. If this is a list, each element should contain ether 1) a character vector of genes, and ranges will be subset based on overlap with these genes, as determined by the annotations made by annotateRanges() or annotateRanges_great() functions, or 2) a data frame with the gene symbols as the rownames. Any additional columns of this dataframe will be added to the range metadata. .}
 
 \item{GRanges_names}{Relevant for 'GRanges' mode. These are the names that will be assigned to the ranges that overlap each GRanges object}
 

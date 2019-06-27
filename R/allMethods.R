@@ -857,6 +857,7 @@ subsetbyGeneListOverlap <- function(object, group, include_nonoverlapping = FALS
 #' @param fun the function used to summarize the ranges (e.g. rowMeans or rowMax)
 #' @param output Must be either "matrix", "long", or "object".
 #' @param keep_all_mcols if output is 'long' and this is set to TRUE, then all metadata columns in the rowRanges will be included in the output. If FALSE (default value), then only the column indicated in the 'rowGroupsInUse' slot of the metadata will be included in the output dataframe. 
+#' @param sampleData_columns_for_longPlot If output is set to 'long', then this argument can be used to add information stored in sampleData(object) to the summarized data frame. This needs to be a character vector with elements matching coumn names in sampleData(object). 
 #' @details Takes a SE object and outputs a summarized experiment object with a matrix containing ranges as rows and each sample having one column with summary statistic
 #' @return If output="matrix" returns a matrix, if output="long" returns a data.frame in long format,  if output="long" returns a SummarizedExperiment object
 #' @examples
@@ -910,6 +911,9 @@ setMethod("summarize", signature(object="profileplyr"), function(object, fun, ou
     summ_long$Sample <- ordered(summ_long$Sample, levels = rownames(sampleData(object)))
     
     if (!is.null(sampleData_columns_for_longPlot)){
+      if(!is.character(sampleData_columns_for_longPlot)){
+        stop("The 'sampleData_columns_for_longPlot' argument must be a character vector")
+      }
       table(summ_long$Sample)
       column_subset <- colnames(sampleData(object)) %in% sampleData_columns_for_longPlot
       temp <- sampleData(object)[column_subset]
@@ -956,7 +960,7 @@ setMethod("summarize", signature(object="profileplyr"), function(object, fun, ou
 #' @name groupBy
 #' @rdname groupBy
 #' @param object  A profileplyr object
-#' @param group How the ranges will be grouped. If this is a character string, then it must match a column name of the range metadata, and this column will be used for grouping of any exported deepTools matrix. If this is a GRanges, or GRangesList, then the ranges will be subset based on overlap with these GRanges. If this is a list, each element should contain a character vector of genes, and ranges will be subset based on overlap with these genes, as determined by the annotations made by annotateRanges() or annotateRanges_great() functions.
+#' @param group How the ranges will be grouped. If this is a character string, then it must match a column name of the range metadata, and this column will be used for grouping of any exported deepTools matrix. If this is a GRanges, or GRangesList, then the ranges will be subset based on overlap with these GRanges. If this is a list, each element should contain ether 1) a character vector of genes, and ranges will be subset based on overlap with these genes, as determined by the annotations made by annotateRanges() or annotateRanges_great() functions, or 2) a data frame with the gene symbols as the rownames. Any additional columns of this dataframe will be added to the range metadata. .
 #' @param levels This will set the levels of the grouping column set by 'rowGroupsInUse' (if the grouping column is not a factor, it will be converted to one). If levels are not provided, they will remain unchanged if the grouping column was already a factor, or will use default leveling (e.g. alphabetical) if grouping column is not already a factor variable. 
 #' @param GRanges_names Relevant for 'GRanges' mode. These are the names that will be assigned to the ranges that overlap each GRanges object
 #' @param include_nonoverlapping Relevant for 'GRanges' mode. This should be indicated (default is TRUE). A logical argument, if FALSE the regions from the original deepTools matrix that do not overlap with the  user defined regions will be left out of the returned profileplyr object.
