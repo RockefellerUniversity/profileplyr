@@ -22,7 +22,10 @@ generateEnrichedHeatmap(object, include_group_annotation = TRUE,
   extra_anno_width = (rep(6, length(extra_annotation_columns))),
   only_extra_annotation_columns = FALSE, gap = 2,
   genes_to_label = NULL, gene_label_font_size = 6,
-  show_heatmap_legend = NULL, legend_params = NULL)
+  show_heatmap_legend = NULL, legend_params = NULL,
+  use_raster = length(object) > 2000, raster_device = c("png", "jpeg",
+  "tiff", "CairoPNG", "CairoJPEG", "CairoTIFF"), raster_quality = 2,
+  raster_device_param = list())
 }
 \arguments{
 \item{object}{A profileplyr object}
@@ -39,9 +42,9 @@ generateEnrichedHeatmap(object, include_group_annotation = TRUE,
 
 \item{top_anno_height}{The height (as a unit object) of the top annotation of all heatmaps representing the matrices}
 
-\item{samples_to_sortby}{Either a character or numeric vector. If numeric, then the samples/matrices that have that index in the profileplyr object will be used to order the rows of the heatmap. If a character vector, then the elements must match the name of a sample in the object (rownames(sampleData(object))), and these samples will be used to order the heatmap.}
+\item{samples_to_sortby}{Only relevant if object@params$mcolToOrderBy is NULL (i.e it hasn't been changed), meaning that the rows are sorted by the mean signal of all heatmaps. This argument allows sorting by the mean of a subset of samples, and should be either a character or numeric vector. If numeric, then the samples/matrices that have that index in the profileplyr object will be used to order the rows of the heatmap. If a character vector, then the elements must match the name of a sample in the object (rownames(sampleData(object))), and these samples will be used to order the heatmap.}
 
-\item{decreasing}{If object@params$mcolToOrderBy has been changed and is NULL, then the ranges will be ordered by the column indicated in this slot of the metadata. By default, the order will be increasing for the factor or numeric value. For decreasing order, choose decreasing = TRUE.}
+\item{decreasing}{If object@params$mcolToOrderBy has been changed and is not NULL, then the ranges will be ordered by the column indicated in this slot of the metadata. By default, the order will be increasing for the factor or numeric value. For decreasing order, choose decreasing = TRUE.}
 
 \item{all_color_scales_equal}{If TRUE (default value) then the same color scale will be used for each separate heatmap. If FALSE, color scales will be inferred for each heatmap as indicated by the legends.}
 
@@ -86,6 +89,14 @@ generateEnrichedHeatmap(object, include_group_annotation = TRUE,
 \item{show_heatmap_legend}{A logical vector with each position corresponding to each matrix heatmap (not including the 'extra_annotation_columns') that determines whether a legend is produced for that heatmap. By default a single legend is made if all heatmaps use the same color scale, or separate legends are made for each matrix heatmap if the scales are different.}
 
 \item{legend_params}{A list that contains parameters for the legend. See \code{\link[ComplexHeatmap]{color_mapping_legend-ColorMapping-method}} for all available parameters.}
+
+\item{use_raster}{Whether render the heatmap body as a raster image. It helps to reduce file size when the matrix is huge.}
+
+\item{raster_device}{Graphic device which is used to generate the raster image.}
+
+\item{raster_quality}{A value set to larger than 1 will improve the quality of the raster image.}
+
+\item{raster_device_param}{A list of further parameters for the selected graphic device. For raster image support, please check \url{https://jokergoo.github.io/ComplexHeatmap-reference/book/a-single-heatmap.html#heatmap-as-raster-image} .}
 }
 \value{
 By default a customized version of a heatmap from EnrichedHeatmap, if return_ht_list = TRUE then a heatmap list is returned that can be modified and then entered as an input for the \code{\link[EnrichedHeatmap]{EnrichedHeatmap}} function
