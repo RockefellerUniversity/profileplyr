@@ -48,7 +48,7 @@ setClass("profileplyr",
     ii <- as.vector(i)
     ans_elementMetadata <- x@elementMetadata[i, , drop=FALSE]
     ans_rowRanges <- x@rowRanges[i]
-    ans_assays <- x@assays[ii,]$data
+    ans_assays <- x@assays[ii,]@data
     
     x  <- profileplyr_Dataset(ans_assays,ans_rowRanges,
                                          sampleData(x),sampleParams(x), params(x))
@@ -62,7 +62,7 @@ setClass("profileplyr",
     }
     ans_colData <- x@colData[j, , drop=FALSE]
     jj <- as.vector(j)
-    ans_assays <- x@assays[,jj]$data
+    ans_assays <- x@assays[,jj]@data
     
     x  <- profileplyr_Dataset(ans_assays,rowRanges(x),
                               sampleData(x),sampleParams(x),params(x))
@@ -78,7 +78,7 @@ setClass("profileplyr",
     sampleDataTmp <- sampleData(x)[k, , drop=FALSE]
     sampleParamsTmp <- sampleParams(x)[k, , drop=FALSE]
     kk <- as.vector(k)
-    ans_assays <- x@assays$data[kk]
+    ans_assays <- x@assays@data[kk]
 
     x  <- profileplyr_Dataset(ans_assays,rowRanges(x),
                               sampleDataTmp,sampleParamsTmp,params(x))
@@ -195,8 +195,6 @@ setMethod("c", "profileplyr",
 setMethod("[", c("profileplyr", "ANY", "ANY", "ANY"),
           .subsetprofileplyr)
 
-.DollarNames.profileplyr <- function(object, pattern = "")
-  grep(pattern, rownames(sampleData(object)), value=TRUE)
 
 
 #' Dataframe of top differentially expressed genes from hindbrain versus liver as measured by RNA-seq
