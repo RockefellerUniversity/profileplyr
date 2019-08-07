@@ -1159,7 +1159,7 @@ setMethod("convertToEnrichedHeatmapMat", signature(object="profileplyr"),functio
 #' @param matrices_pos_line A logical for whether to draw a vertical line(s) at the position of the target (for both a single point or a window). Default is true.
 #' @param matrices_pos_line_gp Graphics parameters for the vertical position lines. Should be set with the gpar() function from the grid() package.
 #' @param matrices_column_title_gp Graphics parameters for the titles on top of each range/matrix. Should be set with the gpar() function from the grid() package.
-#' @param matrices_axis_name Names for axis which is below the heatmap. For profileplyr object made from BamBigwig_to_chipProfile/as_profileplyr functions, the names will be of length three, with the middle point being the midpoint of each range.  If the profileplyr object was made from a deeptools matrix with import_deepToolsMat(), the names will be length three if matrix was generated with 'computeMatrix reference-point', or length of four if matrix was generated with 'computeMatrix scale-regions' corresponding to upstream, start of targets, end of targets and downstream (or length of two if no upstream/downstream included).
+#' @param matrices_axis_name Names for axis which is below the heatmap. For profileplyr object made from BamBigwig_to_chipProfile/leplyr functions, the names will be of length three, with the middle point being the midpoint of each range.  If the profileplyr object was made from a deeptools matrix with import_deepToolsMat(), the names will be length three if matrix was generated with 'computeMatrix reference-point', or length of four if matrix was generated with 'computeMatrix scale-regions' corresponding to upstream, start of targets, end of targets and downstream (or length of two if no upstream/downstream included).
 #' @param matrices_axis_name_gp Graphics parameters for the text on the x-axis of each matrix heatmap. Should be set with the gpar() function from the grid() package.
 #' @param group_anno_color This will specify colors for the grouping column if the 'include_group_annotation' argument is set to TRUE. Since the group column of the range metadata should always be a discrete value, this should be either a numeric vector or character vector with color names. By default, numeric vectors use the colors in palette(), however this can be expanded with other R color lists(e.g. colors()). The length of this vector must equal the number of groups.
 #' @param group_anno_width A numeric value that is used to will set the width of the column bar (in mm using the unit() function from the grid package) for the grouping annotation column. 
@@ -1931,6 +1931,15 @@ as_profileplyr <- function(chipProfile,names = NULL){
   }
   
   forDP_Assays <- assays(chipProfile)
+  
+  for(i in seq_along(forDP_Assays)){
+    
+    if(sum(!is.finite(forDP_Assays[[i]])) > 0) {
+      forDP_Assays[[i]][!is.finite(forDP_Assays[[i]])] <- 0
+      message(paste0("Matrix #", i, " contained non-finite values, these will be replaced with zeros"))
+    }
+  }
+  
   names(forDP_Assays) <-  sample_labels <- basename(metadata(chipProfile)$names)
   
   forDP_ranges <- rowRanges(chipProfile)
