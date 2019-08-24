@@ -303,9 +303,9 @@ setMethod("clusterRanges", signature="profileplyr",
   if (!(is.null(kmeans_k))) {
     message("K means clustering used.")
     res <- pheatmap(range_summ, scale = scale, kmeans_k = kmeans_k, silent = silent)
-    cluster <- res$kmeans$cluster %>%
-      data.frame(row.names = names(.), kmeans_cluster = .)
-    rowRanges(object)$cluster <- cluster[,1]
+    cluster_vector <- res$kmeans$cluster # %>%
+      #data.frame(row.names = make.unique(names(.)), kmeans_cluster = .)
+    rowRanges(object)$cluster <- cluster_vector # [,1]
   }else if (!(is.null(cutree_rows))) {
     if(identical(clustering_callback,(function(x, ...){return(x)}))){
       message("Hierarchical clustering used. It is advised to avoid this option with large matrices as the clustering can take a long time. Kmeans is more suitable for large matrices.")
@@ -314,9 +314,9 @@ setMethod("clusterRanges", signature="profileplyr",
       message("Hierarchical clustering performed using clustering method input in the 'callback_clustering' argument.  It is advised to avoid this option with large matrices as the clustering can take a long time. Kmeans is more suitable for large matrices.")
     }
     res <- pheatmap(range_summ, scale = scale, clustering_distance_rows = clustering_distance_rows, cluster_method = cluster_method, silent = silent, cutree_rows = cutree_rows, show_rownames = show_rownames, clustering_callback = clustering_callback)
-    cluster <- cutree(res$tree_row, k = cutree_rows) %>%
-      as.data.frame(.)
-    rowRanges(object)$cluster <- cluster[,1]
+    cluster_vector <- cutree(res$tree_row, k = cutree_rows) # %>%
+      # as.data.frame(.)
+    rowRanges(object)$cluster <- cluster_vector #[,1]
     rowRanges(object)$hierarchical_order <- order(res$tree_row$order)
   }
   
@@ -385,7 +385,7 @@ setMethod("annotateRanges_great", signature(object="profileplyr"),function(objec
 #' @param object A profileplyr object
 #' @param annotation_subset If specific annotations (from ChIPseeker package) are desired, specify them here in a character vector. Can be one or any combination of "Promoter", "Exon", "Intron", "Downstream", "Distal Intergenic", "3p UTR", or "5p UTR". This argument is optional and all annotation types will be included if argument is left out.
 #' @param TxDb This must be either a TxDb object, a character string that is a path to a GTF file, or character string indicating genome if one of the following - "hg19", "hg38", "mm9", "mm10".
-#' @param tssRegion This needs to be a vector of two numbers that will define promoter regions. The first number must be negative, while the second number must be positive. Default values are  c(-3000, 3000) - SHOULD WE CHANGE THIS, SEEMS BIG!)
+#' @param tssRegion This needs to be a vector of two numbers that will define promoter regions. The first number must be negative, while the second number must be positive. Default values are  c(-3000, 3000) 
 #' @param changeGroupToAnnotation If the grouping should be changed to the annotations (typically when the ranges will be exported for visualization based on this annotation), this should be TRUE. The default if FALSE, which will keep the grouping that existed before annotating the object. This is typical if the output will be used for finding overlaps with gene lists in the 'groupBy' function.
 #' @param heatmap_grouping Only relevant if 'keepAnnotationAsGroup' is set to TRUE. This argument needs to be either "group", or "annotation". This will determine how the ranges are grouped in the resulting object. Default is heatmap_grouping = "Group". If there are no groups in the deepTools matrix that was used in the function, this argument is unnecessary
 #' @param annoDb The annotation package to be used. If the 'TxDb' argument is set to "hg19", "hg38", "mm9", or "mm10" this will automatically be set and this can be left as NULL.
@@ -704,18 +704,18 @@ subsetbyRangeOverlap <- function(object, group, GRanges_names = NULL, include_no
   }
   
   if (include_nonoverlapping == TRUE) {
-
     
-    # here I just populate the metadata columns in the non-overlapping regions with NAs
-    no_overlap_mcols <- list()
-   
-     for (i in seq_along(query_mcols)) {
-      no_overlap_mcols[[i]] <- rep(NA, length(rowRanges(object_no_overlap)))
+    if(ncol(query_mcols) > 0) { 
+      # here I just populate the metadata columns in the non-overlapping regions with NAs
+      no_overlap_mcols <- list()
+      
+      for (i in seq_along(query_mcols)) {
+        no_overlap_mcols[[i]] <- rep(NA, length(rowRanges(object_no_overlap)))
+      }
+      no_overlap_mcols <- do.call("cbind",no_overlap_mcols) %>%  as.data.frame()
+      colnames(no_overlap_mcols) <- colnames(query_mcols)
+      mcols(object_no_overlap) <-  c( mcols(object_no_overlap), no_overlap_mcols)
     }
-    no_overlap_mcols <- do.call("cbind",no_overlap_mcols) %>%  as.data.frame()
-    colnames(no_overlap_mcols) <- colnames(query_mcols)
-    mcols(object_no_overlap) <-  c( mcols(object_no_overlap), no_overlap_mcols)
-    
     object <- rbind(object_overlap, object_no_overlap)
   }
   if (inherit_groups == TRUE) {
@@ -1189,7 +1189,7 @@ setMethod("convertToEnrichedHeatmapMat", signature(object="profileplyr"),functio
 
 generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, extra_annotation_columns = NULL, sample_names = NULL, return_ht_list = FALSE, ylim = "common_max", top_anno_height = unit(2, "cm"),
                                     samples_to_sortby = NULL, decreasing = FALSE, all_color_scales_equal = TRUE, matrices_color = NULL, color_by_sample_group = NULL, matrices_pos_line = TRUE, matrices_pos_line_gp = gpar(lty = 2), 
-                                    top_anno_axis_font = gpar(fontsize = 8), matrices_column_title_gp =  gpar(fontsize = 10, fontface = "bold"), matrices_axis_name = NULL, matrices_axis_name_gp = gpar(fontsize = 8), 
+                                    top_anno_axis_font = gpar(fontsize = 8), matrices_column_title_gp =  gpar(fontsize = 8, fontface = "bold"), matrices_axis_name = NULL, matrices_axis_name_gp = gpar(fontsize = 8), 
                                     group_anno_color = NULL, group_anno_width = 3, group_anno_row_title_gp = gpar(fontsize = 10), group_anno_column_names_gp = gpar(fontsize = 10),
                                     extra_anno_color = vector(mode = "list", length = length(extra_annotation_columns)), extra_anno_top_annotation = TRUE, 
                                     extra_anno_width = (rep(6, length(extra_annotation_columns))), only_extra_annotation_columns = FALSE, gap = 2, genes_to_label = NULL, gene_label_font_size = 6, 
@@ -1647,8 +1647,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                  width = unit(group_anno_width, "mm"),
                                  row_title_gp = group_anno_row_title_gp,
                                  column_names_gp = group_anno_column_names_gp,
-                                 heatmap_legend_param = as.list(c(title = params(object)$rowGroupsInUse,
-                                                                  legend_params)),
+                                 # heatmap_legend_param = as.list(c(title = params(object)$rowGroupsInUse,
+                                 #                                  legend_params)),
                                  use_raster = use_raster,
                                  raster_device = raster_device,
                                  raster_quality = raster_quality,
@@ -1678,8 +1678,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                                                                                     yaxis = yaxis[i-1],
                                                                                                     height = top_anno_height)),
                                            show_heatmap_legend = show_heatmap_legend[i-1],
-                                           heatmap_legend_param = as.list(c(title = heatmap_legend_title[i-1],
-                                                                            legend_params)),
+                                           # heatmap_legend_param = as.list(c(title = heatmap_legend_title[i-1],
+                                           #                                  legend_params)),
                                            column_title_gp = matrices_column_title_gp,
                                            axis_name = matrices_axis_name,
                                            axis_name_gp = matrices_axis_name_gp,
@@ -1710,8 +1710,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                                                                                     yaxis = yaxis[i],
                                                                                                     height = top_anno_height)),
                                            show_heatmap_legend = show_heatmap_legend[i],
-                                           heatmap_legend_param = as.list(c(title = heatmap_legend_title[i],
-                                                                       legend_params)),
+                                           # heatmap_legend_param = as.list(c(title = heatmap_legend_title[i],
+                                           #                             legend_params)),
                                            column_title_gp = matrices_column_title_gp,
                                            axis_name = matrices_axis_name,
                                            axis_name_gp = matrices_axis_name_gp,
@@ -1753,8 +1753,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                                                                                   yaxis = yaxis[x],
                                                                                                   height = top_anno_height)),
                                          show_heatmap_legend = show_heatmap_legend[x],
-                                         heatmap_legend_param = as.list(c(title = heatmap_legend_title[x],
-                                                                          legend_params)),
+                                         # heatmap_legend_param = as.list(c(title = heatmap_legend_title[x],
+                                         #                                  legend_params)),
                                          column_title_gp = matrices_column_title_gp,
                                          axis_name = matrices_axis_name,
                                          axis_name_gp = matrices_axis_name_gp,
@@ -1783,7 +1783,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     }
     
     if(!(length(extra_anno_color) == length(extra_annotation_columns))){
-      stop("The length of the 'extra_annotation_columns' charcter vector must be the same length as the 'extra_anno_color' list")
+      stop("The length of the 'extra_annotation_columns' character vector must be the same length as the 'extra_anno_color' list")
     }
     
     for (i in seq_along(extra_annotation_columns)){
@@ -1834,8 +1834,9 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                                         width = unit(extra_anno_width[i], "mm"),
                                                         column_names_gp = gpar(fontsize = 10),
                                                         top_annotation = top_annotation,
-                                                        cluster_rows = FALSE,
-                                                        heatmap_legend_param = legend_params)
+                                                        cluster_rows = FALSE #,
+                                                        # heatmap_legend_param = legend_params
+                                                        )
     }
     if(!is.null(genes_to_label)){
       i = length(extra_annotation_columns)
@@ -1846,8 +1847,9 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                                         width = unit(extra_anno_width[i], "mm"),
                                                         column_names_gp = gpar(fontsize = 10),
                                                         top_annotation = top_annotation,
-                                                        right_annotation = gene_annotation,
-                                                        heatmap_legend_param = legend_params)
+                                                        right_annotation = gene_annotation # ,
+                                                        # heatmap_legend_param = legend_params
+                                                      )
     }
   }
   

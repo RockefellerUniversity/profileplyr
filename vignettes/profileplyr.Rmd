@@ -579,7 +579,7 @@ Using the list of data frames as our gene list, we produce a heatmap with an add
 
 Also note that the generateEnrichedHeatmap() function gives the ability to manually change the sample names (previously we had shortened them by changing the rownames of sampleData(proplyrObject)) 
 
-```{r, fig12, fig.height=7, fig.width=5, results='hide', fig.keep="last"}
+```{r, fig12, fig.height=7, fig.width=5, results='hide'}
 
 BamBigwig_to_chipProfile(signalFiles, 
                          testRanges, 

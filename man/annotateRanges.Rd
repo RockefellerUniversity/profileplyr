@@ -25,7 +25,7 @@ annotateRanges(object = "profileplyr", annotation_subset = "character",
 
 \item{annoDb}{The annotation package to be used. If the 'TxDb' argument is set to "hg19", "hg38", "mm9", or "mm10" this will automatically be set and this can be left as NULL.}
 
-\item{tssRegion}{This needs to be a vector of two numbers that will define promoter regions. The first number must be negative, while the second number must be positive. Default values are  c(-3000, 3000) - SHOULD WE CHANGE THIS, SEEMS BIG!)}
+\item{tssRegion}{This needs to be a vector of two numbers that will define promoter regions. The first number must be negative, while the second number must be positive. Default values are  c(-3000, 3000)}
 
 \item{changeGroupToAnnotation}{If the grouping should be changed to the annotations (typically when the ranges will be exported for visualization based on this annotation), this should be TRUE. The default if FALSE, which will keep the grouping that existed before annotating the object. This is typical if the output will be used for finding overlaps with gene lists in the 'groupBy' function.}
 
