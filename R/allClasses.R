@@ -48,7 +48,13 @@ setClass("profileplyr",
     ii <- as.vector(i)
     ans_elementMetadata <- x@elementMetadata[i, , drop=FALSE]
     ans_rowRanges <- x@rowRanges[i]
-    ans_assays <- x@assays[ii,]@data
+    if(class(x@assays)[1] == "ShallowSimpleListAssays"){
+        ans_assays <- x@assays[ii,]$data
+    }
+    else {
+        ans_assays <- x@assays[ii,]@data
+    }
+    
     
     x  <- profileplyr_Dataset(ans_assays,ans_rowRanges,
                                          sampleData(x),sampleParams(x), params(x))
@@ -62,7 +68,12 @@ setClass("profileplyr",
     }
     ans_colData <- x@colData[j, , drop=FALSE]
     jj <- as.vector(j)
-    ans_assays <- x@assays[,jj]@data
+    if(class(x@assays)[1] == "ShallowSimpleListAssays"){
+        ans_assays <- x@assays[,jj]$data
+    }
+    else {
+        ans_assays <- x@assays[,jj]@data
+    }
     
     x  <- profileplyr_Dataset(ans_assays,rowRanges(x),
                               sampleData(x),sampleParams(x),params(x))
@@ -78,7 +89,12 @@ setClass("profileplyr",
     sampleDataTmp <- sampleData(x)[k, , drop=FALSE]
     sampleParamsTmp <- sampleParams(x)[k, , drop=FALSE]
     kk <- as.vector(k)
-    ans_assays <- x@assays@data[kk]
+    if(class(x@assays)[1] == "ShallowSimpleListAssays"){
+        ans_assays <- x@assays$data[kk]
+    }
+    else {
+        ans_assays <- x@assays@data[kk]
+    }
 
     x  <- profileplyr_Dataset(ans_assays,rowRanges(x),
                               sampleDataTmp,sampleParamsTmp,params(x))
