@@ -6,7 +6,8 @@
 \usage{
 BamBigwig_to_chipProfile(signalFiles, testRanges, format,
   style = "percentOfRegion", nOfWindows = 100, bin_size = 20,
-  distanceAround = 100, ...)
+  distanceAround = 100, ..., quant_params = MulticoreParam(workers =
+  multicoreWorkers()))
 }
 \arguments{
 \item{signalFiles}{paths to either BAM files or bigwig files. More than one path can be in this character vector, but all paths in one function call must point to be either all BAM files or all bigWig files, not a combination of the two.}
@@ -24,6 +25,8 @@ BamBigwig_to_chipProfile(signalFiles, testRanges, format,
 \item{distanceAround}{If 'style' is 'percentOfRegion', then this controls the distance around the region that is included. Default is 100, meaning that a distance equal to 100 percent of that particular region on either side of the region will be included in the heatmap.}
 
 \item{...}{pass to regionPlot() within the soGGi package}
+
+\item{quant_params}{An optional \code{\link[BiocParallel]{BiocParallelParam}}  instance determining the parallel back-end to be used during evaluation. Default is MulticoreParam(), and the number of cores (workers) used in the MulticoreParam() function can be set with the 'workers' argument withing the MulticoreParam() call. MulticoreParam() defaults to all cores available as determined by detectCores.}
 }
 \value{
 A profileplyr object

@@ -2010,6 +2010,7 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @param distanceAround If 'style' is 'percentOfRegion', then this controls the distance around the region that is included. Default is 100, meaning that a distance equal to 100 percent of that particular region on either side of the region will be included in the heatmap. 
 #' @param bin_size If 'style' is set to 'point' then this will determine the size of each bin over which signal is quantified. The default is 20 base pairs.  
 #' @param ... pass to regionPlot() within the soGGi package
+#' @param quant_params An optional \code{\link[BiocParallel]{BiocParallelParam}}  instance determining the parallel back-end to be used during evaluation. Default is MulticoreParam(), and the number of cores (workers) used in the MulticoreParam() function can be set with the 'workers' argument withing the MulticoreParam() call. MulticoreParam() defaults to all cores available as determined by detectCores. 
 #' @return A profileplyr object
 #' @examples
 #' signalFiles <- c(system.file("extdata",
@@ -2034,7 +2035,7 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @importFrom GenomeInfoDb seqlevelsStyle<- seqlevelsInUse seqlevels
 #' @export
 #' 
-BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "percentOfRegion" , nOfWindows = 100, bin_size = 20, distanceAround = 100, ...) {
+BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "percentOfRegion" , nOfWindows = 100, bin_size = 20, distanceAround = 100, ..., quant_params = MulticoreParam(workers = multicoreWorkers())) {
   
   if (missing(format)){
     stop("'format' argument is missing, it must be entered")
@@ -2096,13 +2097,17 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "p
   names(testRanges_GR_unlist) <- NULL
   
   message("Making ChIPprofile object from signal files.")
+  
+  BPPARAM <- quant_params
+    
   ChIPprofile_combined <- suppressWarnings(bplapply(signalFiles_list, regionPlot, 
                                    testRanges = testRanges_GR_unlist, 
                                    format = format, 
                                    style = style, 
                                    nOfWindows = nOfWindows,
                                    distanceAround = distanceAround,
-                                   ...))
+                                   ...,
+                                   BPPARAM = BPPARAM))
   
   ChIPprofile_for_proplyr <- do.call(c,ChIPprofile_combined)
   
