@@ -1193,7 +1193,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                     group_anno_color = NULL, group_anno_width = 3, group_anno_row_title_gp = gpar(fontsize = 10), group_anno_column_names_gp = gpar(fontsize = 10),
                                     extra_anno_color = vector(mode = "list", length = length(extra_annotation_columns)), extra_anno_top_annotation = TRUE, 
                                     extra_anno_width = (rep(6, length(extra_annotation_columns))), only_extra_annotation_columns = FALSE, gap = 2, genes_to_label = NULL, gene_label_font_size = 6, 
-                                    show_heatmap_legend = NULL, legend_params = NULL, use_raster = length(object) > 2000, raster_device = c("png", "jpeg", "tiff", "CairoPNG", "CairoJPEG", "CairoTIFF"),
+                                    show_heatmap_legend = NULL, legend_params = list(), use_raster = length(object) > 2000, raster_device = c("png", "jpeg", "tiff", "CairoPNG", "CairoJPEG", "CairoTIFF"),
                                     raster_quality = 2,raster_device_param = list()){
 
   if(!is.null(samples_to_sortby)) {
@@ -1647,8 +1647,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                  width = unit(group_anno_width, "mm"),
                                  row_title_gp = group_anno_row_title_gp,
                                  column_names_gp = group_anno_column_names_gp,
-                                 # heatmap_legend_param = as.list(c(title = params(object)$rowGroupsInUse,
-                                 #                                  legend_params)),
+                                 heatmap_legend_param = c(list(title = params(object)$rowGroupsInUse),
+                                                                  legend_params),
                                  use_raster = use_raster,
                                  raster_device = raster_device,
                                  raster_quality = raster_quality,
@@ -1678,8 +1678,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                                                                                     yaxis = yaxis[i-1],
                                                                                                     height = top_anno_height)),
                                            show_heatmap_legend = show_heatmap_legend[i-1],
-                                           # heatmap_legend_param = as.list(c(title = heatmap_legend_title[i-1],
-                                           #                                  legend_params)),
+                                           heatmap_legend_param = c(list(title = heatmap_legend_title[i-1]),
+                                                                            legend_params),
                                            column_title_gp = matrices_column_title_gp,
                                            axis_name = matrices_axis_name,
                                            axis_name_gp = matrices_axis_name_gp,
@@ -1710,8 +1710,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                                                                                     yaxis = yaxis[i],
                                                                                                     height = top_anno_height)),
                                            show_heatmap_legend = show_heatmap_legend[i],
-                                           # heatmap_legend_param = as.list(c(title = heatmap_legend_title[i],
-                                           #                             legend_params)),
+                                           heatmap_legend_param = c(list(title = heatmap_legend_title[i]),
+                                                                       legend_params),
                                            column_title_gp = matrices_column_title_gp,
                                            axis_name = matrices_axis_name,
                                            axis_name_gp = matrices_axis_name_gp,
@@ -1753,8 +1753,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                                                                                   yaxis = yaxis[x],
                                                                                                   height = top_anno_height)),
                                          show_heatmap_legend = show_heatmap_legend[x],
-                                         # heatmap_legend_param = as.list(c(title = heatmap_legend_title[x],
-                                         #                                  legend_params)),
+                                         heatmap_legend_param = c(list(title = heatmap_legend_title[x]),
+                                                                          legend_params),
                                          column_title_gp = matrices_column_title_gp,
                                          axis_name = matrices_axis_name,
                                          axis_name_gp = matrices_axis_name_gp,
@@ -1834,8 +1834,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                                         width = unit(extra_anno_width[i], "mm"),
                                                         column_names_gp = gpar(fontsize = 10),
                                                         top_annotation = top_annotation,
-                                                        cluster_rows = FALSE #,
-                                                        # heatmap_legend_param = legend_params
+                                                        cluster_rows = FALSE,
+                                                        heatmap_legend_param = legend_params
                                                         )
     }
     if(!is.null(genes_to_label)){
@@ -1847,8 +1847,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                                         width = unit(extra_anno_width[i], "mm"),
                                                         column_names_gp = gpar(fontsize = 10),
                                                         top_annotation = top_annotation,
-                                                        right_annotation = gene_annotation # ,
-                                                        # heatmap_legend_param = legend_params
+                                                        right_annotation = gene_annotation,
+                                                        heatmap_legend_param = legend_params
                                                       )
     }
   }
@@ -2010,7 +2010,7 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @param distanceAround If 'style' is 'percentOfRegion', then this controls the distance around the region that is included. Default is 100, meaning that a distance equal to 100 percent of that particular region on either side of the region will be included in the heatmap. 
 #' @param bin_size If 'style' is set to 'point' then this will determine the size of each bin over which signal is quantified. The default is 20 base pairs.  
 #' @param ... pass to regionPlot() within the soGGi package
-#' @param quant_params An optional \code{\link[BiocParallel]{BiocParallelParam}}  instance determining the parallel back-end to be used during evaluation. Default is MulticoreParam(), and the number of cores (workers) used in the MulticoreParam() function can be set with the 'workers' argument withing the MulticoreParam() call. MulticoreParam() defaults to all cores available as determined by detectCores. 
+#' @param quant_params An optional \code{\link[BiocParallel]{BiocParallelParam}}  instance determining the parallel back-end to be used during evaluation. Default is MulticoreParam(), and the number of cores (workers) used in the MulticoreParam() function can be set with the 'workers' argument withing the MulticoreParam() call.
 #' @return A profileplyr object
 #' @examples
 #' signalFiles <- c(system.file("extdata",
@@ -2029,13 +2029,13 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #'                          paired=FALSE,
 #'                          style="percentOfRegion",
 #'                          )
-#' @importFrom BiocParallel bplapply
+#' @importFrom BiocParallel bplapply MulticoreParam multicoreWorkers
 #' @importFrom soGGi regionPlot
 #' @importFrom rtracklayer import.bed import.bw
 #' @importFrom GenomeInfoDb seqlevelsStyle<- seqlevelsInUse seqlevels
 #' @export
 #' 
-BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "percentOfRegion" , nOfWindows = 100, bin_size = 20, distanceAround = 100, ..., quant_params = MulticoreParam(workers = multicoreWorkers())) {
+BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "percentOfRegion" , nOfWindows = 100, bin_size = 20, distanceAround = 100, ..., quant_params = MulticoreParam(workers = multicoreWorkers()) ) {
   
   if (missing(format)){
     stop("'format' argument is missing, it must be entered")

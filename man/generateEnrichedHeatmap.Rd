@@ -22,7 +22,7 @@ generateEnrichedHeatmap(object, include_group_annotation = TRUE,
   extra_anno_width = (rep(6, length(extra_annotation_columns))),
   only_extra_annotation_columns = FALSE, gap = 2,
   genes_to_label = NULL, gene_label_font_size = 6,
-  show_heatmap_legend = NULL, legend_params = NULL,
+  show_heatmap_legend = NULL, legend_params = list(),
   use_raster = length(object) > 2000, raster_device = c("png", "jpeg",
   "tiff", "CairoPNG", "CairoJPEG", "CairoTIFF"), raster_quality = 2,
   raster_device_param = list())

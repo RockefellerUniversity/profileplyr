@@ -26,7 +26,7 @@ BamBigwig_to_chipProfile(signalFiles, testRanges, format,
 
 \item{...}{pass to regionPlot() within the soGGi package}
 
-\item{quant_params}{An optional \code{\link[BiocParallel]{BiocParallelParam}}  instance determining the parallel back-end to be used during evaluation. Default is MulticoreParam(), and the number of cores (workers) used in the MulticoreParam() function can be set with the 'workers' argument withing the MulticoreParam() call. MulticoreParam() defaults to all cores available as determined by detectCores.}
+\item{quant_params}{An optional \code{\link[BiocParallel]{BiocParallelParam}}  instance determining the parallel back-end to be used during evaluation. Default is MulticoreParam(), and the number of cores (workers) used in the MulticoreParam() function can be set with the 'workers' argument withing the MulticoreParam() call.}
 }
 \value{
 A profileplyr object
