@@ -1399,8 +1399,10 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
         for(i in seq_along(matrices_color)){
           if(is.null(matrices_color[[i]])){
             q <- quantile(enrichMAT[[i]], c(0.01, 0.98))
-            matrices_color[[i]] <- (colorRamp2(c(q[1], (q[2] - q[1])/2, q[2]), 
-                                               c("blue", "white", "red")))
+            matrices_color[[i]] <- (colorRamp2(c(q[1], 
+                                                 #(q[2] - q[1])/2, 
+                                                 q[2]), 
+                                               c("white", "red")))
           }else if(is.function(matrices_color[[i]])){
             matrices_color[[i]] <- matrices_color[[i]]
           }else if(is.character(matrices_color[[i]]) | is.numeric(matrices_color[[i]])){
@@ -1421,8 +1423,10 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
       if(all_color_scales_equal == TRUE){
         for(i in seq_along(matrices_color)){
           if(is.null(matrices_color[[i]])){
-            matrices_color[[i]] <- (colorRamp2(c(q_all[1], (q_all[2] - q_all[1])/2, q_all[2]), 
-                                               c("blue", "white", "red")))
+            matrices_color[[i]] <- (colorRamp2(c(q_all[1], 
+                                                 #(q_all[2] - q_all[1])/2, 
+                                                 q_all[2]), 
+                                               c("white", "red")))
           }else if(is.function(matrices_color[[i]])){
             matrices_color[[i]] <- matrices_color[[i]]
             warning("User provided color function will override the 'all_color_scales = TRUE' option")
@@ -1659,7 +1663,9 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
       default_color_fun = function(x) {
         q = quantile(x, c(0.01, 0.99))
         qUpper = q[2]
-        colorRamp2(c(0, qUpper/2, qUpper), c("blue", "white", "red"))
+        colorRamp2(c(0, 
+                     #qUpper/2, 
+                     qUpper), c("white", "red"))
       }
       
       heatmap_list[[i]] <- EnrichedHeatmap(enrichMAT[[i-1]],
