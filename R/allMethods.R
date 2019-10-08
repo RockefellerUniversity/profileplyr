@@ -1194,7 +1194,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                     extra_anno_color = vector(mode = "list", length = length(extra_annotation_columns)), extra_anno_top_annotation = TRUE, 
                                     extra_anno_width = (rep(6, length(extra_annotation_columns))), only_extra_annotation_columns = FALSE, gap = 2, genes_to_label = NULL, gene_label_font_size = 6, 
                                     show_heatmap_legend = NULL, legend_params = list(), use_raster = length(object) > 2000, raster_device = c("png", "jpeg", "tiff", "CairoPNG", "CairoJPEG", "CairoTIFF"),
-                                    raster_quality = 2,raster_device_param = list()){
+                                    raster_quality = 2, raster_device_param = list()){
 
   if(!is.null(samples_to_sortby)) {
     if(is(samples_to_sortby, "numeric")){
@@ -1645,9 +1645,9 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     }
     heatmap_list[[1]] <- Heatmap(mcols(object)[,params(object)$rowGroupsInUse], 
                                  col = structure(group_anno_color,
-                                                 names = names(table((mcols(object)[params(object)$rowGroupsInUse])))),  
-                                 name = "",
-                                 show_row_names = FALSE, 
+                                                 names = names(table((mcols(object)[params(object)$rowGroupsInUse])))),
+                                 #name = "",
+                                 show_row_names = FALSE,
                                  width = unit(group_anno_width, "mm"),
                                  row_title_gp = group_anno_row_title_gp,
                                  column_names_gp = group_anno_column_names_gp,
@@ -1656,7 +1656,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                  use_raster = use_raster,
                                  raster_device = raster_device,
                                  raster_quality = raster_quality,
-                                 raster_device_param = raster_device_param) 
+                                 raster_device_param = raster_device_param
+                                 ) 
 
     for (i in (1 + seq_along(enrichMAT))){
 
@@ -1674,10 +1675,10 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                            name = sample_names[i-1],
                                            column_title = sample_names[i-1],
                                            top_annotation = HeatmapAnnotation(lines = anno_enriched(gp = gpar(col = group_anno_color),
-                                                                                                    ylim = ylim_list[[i-1]], 
+                                                                                                    ylim = ylim_list[[i-1]],
                                                                                                     axis_param = list(side = yaxis_side[i-1],
                                                                                                                       facing = facing[i-1],
-                                                                                                                      # at = ifelse(is.null(ylim_list[[i-1]]), 
+                                                                                                                      # at = ifelse(is.null(ylim_list[[i-1]]),
                                                                                                                       #             NULL,
                                                                                                                       #             grid.pretty(ylim_list[[i-1]])[grid.pretty(ylim_list[[i-1]]) > ylim_list[[i-1]][1]]),
                                                                                                                       gp = top_anno_axis_font),
@@ -1694,7 +1695,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                            use_raster = use_raster,
                                            raster_device = raster_device,
                                            raster_quality = raster_quality,
-                                           raster_device_param = raster_device_param)
+                                           raster_device_param = raster_device_param
+                                           )
     }
   }
   
@@ -1709,7 +1711,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                                                                                     ylim = ylim_list[[i]],
                                                                                                     axis_param = list(side = yaxis_side[i],
                                                                                                                       facing = facing[i],
-                                                                                                                      # at = ifelse(is.null(ylim_list[[i]]), 
+                                                                                                                      # at = ifelse(is.null(ylim_list[[i]]),
                                                                                                                       #             NULL,
                                                                                                                       #             grid.pretty(ylim_list[[i]])[grid.pretty(ylim_list[[i]]) > ylim_list[[i]][1]]),
                                                                                                                       gp = top_anno_axis_font),
@@ -1726,7 +1728,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                            use_raster = use_raster,
                                            raster_device = raster_device,
                                            raster_quality = raster_quality,
-                                           raster_device_param = raster_device_param)
+                                           raster_device_param = raster_device_param
+                                           )
     }
   }
   
@@ -1749,10 +1752,10 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                          name = sample_names[x],
                                          column_title = sample_names[x],
                                          top_annotation = HeatmapAnnotation(lines = anno_enriched(gp = gpar(col = group_anno_color),
-                                                                                                  ylim = ylim_list[[x]], 
+                                                                                                  ylim = ylim_list[[x]],
                                                                                                   axis_param = list(side = yaxis_side[x],
                                                                                                                     facing = facing[x],
-                                                                                                                    # at = ifelse(is.null(ylim_list[[x]]), 
+                                                                                                                    # at = ifelse(is.null(ylim_list[[x]]),
                                                                                                                     #             NULL,
                                                                                                                     #             grid.pretty(ylim_list[[x]])[grid.pretty(ylim_list[[x]]) > ylim_list[[x]][1]]),
                                                                                                                     gp = top_anno_axis_font),
@@ -1770,7 +1773,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                          use_raster = use_raster,
                                          raster_device = raster_device,
                                          raster_quality = raster_quality,
-                                         raster_device_param = raster_device_param)
+                                         raster_device_param = raster_device_param
+                                         )
     
   }
   
@@ -1836,7 +1840,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
       heatmap_list[[length(heatmap_list)+1]] <- Heatmap(column,
                                                         col = extra_anno_color[[i]],
                                                         name = extra_annotation_columns[i],
-                                                        show_row_names = FALSE, 
+                                                        show_row_names = FALSE,
                                                         width = unit(extra_anno_width[i], "mm"),
                                                         column_names_gp = gpar(fontsize = 10),
                                                         top_annotation = top_annotation,
@@ -1849,7 +1853,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
       heatmap_list[[length(heatmap_list)]] <- Heatmap(column,
                                                         col = extra_anno_color[[i]],
                                                         name = extra_annotation_columns[i],
-                                                        show_row_names = FALSE, 
+                                                        show_row_names = FALSE,
                                                         width = unit(extra_anno_width[i], "mm"),
                                                         column_names_gp = gpar(fontsize = 10),
                                                         top_annotation = top_annotation,
@@ -1873,7 +1877,10 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
   
   ifelse(return_ht_list, return(ht_list), return(draw(ht_list, 
                                                       gap =  unit(gap, "mm"),
-                                                      split = mcols(object)[,params(object)$rowGroupsInUse])))
+                                                      split = mcols(object)[,params(object)$rowGroupsInUse]
+                                                      )
+                                                      )
+         )
   
   #return(draw(ht_list, split = mcols(object)[,object@params$rowGroupsInUse]))
   }
