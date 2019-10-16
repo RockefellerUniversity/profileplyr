@@ -2023,7 +2023,7 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @param distanceAround If 'style' is 'percentOfRegion', then this controls the distance around the region that is included. Default is 100, meaning that a distance equal to 100 percent of that particular region on either side of the region will be included in the heatmap. 
 #' @param bin_size If 'style' is set to 'point' then this will determine the size of each bin over which signal is quantified. The default is 20 base pairs.  
 #' @param ... pass to regionPlot() within the soGGi package
-#' @param quant_params An optional \code{\link[BiocParallel]{BiocParallelParam}}  instance determining the parallel back-end to be used during evaluation. Default is MulticoreParam(), and the number of cores (workers) used in the MulticoreParam() function can be set with the 'workers' argument withing the MulticoreParam() call.
+#' @param quant_params An optional \code{\link[BiocParallel:BiocParallelParam-class]{BiocParallelParam}} instance determining the parallel back-end to be used during evaluation. Default is MulticoreParam(), and the number of cores (workers) used in the MulticoreParam() function can be set with the 'workers' argument withing the MulticoreParam() call.
 #' @return A profileplyr object
 #' @examples
 #' signalFiles <- c(system.file("extdata",
