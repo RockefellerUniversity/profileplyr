@@ -1804,8 +1804,11 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
       
       column <- mcols(object)[colnames(mcols(object)) %in% extra_annotation_columns[i]][,1] # this is the contents of the column to be visualized, assigning to a variable as this is used often below
       
+      
       if (is.factor(column) | is.character(column)){
-        
+        if (is.factor(column)){
+          column <- droplevels(column)
+        }
         if(is.null(extra_anno_color[[i]])){
           extra_anno_color[[i]] = seq_along(table(as.character(column)))
         }
