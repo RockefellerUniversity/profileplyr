@@ -6,11 +6,9 @@
 \alias{annotateRanges_great,profileplyr-method}
 \title{Annotate profileplyr ranges to genes using rGREAT}
 \usage{
-annotateRanges_great(object = "profileplyr", species = "character",
-  ...)
+annotateRanges_great(object = "profileplyr", species = "character", ...)
 
-\S4method{annotateRanges_great}{profileplyr}(object = "profileplyr",
-  species = "character", ...)
+\S4method{annotateRanges_great}{profileplyr}(object = "profileplyr", species = "character", ...)
 }
 \arguments{
 \item{object}{A profileplyr object}

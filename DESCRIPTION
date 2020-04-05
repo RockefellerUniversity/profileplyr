@@ -6,14 +6,14 @@ Date: 2018-12-02
 Author: Tom Carroll and Doug Barrows
 Maintainer: Tom Carroll <tc.infomatics@gmail.com>, Doug Barrows <doug.barrows@gmail.com>
 Depends: R (>= 3.6), BiocGenerics, SummarizedExperiment
-Description:Quick and straightforward visualization of read signal over genomic intervals is key for generating
+Description: Quick and straightforward visualization of read signal over genomic intervals is key for generating
   hypotheses from sequencing data sets (e.g. ChIP-seq, ATAC-seq, bisulfite/methyl-seq). Many tools both inside
   and outside of R and Bioconductor are available to explore these types of data, and they typically start
   with a bigWig or BAM file and end with some representation of the signal (e.g. heatmap). profileplyr leverages
   many Bioconductor tools to allow for both flexibility and additional functionality in workflows that end with
   visualization of the read signal.
 License: GPL (>= 3)
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.1
 biocViews: ChIPSeq, DataImport, Sequencing, ChipOnChip, Coverage
 Imports: GenomicRanges, stats, soGGi, methods, utils, S4Vectors, R.utils, dplyr, magrittr, tidyr, IRanges, rjson, ChIPseeker,GenomicFeatures,TxDb.Hsapiens.UCSC.hg19.knownGene,TxDb.Hsapiens.UCSC.hg38.knownGene,TxDb.Mmusculus.UCSC.mm10.knownGene, TxDb.Mmusculus.UCSC.mm9.knownGene,org.Hs.eg.db,org.Mm.eg.db,rGREAT, pheatmap, EnrichedHeatmap, ComplexHeatmap, grid, circlize, BiocParallel, rtracklayer, GenomeInfoDb
 Suggests: BiocStyle, testthat, knitr, rmarkdown, png, Rsamtools, ggplot2

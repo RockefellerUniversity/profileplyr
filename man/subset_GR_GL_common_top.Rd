@@ -4,8 +4,7 @@
 \alias{subset_GR_GL_common_top}
 \title{Redundant code wrapped into subsetbyRangeOverlap() or subsetbyGeneListOverlap() functions}
 \usage{
-subset_GR_GL_common_top(object, overlap, input_names, type,
-  separateDuplicated)
+subset_GR_GL_common_top(object, overlap, input_names, type, separateDuplicated)
 }
 \arguments{
 \item{object}{A profileplyr object}

@@ -4,8 +4,7 @@
 \alias{inherit_group_function}
 \title{Redundant code for inheriting grouping wrapped into subsetbyRangeOverlap() or subsetbyGeneListOverlap() functions}
 \usage{
-inherit_group_function(object, rowGroupsInUse_input, type,
-  separateDuplicated)
+inherit_group_function(object, rowGroupsInUse_input, type, separateDuplicated)
 }
 \arguments{
 \item{object}{A profileplyr object}

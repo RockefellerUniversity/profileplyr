@@ -4,8 +4,13 @@
 \alias{subsetbyGeneListOverlap}
 \title{Subset ranges based on overlap with lists of Gene sets}
 \usage{
-subsetbyGeneListOverlap(object, group, include_nonoverlapping = FALSE,
-  separateDuplicated = TRUE, inherit_groups = FALSE)
+subsetbyGeneListOverlap(
+  object,
+  group,
+  include_nonoverlapping = FALSE,
+  separateDuplicated = TRUE,
+  inherit_groups = FALSE
+)
 }
 \arguments{
 \item{object}{A profileplyr object}

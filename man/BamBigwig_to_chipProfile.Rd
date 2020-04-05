@@ -4,10 +4,17 @@
 \alias{BamBigwig_to_chipProfile}
 \title{BamBigwig_to_chipProfile}
 \usage{
-BamBigwig_to_chipProfile(signalFiles, testRanges, format,
-  style = "percentOfRegion", nOfWindows = 100, bin_size = 20,
-  distanceAround = 100, ..., quant_params = MulticoreParam(workers =
-  multicoreWorkers()))
+BamBigwig_to_chipProfile(
+  signalFiles,
+  testRanges,
+  format,
+  style = "percentOfRegion",
+  nOfWindows = 100,
+  bin_size = 20,
+  distanceAround = 100,
+  ...,
+  quant_params = MulticoreParam(workers = multicoreWorkers())
+)
 }
 \arguments{
 \item{signalFiles}{paths to either BAM files or bigwig files. More than one path can be in this character vector, but all paths in one function call must point to be either all BAM files or all bigWig files, not a combination of the two.}

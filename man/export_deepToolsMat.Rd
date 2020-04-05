@@ -7,11 +7,19 @@
 \alias{import_deepToolsMat}
 \title{Export and import profileplyr from/to deeptools}
 \usage{
-export_deepToolsMat(object = "profileplyr", con = "character",
-  decreasing = "logical", overwrite = "logical")
+export_deepToolsMat(
+  object = "profileplyr",
+  con = "character",
+  decreasing = "logical",
+  overwrite = "logical"
+)
 
-\S4method{export_deepToolsMat}{profileplyr}(object = "profileplyr",
-  con = "character", decreasing = FALSE, overwrite = FALSE)
+\S4method{export_deepToolsMat}{profileplyr}(
+  object = "profileplyr",
+  con = "character",
+  decreasing = FALSE,
+  overwrite = FALSE
+)
 
 import_deepToolsMat(con)
 }

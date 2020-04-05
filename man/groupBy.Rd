@@ -6,15 +6,25 @@
 \alias{groupBy,profileplyr-method}
 \title{group the rows and ranges of the profileplyr object}
 \usage{
-groupBy(object = "profileplyr", group = "ANY",
-  GRanges_names = "character", levels = "ANY",
-  include_nonoverlapping = "logical", separateDuplicated = "logical",
-  inherit_groups = "logical")
+groupBy(
+  object = "profileplyr",
+  group = "ANY",
+  GRanges_names = "character",
+  levels = "ANY",
+  include_nonoverlapping = "logical",
+  separateDuplicated = "logical",
+  inherit_groups = "logical"
+)
 
-\S4method{groupBy}{profileplyr}(object = "profileplyr", group = "ANY",
-  GRanges_names = NULL, levels = NULL,
-  include_nonoverlapping = FALSE, separateDuplicated = TRUE,
-  inherit_groups = FALSE)
+\S4method{groupBy}{profileplyr}(
+  object = "profileplyr",
+  group = "ANY",
+  GRanges_names = NULL,
+  levels = NULL,
+  include_nonoverlapping = FALSE,
+  separateDuplicated = TRUE,
+  inherit_groups = FALSE
+)
 }
 \arguments{
 \item{object}{A profileplyr object}

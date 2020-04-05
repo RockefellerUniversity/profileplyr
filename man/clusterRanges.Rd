@@ -6,22 +6,38 @@
 \alias{clusterRanges,profileplyr-method}
 \title{Cluster Ranges}
 \usage{
-clusterRanges(object = "profileplyr", fun = "function",
-  scaleRows = "logical", kmeans_k = "integer",
-  clustering_callback = "function", clustering_distance_rows = "ANY",
-  cluster_method = "function", cutree_rows = "integer",
-  silent = "logical", show_rownames = "logical")
+clusterRanges(
+  object = "profileplyr",
+  fun = "function",
+  scaleRows = "logical",
+  kmeans_k = "integer",
+  clustering_callback = "function",
+  clustering_distance_rows = "ANY",
+  cluster_method = "function",
+  cutree_rows = "integer",
+  silent = "logical",
+  show_rownames = "logical",
+  cluster_sample_subset = "ANY"
+)
 
-\S4method{clusterRanges}{profileplyr}(object = "profileplyr",
-  fun = rowMeans, scaleRows = TRUE, kmeans_k = NULL,
+\S4method{clusterRanges}{profileplyr}(
+  object = "profileplyr",
+  fun = rowMeans,
+  scaleRows = TRUE,
+  kmeans_k = NULL,
   clustering_callback = function(x, ...) {     return(x) },
-  clustering_distance_rows = "euclidean", cluster_method = "complete",
-  cutree_rows = NULL, silent = TRUE, show_rownames = FALSE)
+  clustering_distance_rows = "euclidean",
+  cluster_method = "complete",
+  cutree_rows = NULL,
+  silent = TRUE,
+  show_rownames = FALSE,
+  cluster_sample_subset = NULL
+)
 }
 \arguments{
 \item{object}{A profileplyr object}
 
-\item{fun}{The function used to summarize the ranges (e.g. rowMeans or rowMax)}
+\item{fun}{The function used to summarize the ranges (e.g. rowMeans or rowMax). This is ignored when only one sample is used for clustering; in this case the lone heatmap is clustered based the signal across the bins.}
 
 \item{scaleRows}{If TRUE, the rows of the matrix containing the signal in each bin that is used as the input for clustering will be scaled (as specified by pheatmap)}
 
@@ -38,6 +54,8 @@ clusterRanges(object = "profileplyr", fun = "function",
 \item{silent}{Whether or not a heatmap (from pheatmap) is shown with the output. This will not change what is returned with the function as it will always be a profileplyr object. If silent = FALSE, the heatmap will be shown which may be helpful in quick evaluation of varying numbers of clusters before proceeding with downstream analysis. The default is silent = TRUE, meaning no heatmap will be shown.}
 
 \item{show_rownames}{for any heatmaps printed while running this function, set to TRUE if rownames should be displayed. Default is FALSE.}
+
+\item{cluster_sample_subset}{Either a character or numeric vector indicating the subset of heatmaps to be used for clustering. If a character vector, all elements of the vector must match names of the samples of the profileplyr object (found with 'rownames(sampleData(object))'). For an numeric vector, the profileplyr object will be subset based on the samples that correspond to these numbers (i.e. the numeric index of that sample within 'rownames(sampleData(object))'). When only sample is chosen, the lone heatmap selected will be clustered by signal across the bins of that sample. When more than one sample are selected, the 'fun' argument will be used to summarize the ranges and cluster across these selected samples.}
 }
 \value{
 A profileplyr object

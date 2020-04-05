@@ -4,9 +4,14 @@
 \alias{subsetbyRangeOverlap}
 \title{Subset ranges based on overlap with a GRanges object}
 \usage{
-subsetbyRangeOverlap(object, group, GRanges_names = NULL,
-  include_nonoverlapping = FALSE, separateDuplicated = TRUE,
-  inherit_groups = FALSE)
+subsetbyRangeOverlap(
+  object,
+  group,
+  GRanges_names = NULL,
+  include_nonoverlapping = FALSE,
+  separateDuplicated = TRUE,
+  inherit_groups = FALSE
+)
 }
 \arguments{
 \item{object}{A profileplyr object}

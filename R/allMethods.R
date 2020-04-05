@@ -233,7 +233,7 @@ import_deepToolsMat <- function(con){
 #' @name clusterRanges
 #' @rdname clusterRanges
 #' @param object A profileplyr object
-#' @param fun The function used to summarize the ranges (e.g. rowMeans or rowMax)
+#' @param fun The function used to summarize the ranges (e.g. rowMeans or rowMax). This is ignored when only one sample is used for clustering; in this case the lone heatmap is clustered based the signal across the bins. 
 #' @param scaleRows If TRUE, the rows of the matrix containing the signal in each bin that is used as the input for clustering will be scaled (as specified by pheatmap)
 #' @param kmeans_k The number of kmeans groups used for clustering
 #' @param clustering_callback Clustering callback function to be passed to pheatmap
@@ -242,6 +242,7 @@ import_deepToolsMat <- function(con){
 #' @param cutree_rows The number of clusters for hierarchical clustering
 #' @param silent Whether or not a heatmap (from pheatmap) is shown with the output. This will not change what is returned with the function as it will always be a profileplyr object. If silent = FALSE, the heatmap will be shown which may be helpful in quick evaluation of varying numbers of clusters before proceeding with downstream analysis. The default is silent = TRUE, meaning no heatmap will be shown. 
 #' @param show_rownames for any heatmaps printed while running this function, set to TRUE if rownames should be displayed. Default is FALSE. 
+#' @param cluster_sample_subset Either a character or numeric vector indicating the subset of heatmaps to be used for clustering. If a character vector, all elements of the vector must match names of the samples of the profileplyr object (found with 'rownames(sampleData(object))'). For an numeric vector, the profileplyr object will be subset based on the samples that correspond to these numbers (i.e. the numeric index of that sample within 'rownames(sampleData(object))'). When only sample is chosen, the lone heatmap selected will be clustered by signal across the bins of that sample. When more than one sample are selected, the 'fun' argument will be used to summarize the ranges and cluster across these selected samples. 
 #' @details tbd
 #' @return A profileplyr object
 #' @examples
@@ -261,74 +262,111 @@ import_deepToolsMat <- function(con){
 #' @rdname clusterRanges
 setGeneric("clusterRanges", function(object="profileplyr",fun="function",scaleRows="logical",
                                      kmeans_k="integer",clustering_callback="function",clustering_distance_rows="ANY",
-                                     cluster_method="function",cutree_rows="integer",silent="logical",show_rownames="logical"
+                                     cluster_method="function",cutree_rows="integer",silent="logical",show_rownames="logical",
+                                     cluster_sample_subset = "ANY"
 ) standardGeneric("clusterRanges"))
 
 #' @export
 #' @describeIn clusterRanges Cluster Ranges
 setMethod("clusterRanges", signature="profileplyr",
-          function(object, fun = rowMeans, scaleRows = TRUE, kmeans_k = NULL, clustering_callback = function(x, ...){return(x)}, clustering_distance_rows = "euclidean", cluster_method = "complete", cutree_rows = NULL, silent = TRUE, show_rownames = FALSE) {
-
-  
-  if (length(assays(object)) < 2){
-    stop("The profileplyr object must have at least two samples (length(assays(object)) > 1) for clustering")
-  }
-  # summarize adds the group name to the rownames, which I don't want to do as it messes up the separation required later on to build GRanges, but summarize is only a couple lines of code, so just include releveant ones here
-  range_summ <- lapply(assays(object), fun)
-  range_summ <- as.matrix(do.call(cbind,range_summ))
-
-  colnames(range_summ) <- rownames(sampleData(object))
-  
-  if (scaleRows == TRUE) {
-    scale <- "row"
-  } else {
-    scale <- "none"
-  }
-  
-  if (is.null(kmeans_k) & is.null(cutree_rows)){
-    res = pheatmap(range_summ, scale = scale, clustering_distance_rows = clustering_distance_rows, cluster_method = cluster_method, show_rownames = show_rownames, silent = FALSE, clustering_callback = clustering_callback)
-    message("No 'kmeans_k' or 'cutree_rows' arguments specified. profileplyr object will be returned new column with hierarchical order from hclust")
-    rowRanges(object)$hierarchical_order <- order(res$tree_row$order)
-    return(object)
-    }
-  
-  if (!(is.null(kmeans_k)) & !(is.null(cutree_rows))){
-    message("Values for both 'kmeans_k' or 'cutree_rows' arguments were specified, kmeans will be used. To choose one method, change the value of the method not being used to NULL")
-  }
-  
-  if (scaleRows == TRUE) {
-    range_summ <- t(scale(t(range_summ)))
-  }
-  
-  if (!(is.null(kmeans_k))) {
-    message("K means clustering used.")
-    res <- pheatmap(range_summ, scale = scale, kmeans_k = kmeans_k, silent = silent)
-    cluster_vector <- res$kmeans$cluster # %>%
-      #data.frame(row.names = make.unique(names(.)), kmeans_cluster = .)
-    rowRanges(object)$cluster <- cluster_vector # [,1]
-  }else if (!(is.null(cutree_rows))) {
-    if(identical(clustering_callback,(function(x, ...){return(x)}))){
-      message("Hierarchical clustering used. It is advised to avoid this option with large matrices as the clustering can take a long time. Kmeans is more suitable for large matrices.")
-    }
-    if(!(identical(clustering_callback,(function(x, ...){return(x)})))){
-      message("Hierarchical clustering performed using clustering method input in the 'callback_clustering' argument.  It is advised to avoid this option with large matrices as the clustering can take a long time. Kmeans is more suitable for large matrices.")
-    }
-    res <- pheatmap(range_summ, scale = scale, clustering_distance_rows = clustering_distance_rows, cluster_method = cluster_method, silent = silent, cutree_rows = cutree_rows, show_rownames = show_rownames, clustering_callback = clustering_callback)
-    cluster_vector <- cutree(res$tree_row, k = cutree_rows) # %>%
-      # as.data.frame(.)
-    rowRanges(object)$cluster <- cluster_vector #[,1]
-    rowRanges(object)$hierarchical_order <- order(res$tree_row$order)
-  }
-  
-  object@params$rowGroupsInUse <- "cluster"  # set the group to be filtered by as the overlap column, this will be used by export function to make the groups and also wil lbe labels for heatmap
-  message("A column has been added to the range metadata with the column name 'cluster', and the 'rowGroupsInUse' has been set to this column.")         
-  
-  rowRanges(object)$cluster <- ordered(rowRanges(object)$cluster, 
+          function(object, fun = rowMeans, scaleRows = TRUE, kmeans_k = NULL, clustering_callback = function(x, ...){return(x)}, clustering_distance_rows = "euclidean", cluster_method = "complete", cutree_rows = NULL, silent = TRUE, show_rownames = FALSE, cluster_sample_subset = NULL) {
+            
+            if (!is.null(cluster_sample_subset)){
+              if (!(is(cluster_sample_subset, "numeric") | is(cluster_sample_subset, "character"))){
+                stop("The 'cluster_sample_subset' argument must be a character vector or a numberic vector")
+              }
+              if (is(cluster_sample_subset, "numeric")){
+                if(max(cluster_sample_subset) > length(names(assays(object)))){
+                  stop("One of the numeric values entered for the 'cluster_sample_subset' argument is larger than the number of samples in the profileplyr object, and is therefore is an out-of-bounds index")
+                }
+                subset_indexes <- cluster_sample_subset
+                object_temp <- object[, , subset_indexes]
+              } else if (is(cluster_sample_subset, "character")) {
+                subset_indexes <- names(assays(object)) %in% cluster_sample_subset
+                # check whether all of the names (or non) match names in the 'cluster_sample_subset' argument
+                if(sum(subset_indexes) == 0){
+                  stop("None of the names entered in the 'cluster_sample_subset' argument match the name of a sample in the profileplyr object (names found with 'rownames(sampleData(object))')")
+                } else if (!sum(subset_indexes) == length(cluster_sample_subset)){
+                  stop("At least one of the names entered in the 'cluster_sample_subset' argument does not match the name of a sample in the profileplyr object (names found with 'rownames(sampleData(object))')")
+                }
+                object_temp <- object[, , subset_indexes]
+              }
+              if (length(assays(object_temp)) < 2){
+                message(paste0("The profileplyr object was clustered based on the signal across all bins of the '", paste(names(assays(object))[subset_indexes],collapse=" "), "' sample."))
+              } else {
+                message(paste0("The profileplyr object was clustered based on the summarized signal (as determined by the 'fun' argument) across the '", paste(names(assays(object))[subset_indexes], collapse="/"), "' samples."))
+              }
+            } else {
+              object_temp <- object
+              if (length(assays(object_temp)) < 2){
+                message("Since there is only one sample in the profileplyr object, the lone heatmap will be clustered by signal across the bins and any 'fun' argument will be ignored")
+              } 
+              # else {
+              #   message(paste0("There is more than one sample in the profileplyr object, the 'fun' argument ('rowMeans' by default) will be applied to the bins for each range in a sample, and this value will be used for clustering between samples"))
+              # }
+            }
+            
+            
+            if (length(assays(object_temp)) < 2){
+              range_summ <- assays(object_temp)[[1]]
+            } else {
+              # summarize adds the group name to the rownames, which I don't want to do as it messes up the separation required later on to build GRanges, but summarize is only a couple lines of code, so just include releveant ones here
+              range_summ <- lapply(assays(object_temp), fun)
+              range_summ <- as.matrix(do.call(cbind,range_summ))
+              colnames(range_summ) <- rownames(sampleData(object_temp))
+            }
+            
+            
+            if (scaleRows == TRUE) {
+              scale <- "row"
+            } else {
+              scale <- "none"
+            }
+            
+            if (is.null(kmeans_k) & is.null(cutree_rows)){
+              res = pheatmap(range_summ, scale = scale, clustering_distance_rows = clustering_distance_rows, cluster_method = cluster_method, show_rownames = show_rownames, silent = FALSE, clustering_callback = clustering_callback)
+              message("No 'kmeans_k' or 'cutree_rows' arguments specified. profileplyr object will be returned new column with hierarchical order from hclust")
+              rowRanges(object)$hierarchical_order <- order(res$tree_row$order)
+              return(object)
+            }
+            
+            if (!(is.null(kmeans_k)) & !(is.null(cutree_rows))){
+              message("Values for both 'kmeans_k' or 'cutree_rows' arguments were specified, kmeans will be used. To choose one method, change the value of the method not being used to NULL")
+            }
+            
+            # if (scaleRows == TRUE) {
+            #   range_summ <- t(scale(t(range_summ)))
+            # }
+            
+            if (!(is.null(kmeans_k))) {
+              message("K means clustering used.")
+              res <- pheatmap(range_summ, scale = scale, kmeans_k = kmeans_k, silent = silent)
+              cluster_vector <- res$kmeans$cluster # %>%
+              #data.frame(row.names = make.unique(names(.)), kmeans_cluster = .)
+              rowRanges(object)$cluster <- cluster_vector # [,1]
+            }else if (!(is.null(cutree_rows))) {
+              if(identical(clustering_callback,(function(x, ...){return(x)}))){
+                message("Hierarchical clustering used. It is advised to avoid this option with large matrices as the clustering can take a long time. Kmeans is more suitable for large matrices.")
+              }
+              if(!(identical(clustering_callback,(function(x, ...){return(x)})))){
+                message("Hierarchical clustering performed using clustering method input in the 'callback_clustering' argument.  It is advised to avoid this option with large matrices as the clustering can take a long time. Kmeans is more suitable for large matrices.")
+              }
+              res <- pheatmap(range_summ, scale = scale, clustering_distance_rows = clustering_distance_rows, cluster_method = cluster_method, silent = silent, cutree_rows = cutree_rows, show_rownames = show_rownames, clustering_callback = clustering_callback)
+              cluster_vector <- cutree(res$tree_row, k = cutree_rows) # %>%
+              # as.data.frame(.)
+              rowRanges(object)$cluster <- cluster_vector #[,1]
+              rowRanges(object)$hierarchical_order <- order(res$tree_row$order)
+            }
+            
+            object@params$rowGroupsInUse <- "cluster"  # set the group to be filtered by as the overlap column, this will be used by export function to make the groups and also wil lbe labels for heatmap
+            message("A column has been added to the range metadata with the column name 'cluster', and the 'rowGroupsInUse' has been set to this column.")         
+            
+            rowRanges(object)$cluster <- ordered(rowRanges(object)$cluster, 
                                                  levels = rowRanges(object)$cluster[!duplicated(rowRanges(object)$cluster)])
-  
-  colnames(mcols(object)) <- make.unique(colnames(mcols(object)))
-  return(object)
-}
+            
+            colnames(mcols(object)) <- make.unique(colnames(mcols(object)))
+            return(object)
+          }
 )
 
 
@@ -1195,7 +1233,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                     extra_anno_width = (rep(6, length(extra_annotation_columns))), only_extra_annotation_columns = FALSE, gap = 2, genes_to_label = NULL, gene_label_font_size = 6, 
                                     show_heatmap_legend = NULL, legend_params = list(), use_raster = length(object) > 2000, raster_device = c("png", "jpeg", "tiff", "CairoPNG", "CairoJPEG", "CairoTIFF"),
                                     raster_quality = 2, raster_device_param = list()){
-
+  
   if(!is.null(samples_to_sortby)) {
     if(is(samples_to_sortby, "numeric")){
       select_samples <- object[,,samples_to_sortby]
@@ -1217,7 +1255,6 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                         as.list(assays(object)))
   }
   
-
   means <- rowMeans(scoreMat)
   means_rev <- max(means) - means
   rowRanges(object)$bin_means_rev <- means_rev
@@ -1257,7 +1294,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     if(!is.null(matrices_color) && !is(matrices_color, "list")) {
       stop("The argument 'matrices_color' must be a list when 'color_by_sample_group' is set (i.e. not NULL)")
     }
-  
+    
     # the list of color options for various defaults (either 'matrices_color' is missing or there are NULL values in user entered list)
     matrices_color_levels_default <- list(c("white", "black"), c("white","red"), c("white","#6C7EDA"), c("white", "#1B5B14"), c("white", "purple"), c("white", "#CC0066"), c("white", "#009999"), c("white", "#CC6600"))
     
@@ -1286,7 +1323,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
       }
       null_colors <- matrices_color_levels_default[seq(number_of_nulls)]
     }
-
+    
     
     #define color scales for each group (either set by user or default set above)
     enrichMAT_split <- enrichMAT
@@ -1294,7 +1331,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     unlist_by_level <- split(enrichMAT_split, names(enrichMAT_split)) %>%
       lapply(unlist)
     
- 
+    
     q_levels <- lapply(unlist_by_level, quantile, 0.99)
     
     # make the names of the color schemes same as the names of 'q_levels' which is just the levels of the column selected for grouping
@@ -1373,9 +1410,6 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
         }
       } 
     }
-    
-
-  
     
     # this will be run if 'matrices_color' argument is a list of equal length to the number of matrices
     # this will fill in any NULL values in the color list with the default, use a function if its the input, and then put an input vector into the color slot in the default function 
@@ -1484,7 +1518,6 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
   # this will find the max for the mean of the columns (bins) and set this as the max for 'ylim' if specified above
   # if there is grouping of rows we actualyl want the max ylim necessary when the matrices are divided by group
   
-  
   # divide the maritcies into separate matrcies for each group
   
   get_matrix_max_incl_group <- function(scoreMat, group_boundaries) {
@@ -1500,7 +1533,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     # get the max and min col mean accounting for groups
     col_means <- vector(mode = "list", length = length(group_sub))
     for (i in seq_along(group_sub)){
-      col_means[[i]] <- colMeans(group_sub[[i]])
+      col_means[[i]] <- colMeans(as.matrix(group_sub[[i]])) # had to add in as.matrix becuase if this is only one renage it becomes a vector and colmenas doesnt work
     }
     col_means_unlist <- unlist(col_means)
     
@@ -1605,8 +1638,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
       }
     }
   }
-
   
+
   if (is.null(sample_names)){
     sample_names <- names(enrichMAT)
   }  
@@ -1633,7 +1666,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     gene_annotation = NULL
   }
   
-
+  
   heatmap_list <- list()
   
   if (include_group_annotation == TRUE){
@@ -1652,15 +1685,15 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                  row_title_gp = group_anno_row_title_gp,
                                  column_names_gp = group_anno_column_names_gp,
                                  heatmap_legend_param = c(list(title = params(object)$rowGroupsInUse),
-                                                                  legend_params),
+                                                          legend_params),
                                  use_raster = use_raster,
                                  raster_device = raster_device,
                                  raster_quality = raster_quality,
                                  raster_device_param = raster_device_param
-                                 ) 
-
+    ) 
+    
     for (i in (1 + seq_along(enrichMAT))){
-
+      
       default_color_fun = function(x) {
         q = quantile(x, c(0.01, 0.99))
         qUpper = q[2]
@@ -1686,7 +1719,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                                                                                     height = top_anno_height)),
                                            show_heatmap_legend = show_heatmap_legend[i-1],
                                            heatmap_legend_param = c(list(title = heatmap_legend_title[i-1]),
-                                                                            legend_params),
+                                                                    legend_params),
                                            column_title_gp = matrices_column_title_gp,
                                            axis_name = matrices_axis_name,
                                            axis_name_gp = matrices_axis_name_gp,
@@ -1696,7 +1729,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                            raster_device = raster_device,
                                            raster_quality = raster_quality,
                                            raster_device_param = raster_device_param
-                                           )
+      )
     }
   }
   
@@ -1719,7 +1752,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                                                                                     height = top_anno_height)),
                                            show_heatmap_legend = show_heatmap_legend[i],
                                            heatmap_legend_param = c(list(title = heatmap_legend_title[i]),
-                                                                       legend_params),
+                                                                    legend_params),
                                            column_title_gp = matrices_column_title_gp,
                                            axis_name = matrices_axis_name,
                                            axis_name_gp = matrices_axis_name_gp,
@@ -1729,7 +1762,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                            raster_device = raster_device,
                                            raster_quality = raster_quality,
                                            raster_device_param = raster_device_param
-                                           )
+      )
     }
   }
   
@@ -1763,7 +1796,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                                                                                   height = top_anno_height)),
                                          show_heatmap_legend = show_heatmap_legend[x],
                                          heatmap_legend_param = c(list(title = heatmap_legend_title[x]),
-                                                                          legend_params),
+                                                                  legend_params),
                                          column_title_gp = matrices_column_title_gp,
                                          axis_name = matrices_axis_name,
                                          axis_name_gp = matrices_axis_name_gp,
@@ -1774,7 +1807,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                          raster_device = raster_device,
                                          raster_quality = raster_quality,
                                          raster_device_param = raster_device_param
-                                         )
+    )
     
   }
   
@@ -1835,7 +1868,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
         } else {
           top_annotation <- NULL
         }
-
+        
       }else {
         stop(" additional column to be used for annotation must be a numeric, character, or factor variable")
       }
@@ -1849,20 +1882,20 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                                         top_annotation = top_annotation,
                                                         cluster_rows = FALSE,
                                                         heatmap_legend_param = legend_params
-                                                        )
+      )
     }
     if(!is.null(genes_to_label)){
       i = length(extra_annotation_columns)
       heatmap_list[[length(heatmap_list)]] <- Heatmap(column,
-                                                        col = extra_anno_color[[i]],
-                                                        name = extra_annotation_columns[i],
-                                                        show_row_names = FALSE,
-                                                        width = unit(extra_anno_width[i], "mm"),
-                                                        column_names_gp = gpar(fontsize = 10),
-                                                        top_annotation = top_annotation,
-                                                        right_annotation = gene_annotation,
-                                                        heatmap_legend_param = legend_params
-                                                      )
+                                                      col = extra_anno_color[[i]],
+                                                      name = extra_annotation_columns[i],
+                                                      show_row_names = FALSE,
+                                                      width = unit(extra_anno_width[i], "mm"),
+                                                      column_names_gp = gpar(fontsize = 10),
+                                                      top_annotation = top_annotation,
+                                                      right_annotation = gene_annotation,
+                                                      heatmap_legend_param = legend_params
+      )
     }
   }
   
@@ -1881,12 +1914,12 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
   ifelse(return_ht_list, return(ht_list), return(draw(ht_list, 
                                                       gap =  unit(gap, "mm"),
                                                       split = mcols(object)[,params(object)$rowGroupsInUse]
-                                                      )
-                                                      )
-         )
+  )
+  )
+  )
   
   #return(draw(ht_list, split = mcols(object)[,object@params$rowGroupsInUse]))
-  }
+}
 
 
 #### From S4Vectors:::selectSome

@@ -4,28 +4,43 @@
 \alias{generateEnrichedHeatmap}
 \title{generateEnrichedHeatmap}
 \usage{
-generateEnrichedHeatmap(object, include_group_annotation = TRUE,
-  extra_annotation_columns = NULL, sample_names = NULL,
-  return_ht_list = FALSE, ylim = "common_max",
-  top_anno_height = unit(2, "cm"), samples_to_sortby = NULL,
-  decreasing = FALSE, all_color_scales_equal = TRUE,
-  matrices_color = NULL, color_by_sample_group = NULL,
-  matrices_pos_line = TRUE, matrices_pos_line_gp = gpar(lty = 2),
+generateEnrichedHeatmap(
+  object,
+  include_group_annotation = TRUE,
+  extra_annotation_columns = NULL,
+  sample_names = NULL,
+  return_ht_list = FALSE,
+  ylim = "common_max",
+  top_anno_height = unit(2, "cm"),
+  samples_to_sortby = NULL,
+  decreasing = FALSE,
+  all_color_scales_equal = TRUE,
+  matrices_color = NULL,
+  color_by_sample_group = NULL,
+  matrices_pos_line = TRUE,
+  matrices_pos_line_gp = gpar(lty = 2),
   top_anno_axis_font = gpar(fontsize = 8),
   matrices_column_title_gp = gpar(fontsize = 8, fontface = "bold"),
-  matrices_axis_name = NULL, matrices_axis_name_gp = gpar(fontsize =
-  8), group_anno_color = NULL, group_anno_width = 3,
+  matrices_axis_name = NULL,
+  matrices_axis_name_gp = gpar(fontsize = 8),
+  group_anno_color = NULL,
+  group_anno_width = 3,
   group_anno_row_title_gp = gpar(fontsize = 10),
   group_anno_column_names_gp = gpar(fontsize = 10),
-  extra_anno_color = vector(mode = "list", length =
-  length(extra_annotation_columns)), extra_anno_top_annotation = TRUE,
+  extra_anno_color = vector(mode = "list", length = length(extra_annotation_columns)),
+  extra_anno_top_annotation = TRUE,
   extra_anno_width = (rep(6, length(extra_annotation_columns))),
-  only_extra_annotation_columns = FALSE, gap = 2,
-  genes_to_label = NULL, gene_label_font_size = 6,
-  show_heatmap_legend = NULL, legend_params = list(),
-  use_raster = length(object) > 2000, raster_device = c("png", "jpeg",
-  "tiff", "CairoPNG", "CairoJPEG", "CairoTIFF"), raster_quality = 2,
-  raster_device_param = list())
+  only_extra_annotation_columns = FALSE,
+  gap = 2,
+  genes_to_label = NULL,
+  gene_label_font_size = 6,
+  show_heatmap_legend = NULL,
+  legend_params = list(),
+  use_raster = length(object) > 2000,
+  raster_device = c("png", "jpeg", "tiff", "CairoPNG", "CairoJPEG", "CairoTIFF"),
+  raster_quality = 2,
+  raster_device_param = list()
+)
 }
 \arguments{
 \item{object}{A profileplyr object}

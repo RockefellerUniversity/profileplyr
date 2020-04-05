@@ -6,15 +6,27 @@
 \alias{annotateRanges,profileplyr-method}
 \title{Annotate profileplyr ranges to genes using ChIPseeker}
 \usage{
-annotateRanges(object = "profileplyr", annotation_subset = "character",
-  TxDb, annoDb = "character", tssRegion = "numeric",
-  changeGroupToAnnotation = "logical", heatmap_grouping = "character",
-  ...)
+annotateRanges(
+  object = "profileplyr",
+  annotation_subset = "character",
+  TxDb,
+  annoDb = "character",
+  tssRegion = "numeric",
+  changeGroupToAnnotation = "logical",
+  heatmap_grouping = "character",
+  ...
+)
 
-\S4method{annotateRanges}{profileplyr}(object = "profileplyr",
-  annotation_subset = NULL, TxDb = NULL, annoDb = NULL,
-  tssRegion = c(-3000, 3000), changeGroupToAnnotation = FALSE,
-  heatmap_grouping = "group", ...)
+\S4method{annotateRanges}{profileplyr}(
+  object = "profileplyr",
+  annotation_subset = NULL,
+  TxDb = NULL,
+  annoDb = NULL,
+  tssRegion = c(-3000, 3000),
+  changeGroupToAnnotation = FALSE,
+  heatmap_grouping = "group",
+  ...
+)
 }
 \arguments{
 \item{object}{A profileplyr object}
