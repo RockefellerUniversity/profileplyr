@@ -16,7 +16,7 @@ subsetbyRangeOverlap(
 \arguments{
 \item{object}{A profileplyr object}
 
-\item{group}{The regions by which to subset the deepTools matrix. This must be either a single GRanges object, or a GRangesList. Combinations of bed file paths and GRanges objects are not accepted, Import BED files as GRanges with rtracklayer import.bed() function.}
+\item{group}{How the ranges will be grouped. If this is a character string, then it must match a column name of the range metadata, and this column will be used for grouping of any exported deepTools matrix. If this is a GRanges, or GRangesList, then the ranges will be subset based on overlap with these GRanges. If this is a list, each element should contain ether 1) a character vector of genes, and ranges will be subset based on overlap with these genes, as determined by the annotations made by annotateRanges() or annotateRanges_great() functions, or 2) a data frame with the gene symbols as the rownames. Any additional columns of this dataframe will be added to the range metadata.}
 
 \item{GRanges_names}{The names of the GRanges that were used for the "GRanges" argument. This will be used to label these groups in the construction of the resulting profileplyr object.}
 

@@ -15,11 +15,11 @@ subsetbyGeneListOverlap(
 \arguments{
 \item{object}{A profileplyr object}
 
-\item{group}{The regions by which to subset the deepTools matrix. This must be either a single GRanges object, or a GRangesList. Combinations of bed file paths and GRanges objects are not accepted, Import BED files as GRanges with rtracklayer import.bed() function.}
+\item{group}{How the ranges will be grouped. If this is a character string, then it must match a column name of the range metadata, and this column will be used for grouping of any exported deepTools matrix. If this is a GRanges, or GRangesList, then the ranges will be subset based on overlap with these GRanges. If this is a list, each element should contain ether 1) a character vector of genes, and ranges will be subset based on overlap with these genes, as determined by the annotations made by annotateRanges() or annotateRanges_great() functions, or 2) a data frame with the gene symbols as the rownames. Any additional columns of this dataframe will be added to the range metadata.}
 
 \item{include_nonoverlapping}{A logical argument, if FALSE the regions from the original deepTools matrix that do not overlap with the  user defined regions will be left out of the returned profileplyr object.}
 
-\item{separateDuplicated}{A logical argument, if TRUE then regions that overlap multiple inputs to 'GRanges' argument will be separated and made into their own group. All possible combinations of region overlaps will be tested, so it is not recommended to have more than 3 groups if this option is TRUE. If FALSE, then regions that overlap each individual 'GRanges' input will be in the output, and if one region overlaps multiple 'GRanges' inputs, then it will be duplicated in the output and will show up in the section for each group.}
+\item{separateDuplicated}{A logical argument, if TRUE (default) then regions that overlap multiple inputs to 'GRanges' argument will be separated and made into their own group. All possible combinations of region overlaps will be tested, so it is not recommended to have more than 3 groups if this option is TRUE. If FALSE, then regions that overlap each individual 'GRanges' input will be in the output, and if one region overlaps multiple 'GRanges' inputs, then it will be duplicated in the output and will show up in the section for each group.}
 
 \item{inherit_groups}{A logical whether that groups the exist in the profileplyr object in the 'object' argument should be included in the default grouping scheme for the output object of this function. The default is TRUE. If false, only the gene list overlap annotation will be used for heatmap grouping.}
 }

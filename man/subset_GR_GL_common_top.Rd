@@ -15,7 +15,7 @@ subset_GR_GL_common_top(object, overlap, input_names, type, separateDuplicated)
 
 \item{type}{Either "GR" for subsetbyRangeOverlap() function or "GL" for subsetbyGeneListOverlap() function}
 
-\item{separateDuplicated}{A logical argument, if TRUE then regions that overlap multiple inputs to 'GRanges' argument will be separated and made into their own group. All possible combinations of region overlaps will be tested, so it is not recommended to have more than 3 groups if this option is TRUE. If FALSE, then regions that overlap each individual 'GRanges' input will be in the output, and if one region overlaps multiple 'GRanges' inputs, then it will be duplicated in the output and will show up in the section for each group.}
+\item{separateDuplicated}{A logical argument, if TRUE (default) then regions that overlap multiple inputs to 'GRanges' argument will be separated and made into their own group. All possible combinations of region overlaps will be tested, so it is not recommended to have more than 3 groups if this option is TRUE. If FALSE, then regions that overlap each individual 'GRanges' input will be in the output, and if one region overlaps multiple 'GRanges' inputs, then it will be duplicated in the output and will show up in the section for each group.}
 }
 \value{
 A list of profileplyr objects
