@@ -897,7 +897,7 @@ subsetbyGeneListOverlap <- function(object, group, include_nonoverlapping = FALS
 #' @param keep_all_mcols if output is 'long' and this is set to TRUE, then all metadata columns in the rowRanges will be included in the output. If FALSE (default value), then only the column indicated in the 'rowGroupsInUse' slot of the metadata will be included in the output dataframe. 
 #' @param sampleData_columns_for_longPlot If output is set to 'long', then this argument can be used to add information stored in sampleData(object) to the summarized data frame. This needs to be a character vector with elements matching coumn names in sampleData(object). 
 #' @details Takes a SE object and outputs a summarized experiment object with a matrix containing ranges as rows and each sample having one column with summary statistic
-#' @return If output="matrix" returns a matrix, if output="long" returns a data.frame in long format,  if output="long" returns a SummarizedExperiment object
+#' @return If output="matrix" returns a matrix, if output="long" returns a data.frame in long format,  if output="object" returns a SummarizedExperiment object with the summarized matrix.
 #' @examples
 #' example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
 #' object <- import_deepToolsMat(example)
@@ -923,6 +923,15 @@ setGeneric("summarize", function(object="profileplyr",fun = "function", output =
 #' @describeIn summarize summarize the rows of a deepTools matrix
 #' @export
 setMethod("summarize", signature(object="profileplyr"), function(object, fun, output, keep_all_mcols = FALSE, sampleData_columns_for_longPlot = NULL){
+  
+  if(missing(output)){
+    stop("Enter 'output' argument, either 'matrix', 'long', or 'object'.")
+  }
+  
+  if(missing(fun)){
+    stop("Enter a function to summarize the signal in each range in the 'fun' argument (e.g. rowMeans or rowMax).")
+  }
+  
   summ <- lapply(assays(object), fun)
   summ_mat <- as.matrix(do.call(cbind,summ))
   rowGroupsInUse <- params(object)$rowGroupsInUse
