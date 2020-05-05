@@ -1349,8 +1349,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     #expand the 'matrices color_levels' to correspond to the whole vector of the column chosen, not just the levels
     q <- vector()
     for  (i in seq_along(column_for_color)) {
-      matrices_color[[i]] <- matrices_color_levels[[column_for_color[i]]]
-      q[i] <- q_levels[[column_for_color[i]]]
+      matrices_color[[i]] <- matrices_color_levels[[as.character(column_for_color[i])]] # need the as.character here because we want the actual name of the sample in that slot, other wise it uses the number that corresponds to the level since its a factor
+      q[i] <- q_levels[[as.character(column_for_color[i])]]
     }
     
     null_count <- 0
@@ -1566,6 +1566,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
   facing <- vector(length = length(enrichMAT))
   
   scoreMat <- list()
+  
+  axis = NULL # axis() is a function in complex heatmap so if I dont do this it throws an error when this isnt set. dont think this reassinging interferes as we dont use the axis function, but maybe should change this?
   
   if(!is.null(ylim)){
     if(ylim %in% colnames(sampleData(object))) {
