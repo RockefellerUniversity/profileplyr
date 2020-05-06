@@ -34,7 +34,7 @@ summarize(
 \item{sampleData_columns_for_longPlot}{If output is set to 'long', then this argument can be used to add information stored in sampleData(object) to the summarized data frame. This needs to be a character vector with elements matching coumn names in sampleData(object).}
 }
 \value{
-If output="matrix" returns a matrix, if output="long" returns a data.frame in long format,  if output="long" returns a SummarizedExperiment object
+If output="matrix" returns a matrix, if output="long" returns a data.frame in long format,  if output="object" returns a SummarizedExperiment object with the summarized matrix.
 }
 \description{
 summarize the rows of a deepTools matrix
