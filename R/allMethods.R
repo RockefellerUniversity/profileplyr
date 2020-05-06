@@ -1344,7 +1344,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     q_levels <- lapply(unlist_by_level, quantile, 0.99)
     
     # make the names of the color schemes same as the names of 'q_levels' which is just the levels of the column selected for grouping
-    names(matrices_color_levels) <- names(q_levels)
+    names(matrices_color_levels) <- levels(column_for_color)
     
     #expand the 'matrices color_levels' to correspond to the whole vector of the column chosen, not just the levels
     q <- vector()
