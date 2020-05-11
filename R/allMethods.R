@@ -2129,7 +2129,7 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "p
     group_labels <- vector()
     testRanges_GR <- GRangesList()
     for(i in seq_along(testRanges)){
-      temp <- import.bed(testRanges[i])
+      temp <- import(testRanges[i])
       seqlevelsStyle(temp) <- "UCSC"
       temp <- temp[seqnames(temp) %in% common_names]
       temp <- temp 
