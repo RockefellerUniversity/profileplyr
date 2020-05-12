@@ -1305,7 +1305,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     }
     
     # the list of color options for various defaults (either 'matrices_color' is missing or there are NULL values in user entered list)
-    matrices_color_levels_default <- list(c("white", "black"), c("white","red"), c("white","#6C7EDA"), c("white", "#1B5B14"), c("white", "purple"), c("white", "#CC0066"), c("white", "#009999"), c("white", "#CC6600"))
+    matrices_color_levels_default <- list(c("white", "red"), c("white","black"), c("white","#6C7EDA"), c("white", "#1B5B14"), c("white", "purple"), c("white", "#CC0066"), c("white", "#009999"), c("white", "#CC6600"))
     
     # set default colors if the user doesn't specify 'matrices_color'"
     if(is.null(matrices_color)){
@@ -1341,16 +1341,16 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
       lapply(unlist)
     
     
-    q_levels <- lapply(unlist_by_level, quantile, 0.99)
+    q_levels <- lapply(unlist_by_level, quantile, c(0.01, 0.98))
     
     # make the names of the color schemes same as the names of 'q_levels' which is just the levels of the column selected for grouping
     names(matrices_color_levels) <- levels(column_for_color)
     
     #expand the 'matrices color_levels' to correspond to the whole vector of the column chosen, not just the levels
-    q <- vector()
+    q <- list()
     for  (i in seq_along(column_for_color)) {
       matrices_color[[i]] <- matrices_color_levels[[as.character(column_for_color[i])]] # need the as.character here because we want the actual name of the sample in that slot, other wise it uses the number that corresponds to the level since its a factor
-      q[i] <- q_levels[[as.character(column_for_color[i])]]
+      q[[i]] <- q_levels[[as.character(column_for_color[i])]]
     }
     
     null_count <- 0
@@ -1364,10 +1364,10 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
         matrices_color[[i]] <- matrices_color[[i]]
       }else if(is.character(matrices_color[[i]]) | is.numeric(matrices_color[[i]])){
         if(length(matrices_color[[i]]) == 3){
-          matrices_color[[i]] <- colorRamp2(c(0, q[i]/2, q[i]), 
+          matrices_color[[i]] <- colorRamp2(c(q[[i]][1], (q[[i]][2] - q[[i]][1])/2, q[[i]][2]), 
                                             matrices_color[[i]])
         }else if(length(matrices_color[[i]]) == 2){
-          matrices_color[[i]] <- colorRamp2(c(0, q[i]), 
+          matrices_color[[i]] <- colorRamp2(c(q[[i]][1], q[[i]][2]), 
                                             matrices_color[[i]])
         }
       }else{
@@ -2070,7 +2070,7 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @param distanceAround If 'style' is 'percentOfRegion', then this controls the distance around the region that is included. Default is 100, meaning that a distance equal to 100 percent of that particular region on either side of the region will be included in the heatmap. 
 #' @param bin_size If 'style' is set to 'point' then this will determine the size of each bin over which signal is quantified. The default is 20 base pairs.  
 #' @param ... pass to regionPlot() within the soGGi package
-#' @param quant_params An optional \code{\link[BiocParallel:BiocParallelParam-class]{BiocParallelParam}} instance determining the parallel back-end to be used during evaluation. Default is MulticoreParam(), and the number of cores (workers) used in the MulticoreParam() function can be set with the 'workers' argument withing the MulticoreParam() call.
+#' @param quant_params An optional \code{\link[BiocParallel:BiocParallelParam-class]{BiocParallelParam}} instance determining the parallel back-end to be used during evaluation. When this argument is set to NULL (default) SerialParam() will be used. For parallelization, MulticoreParam() can be used. 
 #' @return A profileplyr object
 #' @examples
 #' signalFiles <- c(system.file("extdata",
@@ -2089,13 +2089,13 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #'                          paired=FALSE,
 #'                          style="percentOfRegion",
 #'                          )
-#' @importFrom BiocParallel bplapply MulticoreParam multicoreWorkers
+#' @importFrom BiocParallel bplapply MulticoreParam multicoreWorkers SerialParam
 #' @importFrom soGGi regionPlot
-#' @importFrom rtracklayer import.bed import.bw
+#' @importFrom rtracklayer import.bed import.bw import
 #' @importFrom GenomeInfoDb seqlevelsStyle<- seqlevelsInUse seqlevels
 #' @export
 #' 
-BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "percentOfRegion" , nOfWindows = 100, bin_size = 20, distanceAround = 100, ..., quant_params = MulticoreParam(workers = multicoreWorkers()) ) {
+BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "percentOfRegion" , nOfWindows = 100, bin_size = 20, distanceAround = 100, ..., quant_params = NULL) {
   
   if (missing(format)){
     stop("'format' argument is missing, it must be entered")
@@ -2158,7 +2158,11 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "p
   
   message("Making ChIPprofile object from signal files.")
   
-  BPPARAM <- quant_params
+  if (is.null(quant_params)){
+    BPPARAM <- SerialParam()
+  } else {
+    BPPARAM <- quant_params
+  }
     
   ChIPprofile_combined <- suppressWarnings(bplapply(signalFiles_list, regionPlot, 
                                    testRanges = testRanges_GR_unlist, 
