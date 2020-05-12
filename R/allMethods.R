@@ -1322,6 +1322,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     }
     
     #make defaults for the user entered 'NULL' values in the list
+    # first we need to determine the number of nulls to make the default list of colors to replace the NULLs
+    # this is the number of NULLs in the levels, not each heatmap, we fill in the missing level and then the individual heatmap colors are built off the levels
     number_of_nulls <- lapply(matrices_color, is.null) %>%
       unlist %>%
       sum
@@ -1333,6 +1335,14 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
       null_colors <- matrices_color_levels_default[seq(number_of_nulls)]
     }
     
+    # need to replace user-input nulls in the color levels with the default color list made above in 'null_colors'
+    null_count <- 0
+    for (i in seq_along(matrices_color_levels)){
+      if (is.null(matrices_color_levels[[i]])){
+        null_count <- null_count + 1
+        matrices_color_levels[[i]] <- null_colors[[null_count]]
+      }
+    }
     
     #define color scales for each group (either set by user or default set above)
     enrichMAT_split <- enrichMAT
@@ -1345,8 +1355,8 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     
     # make the names of the color schemes same as the names of 'q_levels' which is just the levels of the column selected for grouping
     names(matrices_color_levels) <- levels(column_for_color)
-    
-    #expand the 'matrices color_levels' to correspond to the whole vector of the column chosen, not just the levels
+
+    #expand the 'matrices color_levels' to correspond to the whole vector of the column chosen, not just the levels (so each heatmap will get assigned colors)
     q <- list()
     for  (i in seq_along(column_for_color)) {
       matrices_color[[i]] <- matrices_color_levels[[as.character(column_for_color[i])]] # need the as.character here because we want the actual name of the sample in that slot, other wise it uses the number that corresponds to the level since its a factor
@@ -1356,11 +1366,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
     null_count <- 0
     
     for(i in seq_along(matrices_color)){
-      if(is.null(matrices_color[[i]])){
-        null_count <- null_count + 1
-        matrices_color[[i]] <- colorRamp2(c(0, q[i]), 
-                                          null_colors[[null_count]])
-      }else if(is.function(matrices_color[[i]])){
+      if(is.function(matrices_color[[i]])){
         matrices_color[[i]] <- matrices_color[[i]]
       }else if(is.character(matrices_color[[i]]) | is.numeric(matrices_color[[i]])){
         if(length(matrices_color[[i]]) == 3){
