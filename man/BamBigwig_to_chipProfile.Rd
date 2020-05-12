@@ -13,7 +13,7 @@ BamBigwig_to_chipProfile(
   bin_size = 20,
   distanceAround = 100,
   ...,
-  quant_params = MulticoreParam(workers = multicoreWorkers())
+  quant_params = NULL
 )
 }
 \arguments{
@@ -33,7 +33,7 @@ BamBigwig_to_chipProfile(
 
 \item{...}{pass to regionPlot() within the soGGi package}
 
-\item{quant_params}{An optional \code{\link[BiocParallel:BiocParallelParam-class]{BiocParallelParam}} instance determining the parallel back-end to be used during evaluation. Default is MulticoreParam(), and the number of cores (workers) used in the MulticoreParam() function can be set with the 'workers' argument withing the MulticoreParam() call.}
+\item{quant_params}{An optional \code{\link[BiocParallel:BiocParallelParam-class]{BiocParallelParam}} instance determining the parallel back-end to be used during evaluation. When this argument is set to NULL (default) SerialParam() will be used. For parallelization, MulticoreParam() can be used.}
 }
 \value{
 A profileplyr object
