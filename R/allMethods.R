@@ -1206,7 +1206,7 @@ setMethod("convertToEnrichedHeatmapMat", signature(object="profileplyr"),functio
 #' @param matrices_pos_line A logical for whether to draw a vertical line(s) at the position of the target (for both a single point or a window). Default is true.
 #' @param matrices_pos_line_gp Graphics parameters for the vertical position lines. Should be set with the gpar() function from the grid() package.
 #' @param matrices_column_title_gp Graphics parameters for the titles on top of each range/matrix. Should be set with the gpar() function from the grid() package.
-#' @param matrices_axis_name Names for axis which is below the heatmap. For profileplyr object made from BamBigwig_to_chipProfile/leplyr functions, the names will be of length three, with the middle point being the midpoint of each range.  If the profileplyr object was made from a deeptools matrix with import_deepToolsMat(), the names will be length three if matrix was generated with 'computeMatrix reference-point', or length of four if matrix was generated with 'computeMatrix scale-regions' corresponding to upstream, start of targets, end of targets and downstream (or length of two if no upstream/downstream included).
+#' @param matrices_axis_name Names for axis which is below the heatmap. For profileplyr object made from BamBigwig_to_chipProfile/as_profileplyr functions, the names will be of length three, with the middle point being the midpoint of each range.  If the profileplyr object was made from a deeptools matrix with import_deepToolsMat(), the names will be length three if matrix was generated with 'computeMatrix reference-point', or length of four if matrix was generated with 'computeMatrix scale-regions' corresponding to upstream, start of targets, end of targets and downstream (or length of two if no upstream/downstream included).
 #' @param matrices_axis_name_gp Graphics parameters for the text on the x-axis of each matrix heatmap. Should be set with the gpar() function from the grid() package.
 #' @param group_anno_color This will specify colors for the grouping column if the 'include_group_annotation' argument is set to TRUE. Since the group column of the range metadata should always be a discrete value, this should be either a numeric vector or character vector with color names. By default, numeric vectors use the colors in palette(), however this can be expanded with other R color lists(e.g. colors()). The length of this vector must equal the number of groups.
 #' @param group_anno_width A numeric value that is used to will set the width of the column bar (in mm using the unit() function from the grid package) for the grouping annotation column. 
@@ -1235,7 +1235,7 @@ setMethod("convertToEnrichedHeatmapMat", signature(object="profileplyr"),functio
 #' @export
 
 generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, extra_annotation_columns = NULL, sample_names = NULL, return_ht_list = FALSE, ylim = "common_max", top_anno_height = unit(2, "cm"),
-                                    samples_to_sortby = NULL, decreasing = FALSE, all_color_scales_equal = TRUE, matrices_color = NULL, color_by_sample_group = NULL, matrices_pos_line = TRUE, matrices_pos_line_gp = gpar(lty = 2), 
+                                    samples_to_sortby = NULL, decreasing = FALSE, all_color_scales_equal = TRUE, matrices_color = NULL, color_by_sample_group = NULL, matrices_pos_line = FALSE, matrices_pos_line_gp = gpar(lty = 2), 
                                     top_anno_axis_font = gpar(fontsize = 8), matrices_column_title_gp =  gpar(fontsize = 8, fontface = "bold"), matrices_axis_name = NULL, matrices_axis_name_gp = gpar(fontsize = 8), 
                                     group_anno_color = NULL, group_anno_width = 3, group_anno_row_title_gp = gpar(fontsize = 10), group_anno_column_names_gp = gpar(fontsize = 10),
                                     extra_anno_color = vector(mode = "list", length = length(extra_annotation_columns)), extra_anno_top_annotation = TRUE, 
@@ -2024,13 +2024,13 @@ as_profileplyr <- function(chipProfile,names = NULL){
                `nan after end`=FALSE,
                `sort using`="mean",
                `unscaled 5 prime`=rep(0,length(forDP_Assays)),
-               body=rep(0,length(forDP_Assays)),
+               body=rep(metadata(chipProfile)$nOfWindows, length(forDP_Assays)),
                sample_labels=sample_labels,
-               downstream=rep((ceiling(ncol(forDP_Assays[[1]])*metadata(chipProfile)$bin_size)/2),length(forDP_Assays)),
+               downstream=rep(metadata(chipProfile)$downstream, length(forDP_Assays)),
                `unscaled 3 prime`=rep(0,length(forDP_Assays)),
                group_labels=unique(mcols(forDP_ranges)$sgGroup),
-               `bin size`=rep(metadata(chipProfile)$bin_size,length(forDP_Assays)),
-               upstream=rep((floor(ncol(forDP_Assays[[1]])*metadata(chipProfile)$bin_size)/2),length(forDP_Assays)),
+               `bin size`=rep(metadata(chipProfile)$bin_size, length(forDP_Assays)),
+               upstream=rep(metadata(chipProfile)$upstream, length(forDP_Assays)),
                group_boundaries=NA,
                `max threshold`=NULL,
                `ref point`=rep("center",length(forDP_Assays)),
@@ -2200,6 +2200,9 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "p
   )
   
   metadata(ChIPprofile_for_proplyr)$bin_size <- 1 # this will set the bin size as 1, but this will be changed below if 'point' style is used
+  metadata(ChIPprofile_for_proplyr)$nOfWindows <- nOfWindows
+  metadata(ChIPprofile_for_proplyr)$upstream <- nOfWindows * (distanceAround/100)
+  metadata(ChIPprofile_for_proplyr)$downstream <- nOfWindows * (distanceAround/100)
   
   if (style == "point"){
     
@@ -2225,6 +2228,13 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "p
                                    rowRanges = rowRanges(ChIPprofile_for_proplyr),
                                    metadata = metadata(ChIPprofile_for_proplyr))
       metadata(temp)$bin_size <- bin_size
+      metadata(temp)$nOfWindows <- 0
+      
+      forDP_Assays <- assays(temp)
+      metadata(temp)$downstream <- ceiling(ncol(forDP_Assays[[1]])*metadata(temp)$bin_size)/2
+      metadata(temp)$upstream <- floor(ncol(forDP_Assays[[1]])*metadata(temp)$bin_size)/2
+
+      
       ChIPprofile_for_proplyr = new("ChIPprofile",temp ,params=params(ChIPprofile_for_proplyr))
     }
   }
