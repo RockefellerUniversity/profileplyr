@@ -2026,11 +2026,11 @@ as_profileplyr <- function(chipProfile,names = NULL){
                `unscaled 5 prime`=rep(0,length(forDP_Assays)),
                body=rep(0,length(forDP_Assays)),
                sample_labels=sample_labels,
-               downstream=rep(ceiling(ncol(forDP_Assays[[1]])/2),length(forDP_Assays)),
+               downstream=rep((ceiling(ncol(forDP_Assays[[1]])*metadata(chipProfile)$bin_size)/2),length(forDP_Assays)),
                `unscaled 3 prime`=rep(0,length(forDP_Assays)),
                group_labels=unique(mcols(forDP_ranges)$sgGroup),
-               `bin size`=rep(1,length(forDP_Assays)),
-               upstream=rep(floor(ncol(forDP_Assays[[1]])/2),length(forDP_Assays)),
+               `bin size`=rep(metadata(chipProfile)$bin_size,length(forDP_Assays)),
+               upstream=rep((floor(ncol(forDP_Assays[[1]])*metadata(chipProfile)$bin_size)/2),length(forDP_Assays)),
                group_boundaries=NA,
                `max threshold`=NULL,
                `ref point`=rep("center",length(forDP_Assays)),
@@ -2073,7 +2073,7 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @param format character string of "bam", "bigwig", "RleList" or "PWM"
 #' @param style a character string, "percentOfRegion" (default) for normalized length divided into bins set by the 'nOfWindows' argument, "point" for per base pair plot where the number of base pairs per bin is set by the 'bin_size' argument, and "region" for combined plot
 #' @param nOfWindows The number of windows/bins the normalised ranges will be divided into if 'style' is set to 'percentOfRegion'. Default is 100.
-#' @param distanceAround If 'style' is 'percentOfRegion', then this controls the distance around the region that is included. Default is 100, meaning that a distance equal to 100 percent of that particular region on either side of the region will be included in the heatmap. 
+#' @param distanceAround  This controls the distance around the region that is included. If 'style' is 'percentOfRegion', then the default is 100, meaning that a distance equal to 100 percent of that particular region on either side of the region will be included in the heatmap. If 'style' is 'point', then the defualt is 1000, and this is the number of basepairs from the center of each range, in either direction, that the heatmap will show. 
 #' @param bin_size If 'style' is set to 'point' then this will determine the size of each bin over which signal is quantified. The default is 20 base pairs.  
 #' @param ... pass to regionPlot() within the soGGi package
 #' @param quant_params An optional \code{\link[BiocParallel:BiocParallelParam-class]{BiocParallelParam}} instance determining the parallel back-end to be used during evaluation. When this argument is set to NULL (default) SerialParam() will be used. For parallelization, MulticoreParam() can be used. 
@@ -2101,8 +2101,16 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @importFrom GenomeInfoDb seqlevelsStyle<- seqlevelsInUse seqlevels
 #' @export
 #' 
-BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "percentOfRegion" , nOfWindows = 100, bin_size = 20, distanceAround = 100, ..., quant_params = NULL) {
+BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "percentOfRegion" , nOfWindows = 100, bin_size = 20, distanceAround = NULL, ..., quant_params = NULL) {
   
+  if (is.null(distanceAround)){
+    if (style == "percentOfRegion"){
+      distanceAround = 100
+    }
+    if (style == "point"){
+      distanceAround = 1000
+    }
+  }
   if (missing(format)){
     stop("'format' argument is missing, it must be entered")
   }
@@ -2191,15 +2199,17 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "p
                                                        levels = group_labels
   )
   
+  metadata(ChIPprofile_for_proplyr)$bin_size <- 1 # this will set the bin size as 1, but this will be changed below if 'point' style is used
+  
   if (style == "point"){
-
+    
     if(bin_size > 1){
-
+      
       bin_matrix <- function(matrix, bin_size){
-
+        
         bin_number <- as.integer(ncol(matrix)/bin_size)
         bin_mean_result <- list()
-
+        
         for(i in seq(bin_number)){
           if(i == 1){
             bin_mean_result[[i]] <- rowMeans(matrix[, 1:bin_size])
@@ -2207,13 +2217,14 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "p
             bin_mean_result[[i]] <- rowMeans(matrix[, (bin_size*(i-1)+1):(bin_size*i)])
           }
         }
-
+        
         binned_matrix <- do.call(cbind, bin_mean_result)
         return(binned_matrix)
       }
       temp <- SummarizedExperiment(assays = lapply(assays(ChIPprofile_for_proplyr), bin_matrix, bin_size = bin_size),
-                                                      rowRanges = rowRanges(ChIPprofile_for_proplyr),
-                                                      metadata = metadata(ChIPprofile_for_proplyr))
+                                   rowRanges = rowRanges(ChIPprofile_for_proplyr),
+                                   metadata = metadata(ChIPprofile_for_proplyr))
+      metadata(temp)$bin_size <- bin_size
       ChIPprofile_for_proplyr = new("ChIPprofile",temp ,params=params(ChIPprofile_for_proplyr))
     }
   }
