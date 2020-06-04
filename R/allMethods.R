@@ -2017,6 +2017,14 @@ as_profileplyr <- function(chipProfile,names = NULL){
     mcols(forDP_ranges)$sgGroup <- "no_groups"
   }
   
+  if (params(chipProfile)$style == "percentOfRegion"){
+    bin_size <- 1
+    nOfWindows <- params(chipProfile)$nOfWindows
+  } else if (params(chipProfile)$style == "point") {
+    bin_size = (params(chipProfile)$distanceUp + params(chipProfile)$distanceDown)/ncol(forDP_Assays[[1]])
+    nOfWindows <- 0 # when the object is converted to an enriched heatmap matrix, this is used, but should only be set if style - percentOfRegion
+  }
+  
   rowGroupsInUse <- list(rowGroupsInUse="sgGroup")
   info <- list(verbose=FALSE,
                scale=1,
@@ -2024,13 +2032,13 @@ as_profileplyr <- function(chipProfile,names = NULL){
                `nan after end`=FALSE,
                `sort using`="mean",
                `unscaled 5 prime`=rep(0,length(forDP_Assays)),
-               body=rep(metadata(chipProfile)$nOfWindows, length(forDP_Assays)),
+               body=rep(nOfWindows, length(forDP_Assays)),
                sample_labels=sample_labels,
-               downstream=rep(metadata(chipProfile)$downstream, length(forDP_Assays)),
+               downstream=rep(params(chipProfile)$distanceDown, length(forDP_Assays)),
                `unscaled 3 prime`=rep(0,length(forDP_Assays)),
                group_labels=unique(mcols(forDP_ranges)$sgGroup),
-               `bin size`=rep(metadata(chipProfile)$bin_size, length(forDP_Assays)),
-               upstream=rep(metadata(chipProfile)$upstream, length(forDP_Assays)),
+               `bin size`=rep(bin_size, length(forDP_Assays)),
+               upstream=rep(params(chipProfile)$distanceUp, length(forDP_Assays)),
                group_boundaries=NA,
                `max threshold`=NULL,
                `ref point`=rep("center",length(forDP_Assays)),
@@ -2208,10 +2216,10 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "p
                                                        levels = group_labels
   )
   
-  metadata(ChIPprofile_for_proplyr)$bin_size <- 1 # this will set the bin size as 1, but this will be changed below if 'point' style is used
-  metadata(ChIPprofile_for_proplyr)$nOfWindows <- nOfWindows
-  metadata(ChIPprofile_for_proplyr)$upstream <- nOfWindows * (distanceAround/100)
-  metadata(ChIPprofile_for_proplyr)$downstream <- nOfWindows * (distanceAround/100)
+  # metadata(ChIPprofile_for_proplyr)$bin_size <- 1 # this will set the bin size as 1, but this will be changed below if 'point' style is used
+  # metadata(ChIPprofile_for_proplyr)$nOfWindows <- nOfWindows
+  # metadata(ChIPprofile_for_proplyr)$upstream <- nOfWindows * (distanceAround/100)
+  # metadata(ChIPprofile_for_proplyr)$downstream <- nOfWindows * (distanceAround/100)
   
   if (style == "point"){
     
@@ -2236,18 +2244,18 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "p
       temp <- SummarizedExperiment(assays = lapply(assays(ChIPprofile_for_proplyr), bin_matrix, bin_size = bin_size),
                                    rowRanges = rowRanges(ChIPprofile_for_proplyr),
                                    metadata = metadata(ChIPprofile_for_proplyr))
-      metadata(temp)$bin_size <- bin_size
-      metadata(temp)$nOfWindows <- 0
-      
-      
-      if (!is.null(distanceAround)){
-        metadata(temp)$downstream <- distanceAround
-        metadata(temp)$upstream <- distanceAround
-      } else {
-        metadata(temp)$downstream <- distanceDown
-        metadata(temp)$upstream <- distanceUp
-      }
-      
+      # metadata(temp)$bin_size <- bin_size
+      # metadata(temp)$nOfWindows <- 0
+      # 
+      # 
+      # if (!is.null(distanceAround)){
+      #   metadata(temp)$downstream <- distanceAround
+      #   metadata(temp)$upstream <- distanceAround
+      # } else {
+      #   metadata(temp)$downstream <- distanceDown
+      #   metadata(temp)$upstream <- distanceUp
+      # }
+      # 
       ChIPprofile_for_proplyr = new("ChIPprofile",temp ,params=params(ChIPprofile_for_proplyr))
     }
   }
