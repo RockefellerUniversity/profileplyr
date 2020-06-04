@@ -11,7 +11,9 @@ BamBigwig_to_chipProfile(
   style = "percentOfRegion",
   nOfWindows = 100,
   bin_size = 20,
-  distanceAround = 100,
+  distanceAround = NULL,
+  distanceUp = 1000,
+  distanceDown = 1000,
   ...,
   quant_params = NULL
 )
@@ -29,7 +31,11 @@ BamBigwig_to_chipProfile(
 
 \item{bin_size}{If 'style' is set to 'point' then this will determine the size of each bin over which signal is quantified. The default is 20 base pairs.}
 
-\item{distanceAround}{If 'style' is 'percentOfRegion', then this controls the distance around the region that is included. Default is 100, meaning that a distance equal to 100 percent of that particular region on either side of the region will be included in the heatmap.}
+\item{distanceAround}{This controls the distance around the region that is included. If 'style' is 'percentOfRegion', then the default is 100, meaning that a distance equal to 100 percent of that particular region on either side of the region will be included in the heatmap. If 'style' is 'point',then this is the number of basepairs from the center of each range, in either direction, that the heatmap will show. If style is 'point' and 'distanceAround' is NULL, then distanceUp and distanceDown will be used.}
+
+\item{distanceUp}{If 'style' is set to 'point' then this will determine the distance (in base pairs) upstream from the center of each peak signal will be quantified. If the 'distanceAround' argument is set (i.e. not NULL), that will be used for the quantification range and 'distanceUp will be ignored.}
+
+\item{distanceDown}{If 'style' is set to 'point' then this will determine the distance (in base pairs) downstream from the center of each peak signal will be quantified. If the 'distanceAround' argument is set (i.e. not NULL), that will be used for the quantification range and 'distanceDown' will be ignored.}
 
 \item{...}{pass to regionPlot() within the soGGi package}
 

@@ -17,7 +17,7 @@ generateEnrichedHeatmap(
   all_color_scales_equal = TRUE,
   matrices_color = NULL,
   color_by_sample_group = NULL,
-  matrices_pos_line = TRUE,
+  matrices_pos_line = FALSE,
   matrices_pos_line_gp = gpar(lty = 2),
   top_anno_axis_font = gpar(fontsize = 8),
   matrices_column_title_gp = gpar(fontsize = 8, fontface = "bold"),
@@ -75,7 +75,7 @@ generateEnrichedHeatmap(
 
 \item{matrices_column_title_gp}{Graphics parameters for the titles on top of each range/matrix. Should be set with the gpar() function from the grid() package.}
 
-\item{matrices_axis_name}{Names for axis which is below the heatmap. For profileplyr object made from BamBigwig_to_chipProfile/leplyr functions, the names will be of length three, with the middle point being the midpoint of each range.  If the profileplyr object was made from a deeptools matrix with import_deepToolsMat(), the names will be length three if matrix was generated with 'computeMatrix reference-point', or length of four if matrix was generated with 'computeMatrix scale-regions' corresponding to upstream, start of targets, end of targets and downstream (or length of two if no upstream/downstream included).}
+\item{matrices_axis_name}{Names for axis which is below the heatmap. For profileplyr object made from BamBigwig_to_chipProfile/as_profileplyr functions, the names will be of length three, with the middle point being the midpoint of each range.  If the profileplyr object was made from a deeptools matrix with import_deepToolsMat(), the names will be length three if matrix was generated with 'computeMatrix reference-point', or length of four if matrix was generated with 'computeMatrix scale-regions' corresponding to upstream, start of targets, end of targets and downstream (or length of two if no upstream/downstream included).}
 
 \item{matrices_axis_name_gp}{Graphics parameters for the text on the x-axis of each matrix heatmap. Should be set with the gpar() function from the grid() package.}
 
