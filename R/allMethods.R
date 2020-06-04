@@ -2073,7 +2073,9 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @param format character string of "bam", "bigwig", "RleList" or "PWM"
 #' @param style a character string, "percentOfRegion" (default) for normalized length divided into bins set by the 'nOfWindows' argument, "point" for per base pair plot where the number of base pairs per bin is set by the 'bin_size' argument, and "region" for combined plot
 #' @param nOfWindows The number of windows/bins the normalised ranges will be divided into if 'style' is set to 'percentOfRegion'. Default is 100.
-#' @param distanceAround  This controls the distance around the region that is included. If 'style' is 'percentOfRegion', then the default is 100, meaning that a distance equal to 100 percent of that particular region on either side of the region will be included in the heatmap. If 'style' is 'point', then the defualt is 1000, and this is the number of basepairs from the center of each range, in either direction, that the heatmap will show. 
+#' @param distanceAround  This controls the distance around the region that is included. If 'style' is 'percentOfRegion', then the default is 100, meaning that a distance equal to 100 percent of that particular region on either side of the region will be included in the heatmap. If 'style' is 'point',then this is the number of basepairs from the center of each range, in either direction, that the heatmap will show. If style is 'point' and 'distanceAround' is NULL, then distanceUp and distanceDown will be used. 
+#' @param distanceUp If 'style' is set to 'point' then this will determine the distance (in base pairs) upstream from the center of each peak signal will be quantified. If the 'distanceAround' argument is set (i.e. not NULL), that will be used for the quantification range and 'distanceUp will be ignored.
+#' @param distanceDown If 'style' is set to 'point' then this will determine the distance (in base pairs) downstream from the center of each peak signal will be quantified. If the 'distanceAround' argument is set (i.e. not NULL), that will be used for the quantification range and 'distanceDown' will be ignored.
 #' @param bin_size If 'style' is set to 'point' then this will determine the size of each bin over which signal is quantified. The default is 20 base pairs.  
 #' @param ... pass to regionPlot() within the soGGi package
 #' @param quant_params An optional \code{\link[BiocParallel:BiocParallelParam-class]{BiocParallelParam}} instance determining the parallel back-end to be used during evaluation. When this argument is set to NULL (default) SerialParam() will be used. For parallelization, MulticoreParam() can be used. 
@@ -2101,16 +2103,21 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @importFrom GenomeInfoDb seqlevelsStyle<- seqlevelsInUse seqlevels
 #' @export
 #' 
-BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "percentOfRegion" , nOfWindows = 100, bin_size = 20, distanceAround = NULL, ..., quant_params = NULL) {
+BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "percentOfRegion" , nOfWindows = 100, bin_size = 20, distanceAround = NULL, distanceUp = 1000, distanceDown = 1000, ..., quant_params = NULL) {
   
   if (is.null(distanceAround)){
     if (style == "percentOfRegion"){
       distanceAround = 100
     }
+  }
+  
+  if (!is.null(distanceAround)){
     if (style == "point"){
-      distanceAround = 1000
+      distanceUp = NULL
+      distanceDown = NULL
     }
   }
+  
   if (missing(format)){
     stop("'format' argument is missing, it must be entered")
   }
@@ -2184,6 +2191,8 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "p
                                    style = style, 
                                    nOfWindows = nOfWindows,
                                    distanceAround = distanceAround,
+                                   distanceUp = distanceUp,
+                                   distanceDown = distanceDown,
                                    ...,
                                    BPPARAM = BPPARAM))
   
@@ -2230,10 +2239,14 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "p
       metadata(temp)$bin_size <- bin_size
       metadata(temp)$nOfWindows <- 0
       
-      forDP_Assays <- assays(temp)
-      metadata(temp)$downstream <- ceiling(ncol(forDP_Assays[[1]])*metadata(temp)$bin_size)/2
-      metadata(temp)$upstream <- floor(ncol(forDP_Assays[[1]])*metadata(temp)$bin_size)/2
-
+      
+      if (!is.null(distanceAround)){
+        metadata(temp)$downstream <- distanceAround
+        metadata(temp)$upstream <- distanceAround
+      } else {
+        metadata(temp)$downstream <- distanceDown
+        metadata(temp)$upstream <- distanceUp
+      }
       
       ChIPprofile_for_proplyr = new("ChIPprofile",temp ,params=params(ChIPprofile_for_proplyr))
     }
