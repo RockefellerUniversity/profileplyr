@@ -2020,9 +2020,13 @@ as_profileplyr <- function(chipProfile,names = NULL){
   if (params(chipProfile)$style == "percentOfRegion"){
     bin_size <- 1
     nOfWindows <- params(chipProfile)$nOfWindows
+    distanceUp <- nOfWindows * (params(chipProfile)$distanceAround/100)
+    distanceDown <- nOfWindows * (params(chipProfile)$distanceAround/100)
   } else if (params(chipProfile)$style == "point") {
     bin_size = (params(chipProfile)$distanceUp + params(chipProfile)$distanceDown)/ncol(forDP_Assays[[1]])
     nOfWindows <- 0 # when the object is converted to an enriched heatmap matrix, this is used, but should only be set if style - percentOfRegion
+    distanceUp <- params(chipProfile)$distanceUp
+    distanceDown <- params(chipProfile)$distanceDown
   }
   
   rowGroupsInUse <- list(rowGroupsInUse="sgGroup")
@@ -2034,11 +2038,11 @@ as_profileplyr <- function(chipProfile,names = NULL){
                `unscaled 5 prime`=rep(0,length(forDP_Assays)),
                body=rep(nOfWindows, length(forDP_Assays)),
                sample_labels=sample_labels,
-               downstream=rep(params(chipProfile)$distanceDown, length(forDP_Assays)),
+               downstream=rep(distanceDown, length(forDP_Assays)),
                `unscaled 3 prime`=rep(0,length(forDP_Assays)),
                group_labels=unique(mcols(forDP_ranges)$sgGroup),
                `bin size`=rep(bin_size, length(forDP_Assays)),
-               upstream=rep(params(chipProfile)$distanceUp, length(forDP_Assays)),
+               upstream=rep(distanceUp, length(forDP_Assays)),
                group_boundaries=NA,
                `max threshold`=NULL,
                `ref point`=rep("center",length(forDP_Assays)),
