@@ -627,8 +627,11 @@ subset_GR_GL_common_top <- function(object, overlap, input_names, type, separate
     colnames(mcols(object_overlap))[colnames(mcols(object_overlap)) %in% "overlap_names"] <- paste0(type, "_overlap_names")
     colnames(mcols(object_overlap))[colnames(mcols(object_overlap)) %in% "overlap_nosep_names"] <- paste0(type, "_overlap_nosep_names") 
     
-    mcols(object_no_overlap)$overlap_nosep_names <- "no_overlap"
-    colnames(mcols(object_no_overlap))[colnames(mcols(object_no_overlap)) %in% "overlap_nosep_names"] <- paste0(type, "_overlap_nosep_names")
+    if (!length(object_no_overlap) == 0){
+      mcols(object_no_overlap)$overlap_nosep_names <- "no_overlap"
+      colnames(mcols(object_no_overlap))[colnames(mcols(object_no_overlap)) %in% "overlap_nosep_names"] <- paste0(type, "_overlap_nosep_names")
+    }
+    
     
   }
   return(list(object_overlap, object_no_overlap))
