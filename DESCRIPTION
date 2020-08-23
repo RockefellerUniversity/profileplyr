@@ -13,8 +13,9 @@ Description: Quick and straightforward visualization of read signal over genomic
   many Bioconductor tools to allow for both flexibility and additional functionality in workflows that end with
   visualization of the read signal.
 License: GPL (>= 3)
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1
 biocViews: ChIPSeq, DataImport, Sequencing, ChipOnChip, Coverage
-Imports: GenomicRanges, stats, soGGi, methods, utils, S4Vectors, R.utils, dplyr, magrittr, tidyr, IRanges, rjson, ChIPseeker,GenomicFeatures,TxDb.Hsapiens.UCSC.hg19.knownGene,TxDb.Hsapiens.UCSC.hg38.knownGene,TxDb.Mmusculus.UCSC.mm10.knownGene, TxDb.Mmusculus.UCSC.mm9.knownGene,org.Hs.eg.db,org.Mm.eg.db,rGREAT, pheatmap, EnrichedHeatmap, ComplexHeatmap, grid, circlize, BiocParallel, rtracklayer, GenomeInfoDb
-Suggests: BiocStyle, testthat, knitr, rmarkdown, png, Rsamtools, ggplot2
+Imports: GenomicRanges, stats, soGGi, methods, utils, S4Vectors, R.utils, dplyr, magrittr, tidyr, IRanges, rjson, ChIPseeker,GenomicFeatures,TxDb.Hsapiens.UCSC.hg19.knownGene,TxDb.Hsapiens.UCSC.hg38.knownGene,TxDb.Mmusculus.UCSC.mm10.knownGene, TxDb.Mmusculus.UCSC.mm9.knownGene,org.Hs.eg.db,org.Mm.eg.db,rGREAT, pheatmap, ggplot2, EnrichedHeatmap, ComplexHeatmap, grid, circlize, BiocParallel, rtracklayer, GenomeInfoDb, grDevices, rlang
+Suggests: BiocStyle, testthat, knitr, rmarkdown, png, Rsamtools
 VignetteBuilder: knitr
+Encoding: UTF-8

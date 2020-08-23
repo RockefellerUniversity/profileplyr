@@ -41,7 +41,8 @@
 
 #' @importFrom methods as new
 #' @importFrom utils combn read.delim write.table
-#' @import SummarizedExperiment BiocGenerics
+#' @import SummarizedExperiment 
+#' @rawNamespace import(BiocGenerics, except = Position)
 #' @export
 #' @docType methods
 #' @return  The path to deepTools matrix file
@@ -216,6 +217,8 @@ import_deepToolsMat <- function(con){
     levels = info$group_labels
   )
   
+  sampleData$generation.method <- rep("deepTools", nrow(sampleData))
+  
   perSampleDPParams <- info[lengths(info) == length(info$sample_labels)] %>% .[!(names(.) %in% c("group_labels", "group_boundaries"))] %>%
     names %>% make.names
   rowGroupsInUse <- "dpGroup"
@@ -259,7 +262,6 @@ import_deepToolsMat <- function(con){
 #' @import IRanges
 #' @importFrom pheatmap pheatmap
 #' @importFrom GenomicFeatures makeTxDbFromGFF
-#' @rdname clusterRanges
 setGeneric("clusterRanges", function(object="profileplyr",fun="function",scaleRows="logical",
                                      kmeans_k="integer",clustering_callback="function",clustering_distance_rows="ANY",
                                      cluster_method="function",cutree_rows="integer",silent="logical",show_rownames="logical",
@@ -1941,6 +1943,201 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
   #return(draw(ht_list, split = mcols(object)[,object@params$rowGroupsInUse]))
 }
 
+#' Import ChIPprofile object to profileplyr
+#'
+#' Function to convert soGGi ChIPprofile objects to  profileplyr object .
+#'
+#' @rdname generateProfilePlot
+#' @param object A profileplyr object
+#' @param sampleNames The names used to label the samples in the profileplyr object. By default, the names stored in rownames(sampleData(object)) are used. 
+#' @param colorGroup The name of the column in mcols(object) that will be used for color grouping in the plot. By default the column name in params(object)$rowGroupsInUse is used. If this column is not a factor variable, then it will be converted into one.
+#' @param colorlist  A vector containing the colors to be used. The positions in the vector will be matched with the levels of the factor variable chosen in the 'colorGroup' argument.
+#' @param facet_nrow The number of rows when making the plot panels. This argument is passed to 'nrow' of the ggplot2 function \code{\link[ggplot2]{facet_wrap}}. 
+#' @param facet_ncol The number of columns when making the plot panels. This argument is passed to 'ncol' of the ggplot2 function \code{\link[ggplot2]{facet_wrap}}.
+#' @param facet_scales Whether the scales of all plot panels should be fixed ("fixed", default), free ("free"), or free in one dimension ("free_x" or "free_y"). This argument is passed to 'scales' of the ggplot2 function \code{\link[ggplot2]{facet_wrap}}.
+#' @return A profileplyr object
+#' @examples
+#' 
+#' example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
+#' object <- import_deepToolsMat(example)
+#' 
+#' generateProfilePlot(object)
+#' 
+#' @importFrom ggplot2 ggplot aes geom_line theme_bw theme element_blank element_text element_rect scale_color_manual scale_x_continuous expand_limits ylab xlab facet_wrap 
+#' @importFrom tidyr pivot_longer
+#' @importFrom grDevices hcl
+#' @importFrom rlang .data
+#' @export
+
+generateProfilePlot <- function(object, 
+                                sampleNames = rownames(sampleData(object)), 
+                                colorGroup = params(object)$rowGroupsInUse, 
+                                colorlist = NULL, 
+                                #binSize = NULL,
+                                facet_nrow = 1, 
+                                facet_ncol = NULL, 
+                                facet_scales = "fixed"
+                                ){
+  
+  if(!is(object,"profileplyr")) stop("Object must be profileplyr object")
+  
+  if (length(assays(object)) > 1) {
+    if (!var(sampleData(object)$bin.size) == 0){
+      stop("All samples must have equal bin size!")
+    }
+    if (!var(sampleData(object)$upstream) == 0){
+      stop("All samples must have equal number of upstream bins!")
+    }
+    if (!var(sampleData(object)$downstream) == 0){
+      stop("All samples must have equal number of downstream bins!")
+    }
+    if (!length(unique(sampleData(object)$generation.method)) == 1){
+      stop("All samples must have been generated with the same method (BamBigwig_to_chipProfile() or import_deepToolsMat())")
+    }
+  }
+  
+  
+  binSize <- sampleData(object)$bin.size[1]
+  upstream <- sampleData(object)$upstream[1]
+  downstream <- sampleData(object)$downstream[1]
+  body <- sampleData(object)$body[1]
+  generation_method <- sampleData(object)$generation.method[1]
+  
+  mcols_colorGroup_column <- mcols(object)[, colnames(mcols(object)) %in% colorGroup]
+  # this column needs to be a factor so we can cycle through levels below while plotting
+  # if its not a factor, we make it one
+  # if it is, we preserve the levels the user set within the object, allowing them to control it if they want 
+  if(!is(mcols_colorGroup_column, "factor")){
+    mcols(object)[, colnames(mcols(object)) %in% colorGroup] <- as.factor(mcols(object)[, colnames(mcols(object)) %in% colorGroup])
+    colorGroup_objectLevels <- levels(mcols(object)[, colnames(mcols(object)) %in% colorGroup]) 
+  } else {
+    colorGroup_objectLevels <- levels(mcols(object)[, colnames(mcols(object)) %in% colorGroup]) 
+  }
+  
+  if (!colorGroup %in% colnames(mcols(object))){
+    stop("If you enter a 'colorGroup' argument it must match the name of a column in mcols(object)")
+  }
+  
+  tidy_pplyr_data_list <- list()
+  for (i in seq_along(assays(object))){
+    
+    pplyr_matrixdata <- as.data.frame(assay(object[,,i]))
+    colnames(pplyr_matrixdata) <- c(1:ncol(assay(object[,,i])))
+    pplyr_rowdata <- as.data.frame(mcols(object))
+    pplyr_data <- merge(pplyr_matrixdata, pplyr_rowdata, by = "row.names", all = T)
+    pplyr_summary <- data.frame(bin = as.numeric(colnames(pplyr_data)[2:(ncol(assay(object[,,i]))+1)]))  
+    
+    colorGroup_column <- pplyr_data[, colnames(pplyr_data) %in% colorGroup]
+    
+    for (x in seq_along(levels(colorGroup_column))) {
+      pplyr_summary[,x+1] <- colMeans(pplyr_data[colorGroup_column %in% levels(colorGroup_column)[x],2:(ncol(assay(object[,,i]))+1)])
+    }
+    colnames(pplyr_summary) <- c("bin", levels(colorGroup_column))
+    pplyr_summary$sample <- rep(sampleNames[i], nrow(pplyr_summary))
+    tidy_pplyr_data_list[[i]] <- pivot_longer(pplyr_summary, cols = 2:(length(levels(colorGroup_column))+1), names_to = "groups", values_to = "signal")
+    
+  }
+  
+  tidy_pplyr_data_list_all <- do.call(rbind, tidy_pplyr_data_list)
+  tidy_pplyr_data_list_all$groups <- ordered(tidy_pplyr_data_list_all$groups, levels = colorGroup_objectLevels) # use the levels that will be carried over form the object
+  tidy_pplyr_data_list_all$sample <- ordered(tidy_pplyr_data_list_all$sample, levels = sampleNames)
+  
+  gg_color_hue <- function(n) { # got this from stack overflow forum
+    hues = seq(15, 375, length = n + 1)
+    hcl(h = hues, l = 65, c = 100)[1:n]
+  }
+  
+  if (is.null(colorlist)){
+    colorlist <- gg_color_hue(n = length(colorGroup_objectLevels))
+  }
+  
+  # should you check if the 'body' column values are all the same?
+  
+  if (generation_method == "ChIPprofile"){
+    if (body == 0){
+      labels <- c(-upstream, 0, downstream)
+      breaks <- c(0, upstream/binSize, (upstream+downstream)/binSize)
+      hjust <- c(0, 0.5, 1)
+    } else {
+      if (upstream == 0 & downstream == 0){
+        labels <- c("start", "end")
+        breaks = c(0, body*binSize)
+        hjust <- c(0.5, 0.5)
+      } else if (upstream == 0){
+        labels <- c("start", "end", downstream)
+        breaks = c(0, body*binSize, downstream + body*binSize)
+        hjust <- c(0.5, 0.5, 1)
+      } else if (downstream == 0){
+        labels <- c(-upstream, "start", "end")
+        breaks = c(0, upstream, upstream + 2*(body*binSize))
+        hjust <- c(0, 0.5, 0.5)
+      } else {
+        labels <- c(-(upstream), "start", "end", downstream)
+        breaks = c(0, upstream, upstream + body*binSize, upstream + body*binSize + downstream)
+        hjust <- c(0, 0.5, 0.5, 1)
+      }
+    }
+  }
+  
+  if (generation_method == "deepTools"){
+    if (body == 0){
+      labels <- c(-upstream, 0, downstream)
+      breaks <- c(0, upstream/binSize, (upstream+downstream)/binSize)
+      hjust <- c(0, 0.5, 1)
+    } else {
+      if (upstream == 0 & downstream == 0){
+        labels <- c("start", "end")
+        breaks = c(0, body/binSize)
+        hjust <- c(0.5, 0.5)
+      } else if (upstream == 0){
+        labels <- c("start", "end", downstream)
+        breaks = c(0, body/binSize, downstream/binSize + body/binSize)
+        hjust <- c(0.5, 0.5, 1)
+      } else if (downstream == 0){
+        labels <- c(-upstream, "start", "end")
+        breaks = c(0, upstream/binSize, upstream/binSize + (body/binSize))
+        hjust <- c(0, 0.5, 0.5)
+      } else {
+        labels <- c(-(upstream), "start", "end", downstream)
+        breaks = c(0, upstream/binSize, upstream/binSize + body/binSize, upstream/binSize + body/binSize + downstream/binSize)
+        hjust <- c(0, 1, 0, 1)
+      }
+    }
+  }
+  
+  plot <- ggplot(tidy_pplyr_data_list_all, aes(x= .data$bin, y= .data$signal, color = .data$groups)) +
+    geom_line(size = 0.7) +
+    theme_bw() +
+    theme(panel.grid = element_blank(),
+          plot.title = element_text(hjust = 0.5),
+          axis.text.y = element_text(size = 10),
+          axis.text.x = element_text(size = 10,
+                                     hjust = hjust
+                                     ),
+          #legend.position = c(.85,.70), # Can adjust manually below to avoid overlap with profile
+          legend.title = element_blank(),
+          legend.text = element_text(size = 10),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          strip.background = element_blank(),
+          panel.border = element_rect(colour = "black"),
+          strip.text.x = element_text(size = 10)
+    ) +
+    scale_color_manual(values = colorlist) +
+    scale_x_continuous(labels = labels,
+                      breaks = breaks
+    #name = "Distance from TSS (bp)"
+    ) +
+    expand_limits(y = 0) +
+    ylab(NULL) + 
+    xlab(NULL) + 
+    facet_wrap(~sample,
+               nrow = facet_nrow,
+               ncol = facet_ncol,
+               scales = facet_scales)
+  
+  return(plot)
+}
 
 #### From S4Vectors:::selectSome
 
@@ -2068,7 +2265,7 @@ as_profileplyr <- function(chipProfile,names = NULL){
     row.names = sample_labels) 
   }
   sampleData$max.threshold <- sampleData$min.threshold <- replicate(nrow(sampleData),NULL)
-  
+  sampleData$generation.method <- rep("ChIPprofile", nrow(sampleData))
   
   params <- list(perSampleDPParams= standard_DPparams()$perSampleDPParams,
                  rowGroupsInUse="sgGroup")
