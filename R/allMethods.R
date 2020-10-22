@@ -1227,7 +1227,7 @@ setMethod("convertToEnrichedHeatmapMat", signature(object="profileplyr"),functio
 #' @param show_heatmap_legend A logical vector with each position corresponding to each matrix heatmap (not including the 'extra_annotation_columns') that determines whether a legend is produced for that heatmap. By default a single legend is made if all heatmaps use the same color scale, or separate legends are made for each matrix heatmap if the scales are different. 
 #' @param legend_params A list that contains parameters for the legend. See \code{\link[ComplexHeatmap]{color_mapping_legend-ColorMapping-method}} for all available parameters. 
 #' @param use_raster Whether render the heatmap body as a raster image. It helps to reduce file size when the matrix is huge. 
-#' @param raster_device  Graphic device which is used to generate the raster image.
+#' @param raster_device  Graphic device which is used to generate the raster image. Options are "png", "jpeg", "tiff", "CairoPNG", "CairoJPEG", "CairoTIFF"
 #' @param raster_quality A value set to larger than 1 will improve the quality of the raster image.
 #' @param raster_device_param A list of further parameters for the selected graphic device. For raster image support, please check \url{https://jokergoo.github.io/ComplexHeatmap-reference/book/a-single-heatmap.html#heatmap-as-raster-image} .
 #' @details Takes a profileplyr object and generates a heatmap that can be annotated by group or by range metadata columns of the profileplyr object
@@ -1237,6 +1237,7 @@ setMethod("convertToEnrichedHeatmapMat", signature(object="profileplyr"),functio
 #' object <- import_deepToolsMat(example)
 #' 
 #' generateEnrichedHeatmap(object, include_group_annotation = FALSE)
+#' @import Cairo tiff
 #' @export
 
 generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, extra_annotation_columns = NULL, sample_names = NULL, return_ht_list = FALSE, ylim = "common_max", top_anno_height = unit(2, "cm"),
@@ -1245,8 +1246,7 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
                                     group_anno_color = NULL, group_anno_width = 3, group_anno_row_title_gp = gpar(fontsize = 10), group_anno_column_names_gp = gpar(fontsize = 10),
                                     extra_anno_color = vector(mode = "list", length = length(extra_annotation_columns)), extra_anno_top_annotation = TRUE, 
                                     extra_anno_width = (rep(6, length(extra_annotation_columns))), only_extra_annotation_columns = FALSE, gap = 2, genes_to_label = NULL, gene_label_font_size = 6, 
-                                    show_heatmap_legend = NULL, legend_params = list(), use_raster = length(object) > 2000, raster_device = c("png", "jpeg", "tiff", "CairoPNG", "CairoJPEG", "CairoTIFF"),
-                                    raster_quality = 2, raster_device_param = list()){
+                                    show_heatmap_legend = NULL, legend_params = list(), use_raster = length(object) > 2000, raster_device = "CairoPNG", raster_quality = 2, raster_device_param = list()){
   
   if(!is.null(samples_to_sortby)) {
     if(is(samples_to_sortby, "numeric")){

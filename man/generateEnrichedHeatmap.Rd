@@ -37,7 +37,7 @@ generateEnrichedHeatmap(
   show_heatmap_legend = NULL,
   legend_params = list(),
   use_raster = length(object) > 2000,
-  raster_device = c("png", "jpeg", "tiff", "CairoPNG", "CairoJPEG", "CairoTIFF"),
+  raster_device = "CairoPNG",
   raster_quality = 2,
   raster_device_param = list()
 )
@@ -107,7 +107,7 @@ generateEnrichedHeatmap(
 
 \item{use_raster}{Whether render the heatmap body as a raster image. It helps to reduce file size when the matrix is huge.}
 
-\item{raster_device}{Graphic device which is used to generate the raster image.}
+\item{raster_device}{Graphic device which is used to generate the raster image. Options are "png", "jpeg", "tiff", "CairoPNG", "CairoJPEG", "CairoTIFF"}
 
 \item{raster_quality}{A value set to larger than 1 will improve the quality of the raster image.}
 
