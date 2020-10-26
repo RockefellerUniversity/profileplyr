@@ -804,7 +804,7 @@ subsetbyGeneListOverlap <- function(object, group, include_nonoverlapping = FALS
   } else {
     gene_list_names <- names(group)
   }
-
+  
   # check to see whether all are data frames
   # if not , then we will just use gene symbols and no column data
   df_check_list <- lapply(group, is.data.frame) %>% 
@@ -1069,6 +1069,10 @@ setMethod("groupBy", signature(object="profileplyr"),function(object, group, GRa
   
   if(is(group,"list")) {
     return(subsetbyGeneListOverlap(object, group = group, include_nonoverlapping, separateDuplicated, inherit_groups))
+  }
+  
+  if(is(group,"data.frame")){
+    stop("The 'group' argument is a data frame, but it must be a list! In order to group by a gene list that is part of a data frame, each data frame must be an element of a list, even if the list only has one element (eg list(df = dataframe)).")
   }
  
 })
