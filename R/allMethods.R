@@ -1019,7 +1019,7 @@ setMethod("summarize", signature(object="profileplyr"), function(object, fun, ou
 #' @param separateDuplicated A logical argument, if TRUE (default) then regions that overlap multiple inputs to 'GRanges' argument will be separated and made into their own group. All possible combinations of region overlaps will be tested, so it is not recommended to have more than 3 groups if this option is TRUE. If FALSE, then regions that overlap each individual 'GRanges' input will be in the output, and if one region overlaps multiple 'GRanges' inputs, then it will be duplicated in the output and will show up in the section for each group.
 #' @param inherit_groups A logical whether that groups the exist in the profileplyr object in the 'object' argument should be included in the default grouping scheme for the output object of this function. The default is TRUE. If false, only the GRanges or gene list overlap annotation will be used for heatmap grouping.
 #' @details Takes a SE object and groups rows
-#' @return  A profileplyr object with a summarized matrix, a matrix, or a long dataframe.
+#' @return  A profileplyr object 
 #' @examples
 #' 
 #' # group by gene list or list of data frames with genes as rownames

@@ -42,7 +42,7 @@ groupBy(
 \item{inherit_groups}{A logical whether that groups the exist in the profileplyr object in the 'object' argument should be included in the default grouping scheme for the output object of this function. The default is TRUE. If false, only the GRanges or gene list overlap annotation will be used for heatmap grouping.}
 }
 \value{
-A profileplyr object with a summarized matrix, a matrix, or a long dataframe.
+A profileplyr object
 }
 \description{
 group the rows and ranges of the profileplyr object
