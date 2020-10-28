@@ -22,7 +22,7 @@
 #' @importMethodsFrom IRanges as.matrix cbind colnames "colnames<-" diff gsub lapply ncol nrow paste quantile rbind rownames "rownames<-" subsetByOverlaps table unique which
 #' @importMethodsFrom S4Vectors "%in%" mcols "mcols<-" do.call expand.grid grep grepl head levels metadata "metadata<-" Reduce subset t tail
 #' @importFrom circlize colorRamp2
-#' @importFrom ComplexHeatmap anno_summary Heatmap HeatmapAnnotation
+#' @importFrom ComplexHeatmap anno_summary Heatmap HeatmapAnnotation rowAnnotation anno_mark
 #' @importFrom dplyr mutate select
 #' @importFrom EnrichedHeatmap anno_enriched EnrichedHeatmap
 #' @importFrom GenomicFeatures makeTxDbFromGFF
@@ -1138,7 +1138,7 @@ setMethod("orderBy", signature(object="profileplyr"),function(object, column){
 #' library(EnrichedHeatmap)
 #' EH_mat <- convertToEnrichedHeatmapMat(object)
 #' EnrichedHeatmap(EH_mat[[1]], name = names(EH_mat[1]), column_title = names(EH_mat[1]))
-#' @import EnrichedHeatmap ComplexHeatmap grid circlize
+#' @import grid circlize
 #' @export
 setGeneric("convertToEnrichedHeatmapMat", function(object="profileplyr",sample_names="character") standardGeneric("convertToEnrichedHeatmapMat"))
 
