@@ -2317,6 +2317,7 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @importFrom soGGi regionPlot
 #' @importFrom rtracklayer import.bed import.bw import
 #' @importFrom GenomeInfoDb seqlevelsStyle<- seqlevelsInUse seqlevels
+#' @importFrom Rsamtools scanBamHeader
 #' @export
 #' 
 BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "percentOfRegion" , nOfWindows = 100, bin_size = 20, distanceAround = NULL, distanceUp = 1000, distanceDown = 1000, ..., quant_params = NULL) {
@@ -2339,6 +2340,7 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "p
   }
   
   if (format == "bigwig"){
+    # this function will convert any stadard chromosomes to UCSC format
     add_chr <- function(genomeCov){
       if (!(any(grepl("chr", names(genomeCov))))) {
         oddChrom <- grepl("GL", names(genomeCov))
@@ -2367,7 +2369,7 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "p
     testRanges_GR <- GRangesList()
     for(i in seq_along(testRanges)){
       temp <- import(testRanges[i])
-      seqlevelsStyle(temp) <- "UCSC"
+      seqlevelsStyle(temp) <- "UCSC" # since we manually made all rle from bigwigs UCSC style, we make sure bed is too
       temp <- temp[seqnames(temp) %in% common_names]
       temp <- temp 
       seqlevels(temp) <- seqlevelsInUse(temp)
@@ -2379,14 +2381,34 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "p
   }
   
   if(format == "bam"){
+    
+    # figure out style of seqlevels in BAM files 
     signalFiles_list <- as.list(signalFiles)
+    seqnames_formats_list <- lapply(signalFiles_list, function(x){
+      temp_header <- scanBamHeader(x)
+      temp_seqnames <- names(temp_header[[1]]$targets)
+      if(any(grepl("chr", temp_seqnames))){
+        "UCSC"
+      }else{
+        "NCBI"
+      }
+    })
+    
+    seqnames_formats_all <- unlist(seqnames_formats_list)
+    if (!length(unique(seqnames_formats_all)) == 1){
+      stop("Seqnames of BAM files are not all same format (e.g. UCSC, NCBI, etc.), make sure the same reference was used to make BAM files")
+    }
+    # since we know they are all the same type, we just use the first one
+    seqnames_format <- seqnames_formats_all[1]
     testRanges_GR <- GRangesList()
     group_labels <- vector()
     for(i in seq_along(testRanges)){
-      testRanges_GR[[i]] <- import.bed(testRanges[i])
-      seqlevelsStyle(testRanges_GR[[i]]) <- "UCSC"
-      testRanges_GR[[i]]$sgGroup <- rep(basename(testRanges[i]), length(testRanges_GR[[i]]))
+      temp <- import.bed(testRanges[i])
+      seqlevelsStyle(temp) <- seqnames_format
+      seqlevels(temp) <- seqlevelsInUse(temp)
+      temp$sgGroup <- rep(basename(testRanges[i]), length(temp))
       group_labels[i] <- basename(testRanges[i])
+      testRanges_GR[[i]] <- temp
     }
   }
   
