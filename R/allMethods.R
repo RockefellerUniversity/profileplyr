@@ -739,7 +739,7 @@ subsetbyRangeOverlap <- function(object, group, GRanges_names = NULL, include_no
   hits <- findOverlaps(object_overlap, region_list_GRanges_unlist) # get the indecies of both subject and query that overlap
   uniqueInQuery <- subjectHits(hits) %>%
     .[!duplicated(queryHits(hits))] # this will give us indecies of the input GRanges for subsetting (query) that overlap the deepTools SE (subject).
-  query_mcols <- mcols(region_list_GRanges_unlist)[uniqueInQuery, ] # get the metadata from the GRanges for subsetting (query) that corresponds to the ranges that overlap with the deepTools SE (subject). If multiple input regions overlap with the SE, metadata from only the first one will be caught here
+  query_mcols <- mcols(region_list_GRanges_unlist)[uniqueInQuery, , drop = F] # get the metadata from the GRanges for subsetting (query) that corresponds to the ranges that overlap with the deepTools SE (subject). If multiple input regions overlap with the SE, metadata from only the first one will be caught here
   mcols(object_overlap) <-  c( mcols(object_overlap), query_mcols) # combine the metadata from the subsetting GRanges with the metadata in the SE DT
   
   if (include_nonoverlapping == FALSE) {
