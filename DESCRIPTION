@@ -1,7 +1,7 @@
 Package: profileplyr
 Type: Package
 Title: Visualization and annotation of read signal over genomic ranges with profileplyr
-Version: 1.10.1
+Version: 1.10.2
 Date: 2018-12-02
 Author: Tom Carroll and Doug Barrows
 Maintainer: Tom Carroll <tc.infomatics@gmail.com>, Doug Barrows <doug.barrows@gmail.com>
