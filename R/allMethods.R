@@ -1241,7 +1241,7 @@ setMethod("convertToEnrichedHeatmapMat", signature(object="profileplyr"),functio
 #' object <- import_deepToolsMat(example)
 #' 
 #' generateEnrichedHeatmap(object, include_group_annotation = FALSE)
-#' @import Cairo tiff
+#' @import tiff
 #' @export
 
 generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, extra_annotation_columns = NULL, sample_names = NULL, return_ht_list = FALSE, ylim = "common_max", top_anno_height = unit(2, "cm"),
