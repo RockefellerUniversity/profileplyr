@@ -44,9 +44,9 @@ Takes a SE object and outputs a summarized experiment object with a matrix conta
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{profileplyr}: summarize the rows of a deepTools matrix
-}}
+\item \code{summarize(profileplyr)}: summarize the rows of a deepTools matrix
 
+}}
 \examples{
 example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
 object <- import_deepToolsMat(example)

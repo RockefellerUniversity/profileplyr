@@ -392,20 +392,29 @@ setMethod("clusterRanges", signature="profileplyr",
 #' # annotate ranges with genes using GREAT with following command:
 #' annotateRanges_great(object, species = "mm10")
 #' 
-#' @import TxDb.Hsapiens.UCSC.hg19.knownGene TxDb.Hsapiens.UCSC.hg38.knownGene TxDb.Mmusculus.UCSC.mm9.knownGene TxDb.Mmusculus.UCSC.mm10.knownGene org.Hs.eg.db org.Mm.eg.db ChIPseeker rGREAT GenomicFeatures 
+#' @import TxDb.Hsapiens.UCSC.hg19.knownGene TxDb.Hsapiens.UCSC.hg38.knownGene TxDb.Mmusculus.UCSC.mm9.knownGene TxDb.Mmusculus.UCSC.mm10.knownGene org.Hs.eg.db org.Mm.eg.db ChIPseeker rGREAT GenomicFeatures
+#' @importFrom tidyr unnest 
 setGeneric("annotateRanges_great", function(object="profileplyr",species="character",...)standardGeneric("annotateRanges_great"))
 #' @describeIn annotateRanges_great Annotate profileplyr ranges to genes using rGREAT 
 #' @export
 setMethod("annotateRanges_great", signature(object="profileplyr"),function(object, species, ...) {
 
   great <- submitGreatJob(rowRanges(object), request_interval = 0, species = species, ...)
-  genomic_regions <- plotRegionGeneAssociationGraphs(great)
-  colnames(mcols(genomic_regions)) <- c("SYMBOL", "distanceToTSS")
+  genomic_regions <- getRegionGeneAssociations(great)
+  genomic_regions_df <- as.data.frame(genomic_regions) %>%
+    unnest(cols = c(annotated_genes, dist_to_TSS))
+  genomic_regions_gr <- GRanges(seqnames = genomic_regions_df$seqnames,
+                                ranges = IRanges(start = genomic_regions_df$start,
+                                                 end = genomic_regions_df$end),
+                                strand = genomic_regions_df$strand,
+                                mcols = data.frame(genomic_regions_df$annotated_genes,
+                                                   genomic_regions_df$dist_to_TSS))
+  colnames(mcols(genomic_regions_gr)) <- c("SYMBOL", "distanceToTSS")
   
-  hits <- findOverlaps(genomic_regions, rowRanges(object)) # get the indecies of both subject and query that overlap
+  hits <- findOverlaps(genomic_regions_gr, rowRanges(object)) # get the indecies of both subject and query that overlap
   hits <- hits[!duplicated(queryHits(hits))]
   object <- object[subjectHits(hits)]
-  mcols(object) <-  c(mcols(object), mcols(genomic_regions))
+  mcols(object) <-  c(mcols(object), mcols(genomic_regions_gr))
   
   colnames(mcols(object)) <- make.unique(colnames(mcols(object)))
   return(object)
@@ -839,7 +848,7 @@ subsetbyGeneListOverlap <- function(object, group, include_nonoverlapping = FALS
         stop("elements of 'group' must be a character vector, or a data frame with the gene symbols as the rownames")
       }
     }
-  
+    
     overlap <- lapply(gene_list_vectorList, function(x) rowRanges(object)$SYMBOL %in% x)
     if(!("SYMBOL" %in% colnames(mcols(object)))){
       stop("There is no column in the range metadata with a colname of 'SYMBOL', which is required. Aside from the user manually adding this column it is typically added automatically by annotateRanges() or annotateRanges_great(). Make sure one of these functions has been run first.")

@@ -539,7 +539,7 @@ The gene symbols will be used to determine overlap with the genes that are assoc
 
 ### Gene set list contains a character data
 
-The frist opption is to read in a list of gene sets that are character vectors. This list contains the top 1000 differentially expressed genes that are higher in the liver compared to hindbrain, and the top 1000 that are higher in the hindbrain compared to the liver.
+The first option is to read in a list of gene sets that are character vectors. This list contains the top 1000 differentially expressed genes that are higher in the liver compared to hindbrain, and the top 1000 that are higher in the hindbrain compared to the liver.
 ```{r}
 data("gene_list_character")
 

@@ -28,9 +28,9 @@ tbd
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{profileplyr}: Annotate profileplyr ranges to genes using rGREAT
-}}
+\item \code{annotateRanges_great(profileplyr)}: Annotate profileplyr ranges to genes using rGREAT
 
+}}
 \examples{
 library(SummarizedExperiment)
 example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 

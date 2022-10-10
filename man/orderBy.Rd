@@ -26,9 +26,9 @@ Takes a profileplyr object and orders the rows based on a user defined metadata 
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{profileplyr}: choose the column by which to order the ranges by within each group
-}}
+\item \code{orderBy(profileplyr)}: choose the column by which to order the ranges by within each group
 
+}}
 \examples{
 example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
 object <- import_deepToolsMat(example) 

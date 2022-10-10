@@ -45,9 +45,9 @@ A profileplyr object
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{profileplyr}: Export and import profileplyr from/to deeptools
-}}
+\item \code{export_deepToolsMat(profileplyr)}: Export and import profileplyr from/to deeptools
 
+}}
 \examples{
 
 example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 

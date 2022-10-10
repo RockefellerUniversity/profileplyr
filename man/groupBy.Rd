@@ -52,9 +52,9 @@ Takes a SE object and groups rows
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{profileplyr}: group the rows and ranges of the profileplyr object
-}}
+\item \code{groupBy(profileplyr)}: group the rows and ranges of the profileplyr object
 
+}}
 \examples{
 
 # group by gene list or list of data frames with genes as rownames

@@ -25,7 +25,9 @@ clusterRanges(
   fun = rowMeans,
   scaleRows = TRUE,
   kmeans_k = NULL,
-  clustering_callback = function(x, ...) {     return(x) },
+  clustering_callback = function(x, ...) {
+     return(x)
+ },
   clustering_distance_rows = "euclidean",
   cluster_method = "complete",
   cutree_rows = NULL,
@@ -68,9 +70,9 @@ tbd
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{profileplyr}: Cluster Ranges
-}}
+\item \code{clusterRanges(profileplyr)}: Cluster Ranges
 
+}}
 \examples{
 example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
 object <- import_deepToolsMat(example) 

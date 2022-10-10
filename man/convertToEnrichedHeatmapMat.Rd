@@ -25,9 +25,9 @@ Takes a profileplyr object and converts all of the matrices in the assays() sect
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{profileplyr}: export a profileplyr object to a list of matrices that can be used as an input for EnrichedHeatmap
-}}
+\item \code{convertToEnrichedHeatmapMat(profileplyr)}: export a profileplyr object to a list of matrices that can be used as an input for EnrichedHeatmap
 
+}}
 \examples{
 
 example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 

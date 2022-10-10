@@ -56,9 +56,9 @@ tbd
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{profileplyr}: Annotate profileplyr ranges to genes using ChIPseeker
-}}
+\item \code{annotateRanges(profileplyr)}: Annotate profileplyr ranges to genes using ChIPseeker
 
+}}
 \examples{
 library(SummarizedExperiment)
 example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
