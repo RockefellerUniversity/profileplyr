@@ -394,29 +394,40 @@ setMethod("clusterRanges", signature="profileplyr",
 #' 
 #' @import TxDb.Hsapiens.UCSC.hg19.knownGene TxDb.Hsapiens.UCSC.hg38.knownGene TxDb.Mmusculus.UCSC.mm9.knownGene TxDb.Mmusculus.UCSC.mm10.knownGene org.Hs.eg.db org.Mm.eg.db ChIPseeker rGREAT GenomicFeatures
 #' @importFrom tidyr unnest 
+#' @importFrom dplyr left_join 
 setGeneric("annotateRanges_great", function(object="profileplyr",species="character",...)standardGeneric("annotateRanges_great"))
 #' @describeIn annotateRanges_great Annotate profileplyr ranges to genes using rGREAT 
 #' @export
 setMethod("annotateRanges_great", signature(object="profileplyr"),function(object, species, ...) {
 
-  great <- submitGreatJob(rowRanges(object), request_interval = 0, species = species, ...)
+  great <- submitGreatJob(rowRanges(object), gr_is_zero_based = TRUE, request_interval = 0, species = species, ...)
   genomic_regions <- getRegionGeneAssociations(great)
-  genomic_regions_df <- as.data.frame(genomic_regions) %>%
-    unnest(cols = c(annotated_genes, dist_to_TSS))
-  genomic_regions_gr <- GRanges(seqnames = genomic_regions_df$seqnames,
-                                ranges = IRanges(start = genomic_regions_df$start,
-                                                 end = genomic_regions_df$end),
-                                strand = genomic_regions_df$strand,
-                                mcols = data.frame(genomic_regions_df$annotated_genes,
-                                                   genomic_regions_df$dist_to_TSS))
-  colnames(mcols(genomic_regions_gr)) <- c("SYMBOL", "distanceToTSS")
+  genomic_regions_df <- as.data.frame(genomic_regions)
+  object_rowRanges_df <- as.data.frame(rowRanges(object))
+  merged_gr <- left_join(object_rowRanges_df, genomic_regions_df, by = c("seqnames" ,"start", "end"), suffix = c("", ".y"))
+
+  genomic_regions_gr <- GRanges(seqnames =  merged_gr$seqnames,
+                                ranges = IRanges(start =  merged_gr$start,
+                                                 end =  merged_gr$end),
+                                strand =  merged_gr$strand,
+                                mcols = merged_gr[colnames(merged_gr) %in% c(colnames(mcols(object)), "annotated_genes", "dist_to_TSS")]
+  )
   
-  hits <- findOverlaps(genomic_regions_gr, rowRanges(object)) # get the indecies of both subject and query that overlap
-  hits <- hits[!duplicated(queryHits(hits))]
-  object <- object[subjectHits(hits)]
-  mcols(object) <-  c(mcols(object), mcols(genomic_regions_gr))
+  colnames(mcols(genomic_regions_gr)) <- gsub("mcols.", "", colnames(mcols(genomic_regions_gr)))
+  mcols(genomic_regions_gr) <- mcols(genomic_regions_gr) %>%
+    data.frame %>%
+    dplyr::rename(SYMBOL = annotated_genes,
+                  distanceToTSS = dist_to_TSS)
   
-  colnames(mcols(object)) <- make.unique(colnames(mcols(object)))
+  colnames(mcols(genomic_regions_gr)) <- make.unique(colnames(mcols(genomic_regions_gr)))
+  mcols(genomic_regions_gr)$uid <- paste(seqnames(genomic_regions_gr), start(genomic_regions_gr), end(genomic_regions_gr), sep = "_")
+  
+  mcols(object)$uid <- paste(seqnames(rowRanges(object)), start(rowRanges(object)), end(rowRanges(object)), sep = "_")
+  
+  mcols_new <- mcols(genomic_regions_gr)[match(mcols(object)$uid, mcols(genomic_regions_gr)$uid), ] %>%
+    data.frame %>%
+    dplyr::select(-uid)
+  mcols(object) <- mcols_new
   return(object)
 
 })
