@@ -1605,52 +1605,55 @@ generateEnrichedHeatmap <- function(object, include_group_annotation = TRUE, ext
   axis = NULL # axis() is a function in complex heatmap so if I dont do this it throws an error when this isnt set. dont think this reassinging interferes as we dont use the axis function, but maybe should change this?
   
   if(!is.null(ylim)){
-    if(ylim %in% colnames(sampleData(object))) {
-      column_for_color <- sampleData(object)[, colnames(sampleData(object)) %in% ylim]
-      if(!is(column_for_color, "factor")){
-        column_for_color <- as.factor(column_for_color)
-      }
-      for (i in seq_along(levels(column_for_color))){
-        enrichMAT_levels_temp <- enrichMAT[levels(column_for_color)[i] == column_for_color]
-        scoreMat[[i]] <- do.call(cbind,
-                                 as.list(enrichMAT_levels_temp))
-      }
-    } else {
-      scoreMat[[1]] <- do.call(cbind,
-                               as.list(enrichMAT))
-    }
-    
-    group_boundaries <- getGroupInfoFromObject(object)$group_boundaries
-    
-    min_max_for_figure <- lapply(scoreMat, get_matrix_max_incl_group, group_boundaries)
-    
-    if(ylim %in% colnames(sampleData(object))) {
-      names(min_max_for_figure) <- levels(column_for_color)
-      ylim_list <- list()
-      for  (i in seq_along(column_for_color)) {
-        ylim_list[[i]] <- min_max_for_figure[[column_for_color[i]]]
-      }
-      axis = "all"
-    }
-    
-    if((length(ylim) == 1) && (ylim == "common_max")){
-      limits <- min_max_for_figure[[1]]
-      ylim_list <- list(limits)[rep(1, length(enrichMAT))]
-      axis = "only_first"
-    }
     if (is(ylim,"numeric")) {
       limits <- ylim
       ylim_list <- list(limits)[rep(1, length(enrichMAT))]
       axis = "only_first"
-    }
-    
-    if (is(ylim,"list")) {
+    }else if (is(ylim,"list")) {
       if(length(ylim) != length(enrichMAT)){
         stop("Since it is a list, the length of the 'ylim' argument must equal the number of heatmaps")
       }
       ylim_list <- ylim
       axis = "all"
-    }
+    }else if(is(ylim,"character")){
+      if(length(ylim) == 1){
+        if((ylim == "common_max")){
+          scoreMat[[1]] <- do.call(cbind,
+                                   as.list(enrichMAT))
+          group_boundaries <- getGroupInfoFromObject(object)$group_boundaries
+          min_max_for_figure <- lapply(scoreMat, get_matrix_max_incl_group, group_boundaries)
+          
+          limits <- min_max_for_figure[[1]]
+          ylim_list <- list(limits)[rep(1, length(enrichMAT))]
+          axis = "only_first"
+        }else if(ylim %in% colnames(sampleData(object))) {
+          column_for_color <- sampleData(object)[, colnames(sampleData(object)) %in% ylim]
+          if(!is(column_for_color, "factor")){
+            column_for_color <- as.factor(column_for_color)
+          }
+          for (i in seq_along(levels(column_for_color))){
+            enrichMAT_levels_temp <- enrichMAT[levels(column_for_color)[i] == column_for_color]
+            scoreMat[[i]] <- do.call(cbind,
+                                     as.list(enrichMAT_levels_temp))
+          }
+          group_boundaries <- getGroupInfoFromObject(object)$group_boundaries
+          
+          min_max_for_figure <- lapply(scoreMat, get_matrix_max_incl_group, group_boundaries)
+          names(min_max_for_figure) <- levels(column_for_color)
+          
+          ylim_list <- list()
+          for  (i in seq_along(column_for_color)) {
+            ylim_list[[i]] <- min_max_for_figure[[column_for_color[i]]]
+          }
+          axis = "all"
+        }else{
+          stop("Since ylim is a character vector, make sure the vector has a length of one and is either 'common_max' or one of the column names in sampleData(object)")
+        }
+      }else{
+        stop("Since ylim is a character vector, make sure the vector has a length of one and is either 'common_max' or one of the column names in sampleData(object)")
+      } 
+      
+    }  
   }
   
   if (is.null(ylim)){
