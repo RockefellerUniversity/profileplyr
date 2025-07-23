@@ -2339,7 +2339,7 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @importFrom BiocParallel bplapply MulticoreParam multicoreWorkers SerialParam
 #' @importFrom soGGi regionPlot
 #' @importFrom rtracklayer import.bed import.bw import
-#' @importFrom GenomeInfoDb seqlevelsStyle<- seqlevelsInUse seqlevels
+#' @importFrom Seqinfo seqlevels seqlevelsInUse
 #' @importFrom Rsamtools scanBamHeader
 #' @export
 #' 
@@ -2392,7 +2392,7 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "p
     testRanges_GR <- GRangesList()
     for(i in seq_along(testRanges)){
       temp <- import(testRanges[i])
-      seqlevelsStyle(temp) <- "UCSC" # since we manually made all rle from bigwigs UCSC style, we make sure bed is too
+      GenomeInfoDb::seqlevelsStyle(temp) <- "UCSC" # since we manually made all rle from bigwigs UCSC style, we make sure bed is too
       temp <- temp[seqnames(temp) %in% common_names]
       temp <- temp 
       seqlevels(temp) <- seqlevelsInUse(temp)
@@ -2427,7 +2427,7 @@ BamBigwig_to_chipProfile <- function(signalFiles, testRanges, format, style = "p
     group_labels <- vector()
     for(i in seq_along(testRanges)){
       temp <- import.bed(testRanges[i])
-      seqlevelsStyle(temp) <- seqnames_format
+      GenomeInfoDb::seqlevelsStyle(temp) <- seqnames_format
       seqlevels(temp) <- seqlevelsInUse(temp)
       temp$sgGroup <- rep(basename(testRanges[i]), length(temp))
       group_labels[i] <- basename(testRanges[i])
