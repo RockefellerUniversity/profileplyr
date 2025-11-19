@@ -7,6 +7,6 @@ pRowFilt <- p[1:200,]
 pColumnFilt <- p[,1:100]
 pSampleFilt <- p[,,3:4]
 
-expect_that(is(pRowFilt,"profileplyr"),is_true())
-expect_that(is(pColumnFilt,"profileplyr"),is_true())
-expect_that(is(pSampleFilt,"profileplyr"),is_true())
+expect_true(is(pRowFilt,"profileplyr"))
+expect_true(is(pColumnFilt,"profileplyr"))
+expect_true(is(pSampleFilt,"profileplyr"))
