@@ -25,7 +25,7 @@
 #' @importFrom ComplexHeatmap anno_summary Heatmap HeatmapAnnotation rowAnnotation anno_mark
 #' @importFrom dplyr mutate select
 #' @importFrom EnrichedHeatmap anno_enriched EnrichedHeatmap
-#' @importFrom GenomicFeatures makeTxDbFromGFF
+#' @importFrom txdbmaker makeTxDbFromGFF
 #' @importFrom GenomicRanges GRanges GRangesList
 #' @importFrom grid gpar unit
 #' @importFrom IRanges IRanges
@@ -261,7 +261,7 @@ import_deepToolsMat <- function(con){
 #' @export
 #' @import IRanges
 #' @importFrom pheatmap pheatmap
-#' @importFrom GenomicFeatures makeTxDbFromGFF
+#' @importFrom txdbmaker makeTxDbFromGFF
 setGeneric("clusterRanges", function(object="profileplyr",fun="function",scaleRows="logical",
                                      kmeans_k="integer",clustering_callback="function",clustering_distance_rows="ANY",
                                      cluster_method="function",cutree_rows="integer",silent="logical",show_rownames="logical",
@@ -2339,7 +2339,7 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @importFrom BiocParallel bplapply MulticoreParam multicoreWorkers SerialParam
 #' @importFrom soGGi regionPlot
 #' @importFrom rtracklayer import.bed import.bw import
-#' @importFrom Seqinfo seqlevels seqlevelsInUse
+#' @importFrom GenomeInfoDb Seqinfo seqlevels seqlevelsInUse
 #' @importFrom Rsamtools scanBamHeader
 #' @export
 #' 
