@@ -37,7 +37,7 @@ BamBigwig_to_chipProfile(
 
 \item{distanceDown}{If 'style' is set to 'point' then this will determine the distance (in base pairs) downstream from the center of each peak signal will be quantified. If the 'distanceAround' argument is set (i.e. not NULL), that will be used for the quantification range and 'distanceDown' will be ignored.}
 
-\item{...}{pass to regionPlot() within the soGGi package}
+\item{...}{pass to regionPlot()}
 
 \item{quant_params}{An optional \code{\link[BiocParallel:BiocParallelParam-class]{BiocParallelParam}} instance determining the parallel back-end to be used during evaluation. When this argument is set to NULL (default) SerialParam() will be used. For parallelization, MulticoreParam() can be used.}
 }

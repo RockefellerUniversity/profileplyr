@@ -1,5 +1,4 @@
 library(profileplyr)
-library(soGGi)
 context("Test subsetting and indexing")
 data(chipExampleBig)
 p <- as_profileplyr(chipExampleBig,names = "name")

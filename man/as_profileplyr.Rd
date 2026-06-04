@@ -19,7 +19,6 @@ Function to convert soGGi ChIPprofile objects to  profileplyr object .
 }
 \examples{
 
-library(soGGi)
 data("ik_Profiles")
 proplyr <- as_profileplyr(ik_Profiles,names="ID")
 export_deepToolsMat(proplyr,con=file.path(tempdir(),"ik_Profiles.MAT"))
