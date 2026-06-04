@@ -1,7 +1,7 @@
 Package: profileplyr
 Type: Package
 Title: Visualization and annotation of read signal over genomic ranges with profileplyr
-Version: 1.28.2
+Version: 1.28.3
 Date: 2025-07-22
 Authors@R: c(
       person("Doug", "Barrows", email = "doug.barrows@gmail.com", role = c("aut", "cre")),
