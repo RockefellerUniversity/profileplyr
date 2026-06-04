@@ -1,5 +1,4 @@
 library(profileplyr)
-library(soGGi)
 context("Test import from soGGi")
 data(chipExampleBig)
 p <- as_profileplyr(chipExampleBig,names = "name")

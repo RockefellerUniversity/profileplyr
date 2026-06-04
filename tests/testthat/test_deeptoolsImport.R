@@ -1,5 +1,4 @@
 library(profileplyr)
-library(soGGi)
 context("Test subsetting and indexing")
 example <- system.file("extdata", "example_deepTools_MAT", package = "profileplyr") 
 object <- import_deepToolsMat(example)

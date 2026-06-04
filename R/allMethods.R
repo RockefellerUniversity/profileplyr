@@ -36,7 +36,6 @@
 #' @importFrom rGREAT submitGreatJob
 #' @importFrom rjson fromJSON
 #' @importFrom S4Vectors DataFrame queryHits subjectHits
-#' @importFrom soGGi regionPlot
 #' @importFrom stats cutree
 
 #' @importFrom methods as new
@@ -2212,11 +2211,9 @@ selectSome <- function(obj, maxToShow = 5, ellipsis = "...", ellipsisPos = c("mi
 #' @return A profileplyr object
 #' @examples
 #' 
-#' library(soGGi)
 #' data("ik_Profiles")
 #' proplyr <- as_profileplyr(ik_Profiles,names="ID")
 #' export_deepToolsMat(proplyr,con=file.path(tempdir(),"ik_Profiles.MAT"))
-#' @importClassesFrom soGGi  ChIPprofile
 #' @export
 as_profileplyr <- function(chipProfile,names = NULL){
   if(!is(chipProfile,"ChIPprofile")) stop("Object must be ChIPprofile object")
@@ -2316,7 +2313,7 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #' @param distanceUp If 'style' is set to 'point' then this will determine the distance (in base pairs) upstream from the center of each peak signal will be quantified. If the 'distanceAround' argument is set (i.e. not NULL), that will be used for the quantification range and 'distanceUp will be ignored.
 #' @param distanceDown If 'style' is set to 'point' then this will determine the distance (in base pairs) downstream from the center of each peak signal will be quantified. If the 'distanceAround' argument is set (i.e. not NULL), that will be used for the quantification range and 'distanceDown' will be ignored.
 #' @param bin_size If 'style' is set to 'point' then this will determine the size of each bin over which signal is quantified. The default is 20 base pairs.  
-#' @param ... pass to regionPlot() within the soGGi package
+#' @param ... pass to regionPlot()
 #' @param quant_params An optional \code{\link[BiocParallel:BiocParallelParam-class]{BiocParallelParam}} instance determining the parallel back-end to be used during evaluation. When this argument is set to NULL (default) SerialParam() will be used. For parallelization, MulticoreParam() can be used. 
 #' @return A profileplyr object
 #' @examples
@@ -2337,7 +2334,6 @@ as_profileplyr <- function(chipProfile,names = NULL){
 #'                          style="percentOfRegion",
 #'                          )
 #' @importFrom BiocParallel bplapply MulticoreParam multicoreWorkers SerialParam
-#' @importFrom soGGi regionPlot
 #' @importFrom rtracklayer import.bed import.bw import
 #' @importFrom GenomeInfoDb Seqinfo seqlevels seqlevelsInUse
 #' @importFrom Rsamtools scanBamHeader
