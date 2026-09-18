@@ -371,15 +371,20 @@ setMethod("clusterRanges", signature="profileplyr",
 )
 
 
-#' Annotate profileplyr ranges to genes using rGREAT 
+#' Annotate profileplyr ranges to genes using local rGREAT
 #'
-#' The ranges from the deepTools matrix will be subset based on whether they overlap with specified annotated regions related to a user defined gene list.
+#' The ranges from the deepTools matrix will be annotated to genes using the
+#' local implementation of the GREAT algorithm (\code{\link[rGREAT]{great}}),
+#' which builds extended-TSS regulatory domains from a Bioconductor TxDb and
+#' does not depend on the GREAT web service.
 #' @docType methods
 #' @name annotateRanges_great
 #' @rdname annotateRanges_great
 #' @param object A profileplyr object
-#' @param species GREAT accepts "hg19", "mm10", "mm9", "danRer7" (zebrafish)
-#' @param ... pass to \code{\link[rGREAT]{submitGreatJob}} 
+#' @param species Genome build for the TSS annotation, passed to rGREAT's
+#'   \code{tss_source} argument. Accepts "hg19", "hg38", "mm10", "mm9" (or any
+#'   TxDb.* package name / other tss_source format rGREAT supports).
+#' @param ... passed to \code{\link[rGREAT]{great}}
 #' @details tbd
 #' @return A profileplyr object
 #' @examples
@@ -388,23 +393,36 @@ setMethod("clusterRanges", signature="profileplyr",
 #' object <- import_deepToolsMat(example)
 #' object <- object[1:5, , ] 
 #' 
-#' # annotate ranges with genes using GREAT with following command:
+#' # annotate ranges with genes using local GREAT:
 #' annotateRanges_great(object, species = "mm10")
 #' 
 #' @import TxDb.Hsapiens.UCSC.hg19.knownGene TxDb.Hsapiens.UCSC.hg38.knownGene TxDb.Mmusculus.UCSC.mm9.knownGene TxDb.Mmusculus.UCSC.mm10.knownGene org.Hs.eg.db org.Mm.eg.db ChIPseeker rGREAT GenomicFeatures
 #' @importFrom tidyr unnest 
 #' @importFrom dplyr left_join 
-setGeneric("annotateRanges_great", function(object="profileplyr",species="character",...)standardGeneric("annotateRanges_great"))
-#' @describeIn annotateRanges_great Annotate profileplyr ranges to genes using rGREAT 
+setGeneric("annotateRanges_great", function(object="profileplyr", species="character", ...) standardGeneric("annotateRanges_great"))
+#' @describeIn annotateRanges_great Annotate profileplyr ranges to genes using local rGREAT
 #' @export
-setMethod("annotateRanges_great", signature(object="profileplyr"),function(object, species, ...) {
-
-  great <- submitGreatJob(rowRanges(object), gr_is_zero_based = TRUE, request_interval = 0, species = species, ...)
-  genomic_regions <- getRegionGeneAssociations(great)
+setMethod("annotateRanges_great", signature(object="profileplyr"), function(object, species, ...) {
+  
+  # great() requires a gene_sets argument to run (it's built for enrichment
+  # testing), but the region-gene association step below doesn't depend on
+  # which gene set is used -- it's computed from the full extended-TSS
+  # universe for `species`, not restricted to genes in gene_sets. We pull one
+  # real gene ID straight from that TSS annotation as the placeholder, so its
+  # ID type (Entrez/Ensembl/etc, whichever the TxDb uses) always matches what
+  # great() expects -- avoids the ID-type mismatch a made-up ID can trigger.
+  # min_gene_set_size is dropped to 1 so great() doesn't filter it out (default is 5).
+  placeholder_id <- as.character(mcols(getTSS(species))$gene_id[1])
+  great_res <- great(rowRanges(object),
+                     gene_sets = list(placeholder = placeholder_id),
+                     tss_source = species,
+                     min_gene_set_size = 1,
+                     ...)
+  genomic_regions <- getRegionGeneAssociations(great_res)
   genomic_regions_df <- as.data.frame(genomic_regions)
   object_rowRanges_df <- as.data.frame(rowRanges(object))
   merged_gr <- left_join(object_rowRanges_df, genomic_regions_df, by = c("seqnames" ,"start", "end"), suffix = c("", ".y"))
-
+  
   genomic_regions_gr <- GRanges(seqnames =  merged_gr$seqnames,
                                 ranges = IRanges(start =  merged_gr$start,
                                                  end =  merged_gr$end),
@@ -428,7 +446,7 @@ setMethod("annotateRanges_great", signature(object="profileplyr"),function(objec
     dplyr::select(-uid)
   mcols(object) <- mcols_new
   return(object)
-
+  
 })
 
 

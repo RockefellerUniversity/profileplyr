@@ -4,7 +4,7 @@
 \name{annotateRanges_great}
 \alias{annotateRanges_great}
 \alias{annotateRanges_great,profileplyr-method}
-\title{Annotate profileplyr ranges to genes using rGREAT}
+\title{Annotate profileplyr ranges to genes using local rGREAT}
 \usage{
 annotateRanges_great(object = "profileplyr", species = "character", ...)
 
@@ -13,22 +13,27 @@ annotateRanges_great(object = "profileplyr", species = "character", ...)
 \arguments{
 \item{object}{A profileplyr object}
 
-\item{species}{GREAT accepts "hg19", "mm10", "mm9", "danRer7" (zebrafish)}
+\item{species}{Genome build for the TSS annotation, passed to rGREAT's
+\code{tss_source} argument. Accepts "hg19", "hg38", "mm10", "mm9" (or any
+TxDb.* package name / other tss_source format rGREAT supports).}
 
-\item{...}{pass to \code{\link[rGREAT]{submitGreatJob}}}
+\item{...}{passed to \code{\link[rGREAT]{great}}}
 }
 \value{
 A profileplyr object
 }
 \description{
-The ranges from the deepTools matrix will be subset based on whether they overlap with specified annotated regions related to a user defined gene list.
+The ranges from the deepTools matrix will be annotated to genes using the
+local implementation of the GREAT algorithm (\code{\link[rGREAT]{great}}),
+which builds extended-TSS regulatory domains from a Bioconductor TxDb and
+does not depend on the GREAT web service.
 }
 \details{
 tbd
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{annotateRanges_great(profileplyr)}: Annotate profileplyr ranges to genes using rGREAT
+\item \code{annotateRanges_great(profileplyr)}: Annotate profileplyr ranges to genes using local rGREAT
 
 }}
 \examples{
@@ -37,7 +42,7 @@ example <- system.file("extdata", "example_deepTools_MAT", package = "profileply
 object <- import_deepToolsMat(example)
 object <- object[1:5, , ] 
 
-# annotate ranges with genes using GREAT with following command:
+# annotate ranges with genes using local GREAT:
 annotateRanges_great(object, species = "mm10")
 
 }
